@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 공주시 문화시설을 활용한 원의 방정식 모델링</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 수학</h1>
+    <div class="topic">공주시 문화시설을 활용한<br>원의 방정식 모델링</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  title: "공주시 문화시설을 활용한 원의 방정식 모델링",
+  pages: [
+    // 도입부 (카테고리 없음)
+    {
+      id:"p1", icon:"🎯", title:"학습목표",
+      blocks:[
+        {t:"html", v:`
+          <div class="blk" style="text-align:center;padding:20px 0">
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">수학 × 정보 융합 · 공간 모델링</div>
+            <h2 style="font-size:28px;font-weight:900;margin-bottom:8px">공주시 문화시설을 활용한<br>원의 방정식 모델링</h2>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">수학(원의 방정식)</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">정보(AI 근사)</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">공간 데이터 모델링</span>
+            </div>
+          </div>
+        `},
+        {t:"objectives", items:[
+          "세 점을 통해 원의 방정식을 구하고, 중심과 반지름을 계산할 수 있다.",
+          "공주시의 문화유적·관광지 위치를 활용하여 원의 방정식을 실제 데이터와 연결할 수 있다.",
+          "수학적 모델링과 디지털 도구를 접목하여 '모이기 좋은 지점'을 탐색하는 문제 해결 능력을 기를 수 있다."
+        ]}
+      ]
+    },
+
+    // 생각해요 (카테고리 없음)
+    {
+      id:"p2", icon:"💭", title:"생각해요",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 공주의 관광지를 수학적으로 연결하면?</h3>
+          <p>공주는 무령왕릉, 공산성, 송산리 고분군과 같은 역사적 문화유적과 다양한 관광지가 어우러진 도시입니다. 이런 문화유적이나 관광지를 수학적으로 연결해 본다면 어떤 의미가 있을까요?</p>
+          <p>세 지점을 잇는 원의 방정식을 구하면, <strong>중심과 반지름</strong>이라는 새로운 시각으로 공주를 바라볼 수 있습니다. 그렇다면, 공주의 문화유적을 수학적으로 탐구한다면 어떤 과정을 거칠 수 있을까요?</p>
+          <p style="margin-top:12px;font-weight:600;color:var(--accent)">친구들과 공주를 여행했던 경험을 떠올리며, 아래 질문들에 대한 나의 생각을 적어 봅시다.</p>
+        </div>`},
+        {t:"input", label:"▶ 공주시의 문화유적·관광지 3개를 선택해 원의 방정식을 세운다면, 그 중심은 어떤 위치에 놓이게 될까?", ph:"예: 세 관광지의 가운데쯤, 모두에게 비슷하게 가까운 지점에 놓일 것 같다.", rows:2},
+        {t:"input", label:"▶ 우리가 구한 원의 반지름은 선택한 지점들과 어떤 관계를 보여줄까?", ph:"예: 중심에서 세 관광지까지의 거리를 동일하게 나타낼 것이다.", rows:2},
+        {t:"input", label:"▶ 이렇게 구한 중심과 반지름은 '공주에서 만남의 장소'를 정할 때 어떤 의미를 가질 수 있을까?", ph:"예: 친구들이 흩어져 있을 때, 모두에게 공평하게 가까운 만남의 장소를 정할 수 있다.", rows:3},
+        {t:"html", v:`<div class="callout purple"><div class="c-title">🎬 [릴스① 도입 훅]</div><div class="c-body">주제: 공주의 무령왕릉·공산성·박물관 위치에 점을 찍고, 세 점을 모두 지나는 원이 그려지는 순간 "어디서 만나면 가장 좋을까?" 질문을 던지는 30초 도입 영상<br>길이: 30~45초 / 학부생 팀 제작 예정</div></div>`}
+      ]
+    },
+
+    // 알아봐요 - 1
+    {
+      id:"p3", cat:"알아봐요", icon:"📖", title:"1. 세 점을 지나는 원의 방정식",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 세 점을 지나는 원은 유일하게 결정된다</h3>
+          <p>세 점이 한 원 위에 있을 때, 그 점들을 모두 지나는 원은 <strong>유일하게 결정</strong>됩니다. 원의 방정식은 다음과 같이 표현됩니다.</p>
+          <div style="text-align:center;padding:14px;background:var(--surface-alt);border-radius:var(--radius-sm);font-size:18px;font-weight:600;margin:12px 0">
+            (x − a)² + (y − b)² = r²
+          </div>
+          <p>이때 (a, b)는 <strong>원의 중심</strong>, r은 <strong>원의 반지름</strong>을 나타냅니다. 중심 (a, b)와 반지름 r을 구하기 위해서는 세 점 (x₁, y₁), (x₂, y₂), (x₃, y₃)이 필요하며, 이를 원의 방정식에 대입하여 만든 3개의 방정식을 연립하면 중심과 반지름을 구할 수 있습니다.</p>
+          <p>이 과정을 통해 선택한 문화유적 3개를 지나는 원을 수학적으로 구할 수 있습니다.</p>
+        </div>`},
+        {t:"callout", variant:"blue", title:"💡 핵심 개념", body:"• 세 점이 한 원 위에 있을 때, 그 점들을 모두 지나는 원은 유일하게 결정된다.<br>• 세 점의 좌표를 원의 방정식에 대입하여 만든 3개의 방정식을 연립하면 중심 (a, b)와 반지름 r을 구할 수 있다.<br>• 알지오매스에 세 점을 찍으면 원의 방정식이 시각적으로 확인된다."},
+        {t:"callout", variant:"green", title:"▷ 활용 포인트", body:"① 주어진 점들로 원의 방정식을 직접 도출하며 기하와 대수의 연결을 이해한다.<br>② 원의 중심·반지름을 통해 '모이기 좋은 지점'을 탐색하는 실제적 의미를 부여한다."}
+      ]
+    },
+
+    // 알아봐요 - 2
+    {
+      id:"p4", cat:"알아봐요", icon:"📖", title:"2. 원의 방정식 근사와 AI 도구",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 실제 데이터에는 오차가 있다</h3>
+          <p>실제 데이터는 항상 오차를 포함하므로, 세 점이 정확히 한 원 위에 있지 않을 수도 있습니다. 이때는 <strong>최소제곱법</strong>과 같은 근사 기법을 활용하여 원의 중심과 반지름을 추정합니다.</p>
+          <p>Google Colab 같은 코딩 환경에서 점 좌표를 입력하면, AI와 알고리즘이 가장 적합한 원을 계산해 줍니다. 이렇게 구한 원의 방정식을 알지오매스에 입력해 그래프로 확인하면, 실제 데이터와 근사 결과를 시각적으로 비교할 수 있습니다.</p>
+        </div>`},
+        {t:"steps", title:"AI·코딩으로 원의 방정식 근사하기", items:[
+          {title:"1. ChatGPT로 코드 생성", desc:"공주시 지도에서 관광지 좌표를 선택할 수 있는 코드를 ChatGPT로 생성한다."},
+          {title:"2. Google Colab에서 실행", desc:"코드를 실행하고 3개의 관광지를 선택해 좌표를 확인한다."},
+          {title:"3. 원의 방정식 도출", desc:"선택한 3개의 점을 토대로 원의 방정식을 생성한다."},
+          {title:"4. 원의 중심 위치 확인", desc:"도출한 원의 방정식으로부터 중심 좌표를 확인하고 그 의미를 해석한다."}
+        ]},
+        {t:"callout", variant:"green", title:"▷ 활용 포인트", body:"① AI와 코딩을 통해 원의 방정식을 근사하며 데이터 기반 수학 탐구를 경험한다.<br>② 근사 과정에서 발생하는 오차를 분석하며 수학적 추론력을 향상시킨다.<br>③ 수학·AI 융합 학습을 통해 실제 공간 데이터를 모델링하는 능력을 기른다."},
+        {t:"html", v:`<div class="callout blue"><div class="c-title">🎬 [릴스② 핵심 개념]</div><div class="c-body">주제: 세 점을 지나는 원이 유일하게 결정되는 원리를 애니메이션으로 보여주고, 손계산 결과와 Google Colab의 최소제곱법 근사 결과를 나란히 비교하는 60~90초 영상<br>길이: 60~90초 / 학부생 팀 제작 예정</div></div>`}
+      ]
+    },
+
+    // 활동해요 - 1
+    {
+      id:"p5", cat:"활동해요", icon:"✏️", title:"1. 관광지 3곳 선택 & 원의 방정식",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 공주시 관광지를 활용하여 원의 방정식 세우기</h3>
+          <p>모둠별로 공주시의 문화유적·관광지 3곳을 선택하고, 그 좌표를 활용해 원의 방정식을 직접 구해 봅시다.</p>
+        </div>`},
+        {t:"input", label:"1. 공주시 지도에서 모둠별로 문화유적·관광지 3개를 선택해 좌표(위도·경도)를 기록해 보자.", ph:"예: ① 무령왕릉 (36.4628, 127.1131) ② 공산성 (36.4664, 127.1271) ③ 국립공주박물관 (36.4644, 127.1211)", rows:4},
+        {t:"input", label:"2. 세 점을 이용해 원의 방정식을 구하고, 알지오매스에 입력해 원·중심·반지름을 시각화하여 세 점이 원 위에 있는지 검증해 보자.", ph:"예: 알지오매스에서 세 점을 찍어 원을 그렸을 때, 중심 좌표는 (___, ___), 반지름은 ___이며, 세 점이 모두 원 위에 정확히 위치함을 확인하였다.", rows:4}
+      ]
+    },
+
+    // 활동해요 - 2
+    {
+      id:"p6", cat:"활동해요", icon:"💻", title:"2. AI·코딩 근사와 결과 검증",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ AI·코딩으로 근사하고 결과 검증하기</h3>
+          <p>이번에는 Google Colab과 ChatGPT를 활용해 최소제곱법으로 원의 중심·반지름을 근사해 보고, 손으로 계산한 결과와 비교합니다.</p>
+        </div>`},
+        {t:"callout", variant:"blue", title:"💡 ChatGPT 프롬프트 예시", body:"\"공주시의 세 관광지 좌표 [(x₁, y₁), (x₂, y₂), (x₃, y₃)]를 입력으로 받아 최소제곱법으로 원의 중심과 반지름을 근사하고 RMSE를 출력하는 Python 코드를 작성해 줘.\""},
+        {t:"code", lang:"Python (Google Colab)", code:`import numpy as np
+
+# 공주시 관광지 3곳의 좌표 (예시: 위도, 경도 → 평면 좌표로 변환했다고 가정)
+points = np.array([
+    [x1, y1],  # 관광지 1
+    [x2, y2],  # 관광지 2
+    [x3, y3],  # 관광지 3
+])
+
+# 최소제곱법으로 원의 중심과 반지름 근사
+# (x - a)^2 + (y - b)^2 = r^2  =>  x^2 + y^2 = 2ax + 2by + (r^2 - a^2 - b^2)
+A = np.column_stack([2*points[:,0], 2*points[:,1], np.ones(len(points))])
+b = points[:,0]**2 + points[:,1]**2
+
+# 정규방정식: A^T A x = A^T b
+sol, *_ = np.linalg.lstsq(A, b, rcond=None)
+a, b_center, c = sol
+r = np.sqrt(c + a**2 + b_center**2)
+
+print(f"원의 중심: ({a:.4f}, {b_center:.4f})")
+print(f"반지름: {r:.4f}")
+
+# RMSE(오차) 계산
+distances = np.sqrt((points[:,0]-a)**2 + (points[:,1]-b_center)**2)
+rmse = np.sqrt(np.mean((distances - r)**2))
+print(f"RMSE: {rmse:.4f}")`},
+        {t:"input", label:"1. ChatGPT로 얻은 코드를 통해 최소제곱법으로 원의 중심·반지름을 근사하고, 손계산 결과와 비교해 보자.", ph:"예: 손계산 중심 (___, ___), 근사 중심 (___, ___). 두 결과의 차이는 ___이며, 반지름의 상대 오차는 ___% 이다.", rows:4},
+        {t:"input", label:"2. 오차를 확인하고, 반경 임계값으로 생활권/접근성 원을 그려 '모이기 좋은 지점'의 의미를 해석해 보자.", ph:"예: 반지름 r 이내에는 ___ 같은 시설이 포함되어 있으며, 이 원의 중심은 세 관광지로부터 비슷한 거리에 있어 만남의 장소로 적합하다.", rows:4}
+      ]
+    },
+
+    // 활동해요 - 3
+    {
+      id:"p7", cat:"활동해요", icon:"💡", title:"3. '모이기 좋은 지점' 발표",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 모둠별 프로젝트 발표 – 공주에서 모이기 좋은 지점</h3>
+          <p>지금까지의 탐구 결과를 정리하여 모둠별로 발표 자료를 준비합니다. 모둠이 정한 관광지, 원의 방정식 결과와 근사 결과 검증 내용, '모이기 좋은 지점'의 의미를 발표해 봅시다.</p>
+        </div>`},
+        {t:"steps", title:"발표 자료 구성 순서", items:[
+          {title:"1. 선택한 관광지 3곳 소개", desc:"우리 모둠이 선택한 문화유적·관광지 3곳과 그 좌표, 선택한 이유를 소개한다."},
+          {title:"2. 원의 방정식 결과 제시", desc:"손으로 계산한 원의 방정식, 중심, 반지름과 알지오매스 시각화 결과를 보여준다."},
+          {title:"3. AI 근사 결과 비교", desc:"Google Colab으로 근사한 결과와 손계산 결과의 차이, RMSE 값을 비교한다."},
+          {title:"4. 모이기 좋은 지점 해석", desc:"중심 좌표가 실제 공주 지도의 어디에 위치하는지, 만남의 장소로서의 의미를 해석한다."},
+          {title:"5. 학습 성찰", desc:"활동을 통해 새롭게 알게 된 점, 어려웠던 점, 더 탐구하고 싶은 점을 공유한다."}
+        ]},
+        {t:"input", label:"우리 모둠이 제안하는 '공주에서 모이기 좋은 지점'은 어디이며, 그 이유는 무엇인가요?", ph:"우리 모둠이 정한 중심 좌표가 위치한 장소와, 그곳을 만남의 장소로 추천하는 이유를 정리해 보세요.", rows:4}
+      ]
+    },
+
+    // 활동퀴즈 - 1
+    {
+      id:"p8", cat:"활동퀴즈", icon:"❓", title:"1. 원의 방정식 이해",
+      blocks:[
+        {t:"html", v:`<div class="blk"><h3>▶ 세 점을 지나는 원의 방정식</h3></div>`},
+        {t:"quiz", num:"01", q:"세 점 (0,0), (2,6), (4,2)를 지나는 원의 중심의 좌표를 (a, b), 반지름의 길이를 r이라 할 때 a + b + r²의 값은?", opts:[
+          "6", "8", "10", "12", "14"
+        ], ans:4, ok:"정답입니다! 세 점을 원의 방정식에 대입해 연립방정식을 풀면 중심과 반지름의 제곱을 구할 수 있습니다.", no:"각 점을 (x−a)² + (y−b)² = r²에 대입한 뒤 식을 빼서 a, b를 먼저 구해 보세요."},
+        {t:"quiz", num:"02", q:"좌표평면 위의 세 점 (0,0), (6,0), (−4,4)를 지나는 원의 중심의 좌표를 (p, q)라 할 때, p + q의 값은?", opts:[
+          "6", "8", "10", "12", "14"
+        ], ans:2, ok:"정답입니다! 두 점 (0,0)과 (6,0)에서 p=3을 얻고, (−4,4)와의 관계로 q를 구할 수 있습니다.", no:"두 점에서 같은 거리에 있는 점들의 집합(수직이등분선)을 떠올려 보세요."},
+        {t:"quiz", num:"03", q:"중심이 직선 y = x + 3 위에 있고 점 (1, 2)를 지나며 x축에 접하는 두 원의 중심 사이의 거리는?", opts:[
+          "6√2", "7√2", "8√2", "12", "14"
+        ], ans:2, ok:"정답입니다! x축에 접하는 원의 반지름은 |중심의 y좌표|와 같다는 점이 핵심입니다.", no:"x축에 접한다는 조건과 중심이 직선 위에 있다는 조건을 모두 사용해 보세요."}
+      ]
+    },
+
+    // 활동퀴즈 - 2
+    {
+      id:"p9", cat:"활동퀴즈", icon:"❓", title:"2. 근사와 오차 분석",
+      blocks:[
+        {t:"html", v:`<div class="blk"><h3>▶ AI 근사와 오차 해석</h3></div>`},
+        {t:"quiz", num:"04", q:"세 점 A(−2,3), B(−1,0), C(0,−1)을 지나는 원의 반지름의 길이는?", opts:[
+          "1", "2", "3", "4", "5"
+        ], ans:4, ok:"정답입니다! 세 점의 좌표를 원의 방정식에 대입해 연립하면 반지름을 구할 수 있습니다.", no:"세 점이 한 원 위에 있다는 조건으로 연립방정식을 세워 보세요."},
+        {t:"quiz", num:"05", q:"세 점을 이용해 직접 계산한 원의 반지름 r = 5km이고 Google Colab으로 근사한 결과 원의 반지름 r = 5.2km였다. 이때 반지름 계산의 상대 오차율은?", opts:[
+          "3%", "4%", "7%", "8%", "9%"
+        ], ans:1, ok:"정답입니다! 상대 오차율 = |근사값 − 참값| ÷ 참값 × 100% = 0.2/5 × 100% = 4%입니다.", no:"상대 오차율 = (오차 ÷ 참값) × 100% 공식을 적용해 보세요."},
+        {t:"quiz", num:"06", q:"세 점이 정확히 한 원 위에 있지 않을 때, AI 근사 결과와 손계산 결과를 비교하는 이유로 가장 적절한 것은?", opts:[
+          "직접 계산한 결과가 항상 더 정확하기 때문이다.",
+          "AI는 계산 시간을 줄여주지만, 수학적 근거를 제공하지 않는다.",
+          "실제 데이터에는 오차가 포함되므로, 두 결과를 비교하여 신뢰도를 확인하기 위해서이다.",
+          "AI 결과는 항상 틀리기 때문이다.",
+          "두 방법 모두 결과가 똑같으므로 비교할 필요가 없다."
+        ], ans:2, ok:"정답입니다! 실제 데이터의 오차를 인정하고, 손계산과 AI 근사 결과를 비교함으로써 모델의 신뢰도를 검증할 수 있습니다.", no:"힌트: 데이터 기반 탐구에서는 '오차'를 어떻게 다루는지가 핵심입니다."}
+      ]
+    },
+
+    // 읽기 자료
+    {
+      id:"p10", cat:"읽기 자료", icon:"📚", title:"읽기 자료 & 진로 연계",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 공주시 문화유적과 원의 방정식</h3>
+          <p>공주는 무령왕릉, 공산성, 국립공주박물관과 같은 역사적 문화유적을 품은 도시입니다. 이 지점들을 단순히 관광지로 보는 것에서 나아가, 수학적으로 연결해 본다면 새로운 의미를 발견할 수 있습니다. 세 지점을 모두 지나는 원의 방정식을 구하면, 그 중심은 세 곳에서 같은 거리에 있는 특별한 지점을 나타냅니다. 이는 단순히 기하학적 계산이 아니라, '<strong>모이기 좋은 중심</strong>'을 찾는 실제적 탐구로 이어집니다.</p>
+        </div>`},
+        {t:"tabs", tabs:[
+          {label:"원과 거리 개념", content:`<p>원의 정의는 '중심에서 같은 거리에 있는 점들의 집합'입니다. 세 점으로 원을 만든다는 것은, 세 지점을 같은 거리 개념으로 묶는다는 의미입니다. 따라서 원의 중심은 '세 곳 모두에게 공평한 지점'이 됩니다.</p><p>이러한 사고는 단순한 기하 문제를 넘어, <strong>공정성과 균형</strong>이라는 수학적 가치까지 탐구하게 합니다.</p>`},
+          {label:"원의 근사와 AI 도구", content:`<p>실제 데이터는 오차가 포함되어 세 점이 정확히 한 원 위에 있지 않을 수도 있습니다. 이때는 <strong>최소제곱법</strong> 같은 근사 기법을 활용하여 '가장 잘 맞는 원'을 구합니다.</p><ul><li><strong>ChatGPT</strong>: 원의 방정식 유도, 최소제곱 근사 과정, 수학적 탐구 절차 안내</li><li><strong>Google Colab</strong>: 세 점 좌표로 원의 중심·반지름을 자동 계산하고 RMSE까지 분석</li><li><strong>알지오매스</strong>: 구한 원을 입력해 그래프로 시각화하고 중심·반지름을 해석</li></ul><p>이 과정을 통해 손계산 결과와 AI 근사 결과를 비교하고, 오차 분석으로 데이터 기반 탐구를 경험할 수 있습니다.</p>`},
+          {label:"원의 방정식 활용", content:`<p>세 점을 통해 얻은 원과 중심은 단순한 수학 결과를 넘어 실제 생활에도 활용됩니다.</p><ul><li><strong>도시 계획</strong>: 주요 시설 3곳을 기준으로 광장·공원 입지를 선정</li><li><strong>상업 분야</strong>: 학교, 아파트, 역을 기준으로 상권 중심을 계산</li><li><strong>재난 관리</strong>: 소방서·병원·경찰서를 기준으로 효율적인 구조 거점을 결정</li></ul><p>이처럼 원의 방정식은 교과서 속 기하 문제가 아니라, 공간 배치와 의사결정에 직접적으로 쓰이는 수학적 도구입니다.</p>`}
+        ]},
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 진로 연계</h3>
+          <p>원의 방정식과 공간 데이터 모델링은 다양한 진로 분야와 연결됩니다. 자신의 관심 분야와 연결해 더 탐구해 봅시다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"도시계획가", back:"주요 시설의 입지 선정과 시민 생활 동선 설계 등 공간 기반 의사결정을 수행"},
+          {front:"데이터 분석가", back:"좌표 데이터와 수학적 모델링을 활용해 효율적인 공간 배치 및 예측을 수행"},
+          {front:"GIS 전문가", back:"지리정보시스템을 활용해 도시·문화유적의 위치 관계를 분석하고 공간 문제 해결을 지원"},
+          {front:"수학과", back:"좌표 기하, 대수, 근사 기법을 기반으로 공간 문제 해결과 수학적 모델링을 연구"},
+          {front:"도시공학과", back:"도시 구조와 공간 활용을 분석하고, 수학적 원리를 적용해 효율적인 도시 설계를 수행"}
+        ]},
+        {t:"link", url:"https://www.algeomath.kr/", icon:"📐", title:"알지오매스로 더 탐구하기", desc:"세 점을 찍고 원의 방정식을 직접 시각화해 봅시다"},
+        {t:"html", v:`<div class="callout green"><div class="c-title">🎬 [릴스③ 실생활 적용]</div><div class="c-body">주제: 공주시 무령왕릉·공산성·박물관 세 지점의 원의 중심이 실제 어디에 위치하는지 보여주고, 도시계획가가 광장 입지를 선정할 때 같은 원리를 어떻게 활용하는지 연결하는 영상<br>길이: 45~60초 / 학부생 팀 제작 예정</div></div>`}
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>

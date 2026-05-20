@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 구석기의 과학, 디지털로 다시 태어나다</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 과학</h1>
+    <div class="topic">구석기의 과학,<br>디지털로 다시 태어나다</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  title: "구석기의 과학, 디지털로 다시 태어나다",
+  pages: [
+    // 도입 - 학습목표
+    {
+      id:"p1", cat:"도입", icon:"🎯", title:"학습목표",
+      blocks:[
+        {t:"html", v:`
+          <div class="blk" style="text-align:center;padding:20px 0">
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">과학 × 정보 융합</div>
+            <h2 style="font-size:28px;font-weight:900;margin-bottom:8px">구석기의 과학,<br>디지털로 다시 태어나다</h2>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">선사 과학</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">기계학습 분류</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">디지털 재해석</span>
+            </div>
+          </div>
+        `},
+        {t:"objectives", items:[
+          "선사 시대의 도구 제작과정에서 사용된 힘과 에너지의 원리를 탐색하고, 현대 과학 기술과 비교하여 설명할 수 있다.",
+          "기계 학습의 원리에 기반하여 유물의 종류와 용도를 분류할 수 있다.",
+          "디지털 도구를 활용해 유물 제작 과정을 시뮬레이션하고, 선사 도구의 과학적 원리를 창의적으로 재해석 할 수 있다."
+        ]}
+      ]
+    },
+    // 도입 - 생각해요
+    {
+      id:"p2", cat:"도입", icon:"💭", title:"생각해요",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 사람은 어떻게 무언가를 깎고 자르고, 방어하고 사냥하기 시작했을까?</h3>
+          <p>선사 시대 사람들은 주변에서 얻을 수 있는 재료를 활용해 자신만의 도구를 만들었고, 그 안에는 단순한 생존을 넘어선 놀라운 과학적 원리가 숨어 있었습니다. 석장리에서 출토된 도구들을 보면, <strong>방향성 있는 충격, 예리한 마찰면, 손잡이의 힘 분산 구조</strong> 등 현대의 공구와 유사한 기능적 설계가 적용되어 있습니다.</p>
+          <p>오늘날 우리는 정밀한 도구와 기계, 복잡한 재료로 무장했지만, 선사시대의 사람들도 그들만의 지식과 관찰로 환경을 이겨냈습니다. 이번 활동에서는 선사 도구의 구조와 원리를 분석하고, 현대 과학 기술과 연결해보며, 그들의 '생활 속 과학'을 디지털 도구를 활용해 재해석해 봅니다.</p>
+        </div>`},
+        {t:"link", url:"https://www.gongju.go.kr/sjnmuseum/sub01_01.do", icon:"🏛️", title:"공주 석장리 박물관", desc:"우리나라 최초의 구석기 유적 발굴지인 석장리 유적을 중심으로 설립된 선사 전문 박물관"},
+        {t:"input", label:"▶ 지금 우리가 가진 도구는, 과거의 어떤 지혜에서 출발한 것이며, 어떤 과학적 원리가 숨어 있을까요?", ph:"예: 칼은 뗀석기의 날카로운 면을 정교하게 다듬은 것이고, 압력 집중의 원리가 동일하게 적용된다.", rows:3},
+        {t:"html", v:`<div class="callout purple"><div class="c-title">🎬 [릴스① 도입 훅]</div><div class="c-body">주제: 30초 안에 떼어내는 뗀석기 — 돌과 돌이 부딪히는 순간을 슬로모션으로, "이게 인류 최초의 공구입니다"로 마무리하는 도입 훅<br>길이: 30~45초 / 학부생 팀 제작 예정</div></div>`}
+      ]
+    },
+
+    // 알아봐요 1
+    {
+      id:"p3", cat:"알아봐요", icon:"📖", title:"1. 선사시대의 대표적인 도구: 뗀석기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 뗀석기의 제작 과정의 과학적 원리</h3>
+          <p><strong>충격과 힘의 방향</strong> : 큰 돌에 일정한 각도와 세기로 작은 돌(망치돌)을 치면, 원하는 방향으로 돌이 깨져 나갑니다. 이때 힘의 전달과 충격량, 그리고 작용점에 가해지는 압력이 중요합니다.</p>
+          <p><strong>재료의 물리적 성질</strong> : 너무 단단한 돌은 깨지지 않고, 너무 부드러운 돌은 날이 서지 않습니다. 적절한 강도와 취성을 가진 돌을 골라야 하므로, 재료 선택의 과학적 판단력이 필요합니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 뗀석기의 활용 과정의 과학적 원리</h3>
+          <p><strong>에너지 전달</strong> : 뗀석기를 사용해 무언가를 자르거나 내려찍을 때, 사람의 운동 에너지가 도구를 통해 힘으로 전달됩니다. 도구의 날카로운 부분으로 압력이 집중되면서 힘의 밀도가 높아져서 잘려나가게 됩니다.</p>
+          <p><strong>지레 원리의 활용 (간접적)</strong> : 손잡이를 붙여 사용하면 지레처럼 힘을 덜 들이고 더 큰 힘을 낼 수 있습니다. 이런 지점이 초기 도구 진화의 핵심입니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"찍개", back:"한쪽 면에 날을 세운 큰 자갈돌 도구. 단단한 물체를 내려쳐 분쇄하거나 절단하는 데 사용"},
+          {front:"슴베찌르개", back:"자루(슴베)를 끼울 수 있도록 가공된 끝이 뾰족한 석기. 사냥용 창이나 화살촉으로 활용"},
+          {front:"긁개", back:"한 면이 날카롭게 다듬어진 석기. 동물 가죽을 벗기거나 나무 표면을 깎는 데 사용"},
+          {front:"막집", back:"나뭇가지·짚·풀로 지은 구석기인의 임시 거주지. 자연 재료의 단열·차폐 원리 활용"},
+          {front:"가락바퀴", back:"회전 관성을 이용해 실을 꼬는 도구. 회전 운동을 활용한 초기 기계 장치의 사례"}
+        ]}
+      ]
+    },
+
+    // 알아봐요 2
+    {
+      id:"p4", cat:"알아봐요", icon:"📖", title:"2. 기계학습의 개념과 원리",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 기계학습이란?</h3>
+          <p>기계 학습이란 컴퓨터가 명시적인 프로그래밍 없이 <strong>데이터를 통해 스스로 학습하고 성능을 향상시키는 인공지능의 한 분야</strong>입니다.</p>
+          <p>사람처럼 데이터 속의 규칙(패턴)과 특징을 스스로 찾아내고, 이 규칙을 바탕으로 새로운 데이터에 대해 예측하거나 분류하는 능력을 갖게 됩니다.</p>
+        </div>`},
+        {t:"tabs", tabs:[
+          {label:"지도 학습", content:"<p><strong>입력 데이터에 정답이 붙어 있어, 인공지능이 정답을 보며 규칙을 배우는 방식</strong>입니다. 주로 분류, 예측에 활용됩니다.</p><p>유물 분류 AI에선 '이 이미지는 주먹도끼', '이 이미지는 긁개'와 같이 정답(유물 종류)을 알려주며 학습하여, 새로운 유물의 종류를 정확히 분류하는 데 사용됩니다.</p>"},
+          {label:"비지도 학습", content:"<p><strong>입력 데이터에 정답이 없어, 인공지능이 데이터 자체에 내재된 패턴이나 유사성을 파악하여 스스로 그룹(군집)을 만드는 방식</strong>입니다. 군집화, 차원 축소에 주로 활용됩니다.</p><p>유물 분류 AI에선 유물의 크기, 형태, 마모 정도 등의 특징이 비슷한 것끼리 AI가 자동으로 묶어줍니다.</p>"}
+        ]},
+        {t:"html", v:`<div class="callout blue"><div class="c-title">🎬 [릴스② 핵심 개념]</div><div class="c-body">주제: 돌멩이 사진 한 장이 AI에 들어가는 순간 — 티처블 머신의 학습 과정을 빠른 컷으로, 마지막에 "주먹도끼 99%"가 뜨며 기계학습의 원리를 시각화<br>길이: 60~90초 / 학부생 팀 제작 예정</div></div>`}
+      ]
+    },
+
+    // 활동해요 1: 디지털 유물 아카이빙 - 박물관 탐색
+    {
+      id:"p5", cat:"활동해요", icon:"✏️", title:"1. 석장리 박물관의 유물 탐색하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 석장리 박물관의 유물 탐색하기</h3>
+          <p>석장리 박물관의 유물을 탐색하고, 내가 생각하는 유물의 쓰임과 실제 유물의 쓰임을 비교해 봅시다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <thead><tr style="background:var(--surface-alt)">
+              <th style="padding:10px;border-bottom:1px solid var(--border);text-align:left">유물명</th>
+              <th style="padding:10px;border-bottom:1px solid var(--border);text-align:left">내가 생각하는 쓰임</th>
+              <th style="padding:10px;border-bottom:1px solid var(--border);text-align:left">실제 쓰임 (박물관 정보)</th>
+              <th style="padding:10px;border-bottom:1px solid var(--border);text-align:left">새롭게 알게 된 점</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:10px;border-bottom:1px solid var(--border-lt)"><strong>뗀석기</strong> (예시)</td><td style="padding:10px;border-bottom:1px solid var(--border-lt);color:var(--txt2)">망치와 같은 쓰임, 무언가를 때릴 때 썼을 것 같다.</td><td style="padding:10px;border-bottom:1px solid var(--border-lt);color:var(--txt2)">사냥한 동물의 가죽을 벗기거나, 뼈를 자르고, 식물을 채취하거나 뿌리를 캐는 등 다용도로 사용됨.</td><td style="padding:10px;border-bottom:1px solid var(--border-lt);color:var(--txt2)">단순히 '때리는 용도'가 아니라 정교하게 자르고 벗기는 등 다양한 용도로 쓰였다는 것이 새로웠다.</td></tr>
+            </tbody>
+          </table>
+        </div>`},
+        {t:"input", label:"▶ 유물 1 — 유물명", ph:"예: 주먹도끼", rows:1},
+        {t:"input", label:"   내가 생각하는 쓰임 / 실제 쓰임 / 새롭게 알게 된 점", ph:"세 가지를 줄을 바꿔 적어 보세요.", rows:3},
+        {t:"input", label:"▶ 유물 2 — 유물명", ph:"예: 긁개", rows:1},
+        {t:"input", label:"   내가 생각하는 쓰임 / 실제 쓰임 / 새롭게 알게 된 점", ph:"세 가지를 줄을 바꿔 적어 보세요.", rows:3},
+        {t:"input", label:"▶ 유물 3 — 유물명", ph:"예: 슴베찌르개", rows:1},
+        {t:"input", label:"   내가 생각하는 쓰임 / 실제 쓰임 / 새롭게 알게 된 점", ph:"세 가지를 줄을 바꿔 적어 보세요.", rows:3}
+      ]
+    },
+
+    // 활동해요 2: 유물의 과학적 원리 분석
+    {
+      id:"p6", cat:"활동해요", icon:"✏️", title:"2. 유물의 과학적 원리 분석하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 유물의 과학적 원리 분석하기</h3>
+          <p>탐색한 석장리 박물관의 유물 중 하나를 선택하여 ChatGPT를 활용해 다음 다섯 가지 관점에서 과학적 원리를 분석해 봅시다.</p>
+        </div>`},
+        {t:"steps", title:"분석 5단계 (예시: 뗀석기)", items:[
+          {title:"구조 및 형태", desc:"한쪽 면이 날카롭게 가공되어 있고, 손에 잡기 좋은 크기와 무게로 제작. 날카로운 부분은 힘을 한 점에 집중시켜 절삭 효과를 높임."},
+          {title:"재료의 특성", desc:"단단하고 잘 부러지지 않는 암석(규암, 편암, 석영 등)을 사용. 경도가 높아 마모에 강하며, 날이 오랫동안 유지됨."},
+          {title:"에너지 전달 방식", desc:"손으로 들고 휘두르거나, 내리치는 방식으로 운동 에너지를 날카로운 부분에 집중. 충격이 작은 면적에 집중되며 큰 힘 없이도 절단 가능."},
+          {title:"사용방법 및 사용목적", desc:"사냥한 동물의 가죽을 벗기거나, 고기를 절단하고, 나무나 뼈를 다듬는 용도로 사용. 생존에 필요한 가공 활동을 효율적으로 수행."},
+          {title:"현대 기술과의 연계", desc:"주먹도끼, 절삭 도구(칼, 조각도), 손도끼 등과 유사. 현재의 가공 도구들은 더 정밀하지만, 기본 원리는 동일(날의 구조, 힘의 전달 등)."}
+        ]},
+        {t:"input", label:"▶ 내가 선택한 유물", ph:"예: 슴베찌르개", rows:1},
+        {t:"input", label:"① 구조 및 형태", ph:"유물의 외형, 크기, 가공된 부위 등을 적어 보세요.", rows:2},
+        {t:"input", label:"② 재료의 특성", ph:"어떤 재료로 만들어졌는지, 그 재료의 물리적 성질을 적어 보세요.", rows:2},
+        {t:"input", label:"③ 에너지 전달 방식", ph:"이 유물이 어떻게 힘을 전달하는지 적어 보세요.", rows:2},
+        {t:"input", label:"④ 사용방법 및 사용목적", ph:"무엇을 하기 위해, 어떻게 사용했는지 적어 보세요.", rows:2},
+        {t:"input", label:"⑤ 현대 기술과의 연계", ph:"오늘날 어떤 도구·기술과 원리가 비슷한지 적어 보세요.", rows:2}
+      ]
+    },
+
+    // 활동해요 3: 디지털 유물 아카이빙 활동
+    {
+      id:"p7", cat:"활동해요", icon:"💻", title:"3. 디지털 유물 아카이빙",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 디지털 유물 아카이빙 활동하기</h3>
+          <p>국가유산포털 또는 국립공주박물관 웅진백제문화 아카이브 사이트에서 '석장리' 키워드를 검색하고, 안내·이미지·도면 데이터를 수집하여 엑셀에 정리해 봅시다.</p>
+        </div>`},
+        {t:"link", url:"https://www.heritage.go.kr/main/?v=1762756983545", icon:"🏛️", title:"국가유산포털 아카이브", desc:"국가가 지정·관리하는 문화유산 정보를 통합 제공하는 포털. '석장리' 키워드 검색 가능"},
+        {t:"link", url:"https://gongju.museum.go.kr/archive/", icon:"📚", title:"국립공주박물관 웅진백제문화 아카이브", desc:"공주·웅진백제 관련 유물·도면·이미지 자료를 모은 디지털 아카이브"},
+        {t:"steps", title:"아카이빙 절차", items:[
+          {title:"1. 사이트 접속", desc:"국가유산포털 또는 국립공주박물관 아카이브에 접속한다."},
+          {title:"2. 키워드 검색", desc:"통합검색 탭에 '석장리'를 입력하여 검색한다."},
+          {title:"3. 데이터 수집", desc:"안내, 이미지, 도면 데이터를 수집한다."},
+          {title:"4. 엑셀 정리", desc:"분류, 수량/면적, 지정일, 소재지, 시대, 소유자, 관리자 등 항목을 열로 만들어 엑셀에 정리한다."}
+        ]},
+        {t:"input", label:"▶ 수집한 유물 메타데이터 (분류 · 수량/면적 · 지정일 · 소재지 · 시대 · 소유자 · 관리자)", ph:"엑셀에 정리한 항목을 텍스트로 간단히 옮겨 적어 보세요.", rows:4}
+      ]
+    },
+
+    // 활동해요 4: 유물 분류 AI 제작하기
+    {
+      id:"p8", cat:"활동해요", icon:"🤖", title:"4. 유물 분류 AI 제작하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 티처블 머신으로 유물 분류 AI 제작하기</h3>
+          <p>티처블 머신은 누구나 머신러닝 모델을 쉽고 빠르게 만들 수 있도록 구글에서 제작한 웹 기반 도구입니다. <strong>① 모으기 → ② 학습시키기 → ③ 내보내기</strong> 과정을 거쳐 유물 분류 AI를 만들어 봅시다.</p>
+        </div>`},
+        {t:"link", url:"https://teachablemachine.withgoogle.com/", icon:"🤖", title:"Teachable Machine", desc:"구글이 제공하는 웹 기반 머신러닝 학습 도구. 이미지·오디오·포즈 프로젝트 지원"},
+        {t:"steps", title:"제작 절차", items:[
+          {title:"1. 데이터 준비", desc:"분류할 유물의 이미지를 수집하고, 티처블 머신에 클래스(예: 주먹도끼, 긁개) 별로 나누어 업로드한다."},
+          {title:"2. 모델 훈련", desc:"Train Model 버튼을 눌러 AI가 데이터 속의 특징을 학습하게 한다."},
+          {title:"3. 테스트 및 분류", desc:"학습에 사용되지 않은 새로운 유물 이미지를 AI 모델에 입력하여, AI가 유물의 종류를 정확히 분류하는지 확인한다."}
+        ]},
+        {t:"callout", variant:"blue", title:"💡 데이터 편향 주의", body:"분류할 유물의 이미지를 수집할 때는, 특정 색상의 이미지만 많이 수집하거나, 특정 모양의 이미지만 많이 수집하는 식의 데이터 편향이 일어나지 않도록 주의합시다."},
+        {t:"input", label:"▶ AI가 잘 분류한 유물 / 잘못 분류한 유물", ph:"각각 어떤 유물이었는지, 왜 그랬을지 추측해 보세요.", rows:3},
+        {t:"input", label:"▶ 분류 성능을 더 높이기 위해 추가하고 싶은 데이터", ph:"예: 다양한 각도에서 찍은 사진, 배경이 다른 사진 등", rows:2}
+      ]
+    },
+
+    // 활동해요 5: 인포그래픽 제작
+    {
+      id:"p9", cat:"활동해요", icon:"💡", title:"5. 유물 인포그래픽 제작하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 유물의 제작과정 및 탄생과정 인포그래픽 제작하기</h3>
+          <p>유물 하나를 선택하여, 제작 과정 및 탄생 과정을 상상하여 <strong>Canva</strong>로 인포그래픽을 만들어 봅시다.</p>
+        </div>`},
+        {t:"steps", title:"뗀석기 제작 과정 예시", items:[
+          {title:"1. 원석 준비", desc:"날카로운 가장자리를 가진 원석을 선택한다."},
+          {title:"2. 타격 도구 선택", desc:"원석을 깰 적절한 망치돌을 고른다."},
+          {title:"3. 격지 제거", desc:"다듬은 원석의 쳐서 날카로운 격지를 떼어낸다."},
+          {title:"4. 형태 다듬기", desc:"필요에 따라 날의 형태를 다듬는다."}
+        ]},
+        {t:"link", url:"https://www.canva.com/", icon:"🎨", title:"Canva", desc:"초보자도 쉽게 시각 자료를 제작할 수 있는 콘텐츠 제작 도구. 템플릿·AI 이미지 생성 지원"},
+        {t:"html", v:`<div class="blk">
+          <h4>▶ 현대 도구와의 비교 인포그래픽</h4>
+          <p>선택한 유물과 과학적 원리가 유사한 <strong>현대 도구</strong>를 함께 제시하고, 공통점과 차이점을 정리해 봅시다. (예시: 뗀석기 ↔ 식칼·대패·망치 → 공통점은 '날카로운 끝이나 면을 이용해 물체를 자르거나 다듬는다', 차이점은 '뗀석기는 돌을 깨뜨려 만들지만 현대 도구는 다양한 재료를 가공하여 제작된다')</p>
+        </div>`},
+        {t:"input", label:"▶ 선택한 유물 — 현대 도구 — 공통점 — 차이점", ph:"네 항목을 줄을 바꿔 적어 보세요.", rows:4}
+      ]
+    },
+
+    // 정리 - 스스로 진단하기
+    {
+      id:"p10", cat:"정리", icon:"✅", title:"스스로 진단하기",
+      blocks:[
+        {t:"assessment", title:"스스로 진단하기", ratings:["잘함","보통","미흡"], items:[
+          "선사시대 도구의 제작 과정에서 사용된 힘과 에너지의 원리를 설명할 수 있다.",
+          "디지털 도구를 활용하여 유물의 제작 과정을 시뮬레이션하거나 표현할 수 있었다.",
+          "선사시대 도구와 현대 과학기술을 비교하여 공통점과 차이점을 설명할 수 있었다."
+        ]}
+      ]
+    },
+
+    // 정리 - 활동퀴즈
+    {
+      id:"p11", cat:"정리", icon:"❓", title:"활동퀴즈",
+      blocks:[
+        {t:"quiz", num:"01", q:"다음 중 요리 과정에서 관찰할 수 있는 과학 원리로 적절한 것은?",
+          opts:["물의 끓는점은 항상 200℃이다.","설탕이 물에 녹는 현상은 물리 변화가 아니다.","베이킹소다와 식초를 섞었을 때 발생하는 거품은 화학 반응 때문이다.","튀김을 할 때 기름이 물보다 더 빨리 끓는다.","조리 중에 식재료의 색이 변하는 것은 대부분 마찰 때문이다."], ans:2,
+          ok:"정답입니다! 베이킹소다(탄산수소나트륨)와 식초(아세트산)의 산-염기 반응으로 이산화탄소 거품이 발생합니다.", no:"화학 반응의 사례를 다시 살펴보세요."},
+        {t:"quiz", num:"02", q:"다음 중 건축 구조에서 사용되는 과학 원리로 보기 어려운 것은?",
+          opts:["지진에 대비한 내진 설계","지붕의 경사각을 고려한 우수 배수 설계","콘크리트의 응고 반응","철근의 강도 테스트","영화관의 음향 효과 설계"], ans:4,
+          ok:"정답입니다! 음향 효과 설계는 건축 구조의 핵심 원리라기보다 실내 음향 분야입니다.", no:"건축 '구조' 자체와 직접 관련된 항목인지 다시 살펴보세요."},
+        {t:"quiz", num:"03", q:"다음 중 운동량 보존 법칙이 가장 잘 적용되는 사례는?",
+          opts:["냉장고에 불이 켜지는 원리","자전거 페달을 밟는 동작","볼링공이 핀을 쳐서 넘기는 상황","전자레인지의 마이크로파 조사","종이비행기를 날리는 행위"], ans:2,
+          ok:"정답입니다! 충돌 전·후의 운동량 총합이 보존되는 대표 사례입니다.", no:"두 물체의 충돌이 일어나는 상황을 다시 떠올려 보세요."},
+        {t:"quiz", num:"04", q:"다음 중 생활 속 미디어와 관련된 과학 원리로 가장 적절한 것은?",
+          opts:["스마트폰의 진동은 정전기 때문이다.","TV화면은 빛의 간섭으로 색을 낸다.","액정 화면은 전기 신호에 따라 분자의 배열을 조절하여 색을 표현한다.","카메라 렌즈는 자석으로 이미지를 확대한다.","음성 인식은 자외선 센서를 이용한다."], ans:2,
+          ok:"정답입니다! LCD는 액정 분자의 배열을 전기 신호로 조절하여 빛의 투과량을 바꿉니다.", no:"LCD(액정 표시 장치)의 원리를 다시 살펴보세요."},
+        {t:"quiz", num:"05", q:"다음 중 놀이 체험을 통해 과학 원리를 탐구한 사례로 보기 적절하지 않은 것은?",
+          opts:["풍선 자동차를 만들며 작용 반작용 원리를 이해한다.","슬라임을 만들며 고체, 액체의 경계를 탐색한다.","그네를 타며 운동 에너지와 위치 에너지를 이해한다.","종이접기로 동물의 분류 체계를 학습한다.","종이컵 전화기를 만들며 소리의 전달 방식을 탐구한다."], ans:3,
+          ok:"정답입니다! 동물 분류 체계는 종이접기 활동과 직접 관련이 없습니다.", no:"각 활동이 어떤 '과학' 원리와 연결되는지 살펴보세요."},
+        {t:"quiz", num:"06", q:"다음 중 선사시대의 도구인 뗀석기의 과학적 특성과 가장 관련 깊은 설명은?",
+          opts:["자연적인 마찰력을 이용해 금속을 녹여 도구를 만들었다.","돌의 단단함과 날카로움을 활용하여 절단과 분쇄 기능을 수행했다.","열의 전도성을 활용해 음식을 빠르게 조리했다.","자기장을 이용해 방향을 파악하는 데 사용되었다.","전기 에너지를 저장하여 야간 활동에 사용되었다."], ans:1,
+          ok:"정답입니다! 뗀석기는 돌의 물리적 성질을 활용한 절단·분쇄 도구입니다.", no:"구석기 시대에 사용 가능했던 에너지·재료를 다시 떠올려 보세요."}
+      ]
+    },
+
+    // 정리 - 읽기 자료
+    {
+      id:"p12", cat:"정리", icon:"📚", title:"읽기 자료",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>★ 영화 속 과학, 제대로 표현되었나</h3>
+          <p>영화나 드라마에 등장하는 과학적인 요소들, 과연 제대로 표현된 것일까요? 누구나 영화를 보며 "말도 안돼" 하며 놀랐던 경험이 있을 것입니다. 그러나 정말 과학적으로 불가능한지, 아니면 단지 상용화되지 않은 기술인지 구별하기 힘들었을 것입니다.</p>
+          <p>2010년 3월 18일, 미국 샌디에이고에서 개최된 <strong>'미국과학진흥협회 연례대회(AAAS Annual Meeting)'</strong> 과학 커뮤니케이션 세션에서 과학자들과 영상산업 종사자들이 모여 '영화에 등장한 과학기술'에 대해 강연했습니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk">
+          <h3>★ 과학적 사실 전파하는 공상과학영화의 또 다른 역할</h3>
+          <p>공상과학영화는 내용의 정확성을 떠나 과학적 사실 자체를 널리 전파하는 데 도움을 주기도 합니다. 예를 들어 5억달러 이상의 수입을 벌어들인 영화 <strong>'투모로우(The Day After Tomorrow)'</strong>는 기후변화의 심각성을 일깨우는 데 큰 역할을 했습니다. 또한 영화 '아바타(Avatar)', '디스트릭트 나인(District 9)', '가타카(Gattaca)' 등은 유전공학을 비롯한 과학기술을 사회 이슈화시킨 대표적인 사례로 꼽힙니다.</p>
+          <p>"영화 제작자들은 스토리를 망치지 않고 돈이 많이 들지만 않는다면 당연히 더 사실적이고 과학적인 장면을 넣고 싶어할 겁니다." — 에모리대 물리학 시드니 퍼코위츠</p>
+          <p>이와 반대로, 말이 안 되는 내용을 과학적인 양 포장한 영화들도 있습니다. 퍼코위츠는 2003년 개봉작 <strong>'코어(The Core)'</strong>를 최악의 과학영화로 꼽았는데, 지구의 자기장이 아닌 '전자기장'이 사라졌다고 묘사한 점, 지구 내부의 높은 압력을 팀원들이 얇은 옷만으로 견디는 점 등을 비판했습니다.</p>
+          <p style="font-size:12px;color:var(--txt3);margin-top:8px">* 출처: The Science Times</p>
+        </div>`}
+      ]
+    },
+
+    // 정리 - 진로 연계
+    {
+      id:"p13", cat:"정리", icon:"🧭", title:"진로 연계",
+      blocks:[
+        {t:"tabs", tabs:[
+          {label:"프로그램", content:"<p><strong>국립과천과학관 '생활 속 과학 원리 체험관'</strong></p><p>요리, 건축, 스포츠 등 실생활 상황에서 적용되는 물리·화학 원리를 직접 체험하고 놀이로 탐구할 수 있는 전시 및 워크숍 운영.</p>"},
+          {label:"콘텐츠", content:"<p><strong>EBS 다큐프라임 – '생활 속의 과학' 시리즈</strong></p><p>일상생활 속에 숨겨진 과학적 원리를 주제별로 흥미롭게 소개하며, 과학적 사고력과 응용력을 키울 수 있다.</p>"},
+          {label:"책", content:"<p><strong>『왜? 생활 속 과학』 – 예림당</strong></p><p>어린이와 청소년을 위한 과학 교양서로, 영화관, 주방, 운동장, 건설현장 등 실제 공간에서 과학 원리를 찾아보는 내용.</p>"},
+          {label:"기업", content:"<p><strong>삼성전자 CS Lab(고객 경험 연구소)</strong></p><p>일상에서 겪는 불편을 물리/화학/생물/기술적 원리로 해결하는 생활밀착형 제품 및 서비스 연구 기업.</p>"},
+          {label:"직업", content:"<p><strong>과학 커뮤니케이터</strong></p><p>과학을 일반 대중이나 학생들에게 재미있고 쉽게 전달하는 직업. 유튜브, 방송, 전시해설, 교육 콘텐츠 제작 등 다양한 분야에서 활동한다.</p>"},
+          {label:"전공", content:"<p><strong>과학문화콘텐츠학과</strong></p><p>과학과 예술, 미디어, 교육을 융합하여 실생활 속 과학을 스토리텔링하고 콘텐츠화하는 융합 전공.</p>"}
+        ]},
+        {t:"html", v:`<div class="callout green"><div class="c-title">🎬 [릴스③ 실생활 적용]</div><div class="c-body">주제: 공주 석장리 박물관에서 본 뗀석기 → 우리집 부엌 식칼·캠핑용 손도끼 → "원리는 5만 년 전부터 똑같았다"는 공주 청소년의 인터뷰로 마무리<br>길이: 45~60초 / 학부생 팀 제작 예정</div></div>`}
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>

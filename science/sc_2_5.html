@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 외래종이 생태계 평형에 미치는 영향</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 과학</h1>
+    <div class="topic">외래종이 생태계<br>평형에 미치는 영향</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  title: "외래종이 생태계 평형에 미치는 영향",
+  pages: [
+    // 도입 - 학습목표
+    {
+      id:"p1", cat:"도입", icon:"🎯", title:"학습목표",
+      blocks:[
+        {t:"html", v:`
+          <div class="blk" style="text-align:center;padding:20px 0">
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">과학 × 정보 융합 · 시뮬레이션</div>
+            <h2 style="font-size:28px;font-weight:900;margin-bottom:8px">외래종이 생태계<br>평형에 미치는 영향</h2>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">생태계 평형</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">시뮬레이션</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">파이썬 코딩</span>
+            </div>
+          </div>
+        `},
+        {t:"objectives", items:[
+          "먹이 관계와 생태 피라미드를 중심으로 생태계 평형 유지 과정을 이해하고 환경 변화의 영향을 설명할 수 있다.",
+          "외래종이 생태계 평형에 미치는 문제를 시뮬레이션으로 예측하여 해결 방법을 탐색할 수 있다."
+        ]}
+      ]
+    },
+
+    // 도입 - 생각해요
+    {
+      id:"p2", cat:"도입", icon:"💭", title:"생각해요",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>📰 공주시, 왕우렁이 수거 당부…생태계 교란 우려</h3>
+          <p>공주시가 친환경 농법에 활용되는 <strong>왕우렁이</strong>의 외부 유출을 막기 위해 농가에 적극적인 수거를 당부하고 나섰다. 중간 물떼기 기간을 활용해 논 잡초 제거에 효과적인 왕우렁이를 수거함으로써 농작물 피해와 생태계 교란을 사전에 방지한다는 계획이다.</p>
+          <p>왕우렁이는 논 잡초 제거 효과가 뛰어나 2012년부터 친환경 농업에 활용되어 왔다. 그러나 강한 번식력과 빠른 확산 속도로 관리 범위를 벗어날 경우 어린 모를 갉아먹는 등 피해를 줄 수 있어 현재 수거가 의무화됐다. 아마존강 유역이 원산지인 왕우렁이는 최근 기상 여건에 따라 국내에서도 월동 가능성이 제기되고 있다.</p>
+          <p style="font-size:12px;color:var(--txt3);margin-top:8px">* 출처: 뉴스티앤티 (http://www.newstnt.com)</p>
+        </div>`},
+        {t:"input", label:"▶ 왕우렁이가 우리나라에 유입된 이유는 무엇일까요?", ph:"기사 내용과 일상에서 들어본 정보를 활용해 적어 보세요.", rows:2},
+        {t:"input", label:"▶ 왕우렁이가 자연 생태계로 유출되면 생태 피라미드에 어떤 문제가 발생할까요?", ph:"먹이 관계를 떠올리며 적어 보세요.", rows:3},
+        {t:"html", v:`<div class="callout purple"><div class="c-title">🎬 [릴스① 도입 훅]</div><div class="c-body">주제: 논에 풀어둔 왕우렁이가 어린 모를 갉아먹는 클로즈업 + "한 종이 더해지면 생태계는 어떻게 흔들릴까?"로 마무리하는 도입 훅<br>길이: 30~45초 / 학부생 팀 제작 예정</div></div>`}
+      ]
+    },
+
+    // 알아봐요 1: 외래생물과 생태계교란 생물
+    {
+      id:"p3", cat:"알아봐요", icon:"📖", title:"1. 외래생물과 생태계교란 생물",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 외래생물</h3>
+          <p><strong>외래생물</strong>이란 외국으로부터 인위적 또는 자연적으로 유입되어 그 본래의 원산지 또는 서식지를 벗어나 존재하게 된 생물입니다. 외국에서 들어온 생물종을 포함하여, 원래는 국내의 토착종이나 특정 생태계에서 역사적으로 서식하지 않던 생물종이 자연적인 서식범위를 벗어나서 스스로 번식 혹은 경쟁력을 가지고 살아가는 생물종을 의미합니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 생태계교란 생물</h3>
+          <p>다음 각 목의 어느 하나에 해당하는 생물로서 위해성평가 결과 생태계 등에 미치는 위해가 큰 것으로 판단되어 환경부장관이 지정·고시하는 생물:</p>
+          <ul>
+            <li>가. 유입주의 생물 및 외래생물 중 생태계의 균형을 교란하거나 교란할 우려가 있는 생물</li>
+            <li>나. 유입주의 생물이나 외래생물에 해당하지 아니하는 생물 중 특정 지역에서 생태계의 균형을 교란하거나 교란할 우려가 있는 생물</li>
+          </ul>
+        </div>`},
+        {t:"cards", items:[
+          {front:"미국쑥부쟁이", back:"북미 원산의 외래 식물. 줄기·뿌리 번식력이 강해 다른 식물의 서식지를 차지함"},
+          {front:"왕우렁이", back:"아마존강 유역 원산. 친환경 농법에 활용되나 자연 유출 시 어린 모를 갉아먹음"},
+          {front:"뉴트리아", back:"남미 원산의 대형 설치류. 습지 식물과 농작물에 피해를 입히는 생태계교란 생물"},
+          {front:"가시박", back:"북미 원산의 한해살이 덩굴 식물. 다른 식물을 덮어 생장을 방해함"}
+        ]},
+        {t:"link", url:"https://kias.nie.re.kr", icon:"🌿", title:"한국외래생물정보시스템", desc:"국내 유입 외래생물의 분포·생태·관리 정보를 제공하는 환경부 산하 시스템"}
+      ]
+    },
+
+    // 알아봐요 2: 외래종 유입 경로
+    {
+      id:"p4", cat:"알아봐요", icon:"📖", title:"2. 외래종 유입 경로",
+      blocks:[
+        {t:"steps", title:"외래종 유입 경로 4가지", items:[
+          {title:"1. 무역·국제 물류로 유입", desc:"수입 농산물이나 목재, 포장재 등에 섞여 들어오거나 선박 외부에 붙어 유입된다."},
+          {title:"2. 농업·원예·양식 목적으로 유입", desc:"외래 동식물을 재배하거나 사육하기 위해 의도적으로 유입한다."},
+          {title:"3. 애완·관상 목적으로 유입", desc:"외래 동식물을 애완·관상용으로 들여오다가 유기되거나 탈출하여 자연 생태계로 유입된다."},
+          {title:"4. 환경 변화로 인한 유입", desc:"기존에 우리나라의 기후에 정착하지 못하던 종이 기후 변화로 인해 생존·번식이 가능해지면서 자연적으로 유입된다."}
+        ]}
+      ]
+    },
+
+    // 알아봐요 3: 먹이 관계와 생태 피라미드
+    {
+      id:"p5", cat:"알아봐요", icon:"📖", title:"3. 먹이 관계와 생태 피라미드",
+      blocks:[
+        {t:"cards", items:[
+          {front:"먹이 사슬", back:"군집 내에서 생산자와 소비자 간 먹고 먹히는 관계. 에너지의 일부가 다음 단계의 생물로 전달되며 생태계가 유지됨"},
+          {front:"먹이 그물", back:"군집 내에서 여러 생물의 먹이 사슬이 얽혀 그물 모양을 이룬 구조"},
+          {front:"생태 피라미드", back:"생태계에서 하위 영양단계부터 상위 영양단계까지 각 영양단계가 갖는 에너지의 상댓값을 쌓아 올린 피라미드 형태"}
+        ]},
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 생태계 평형이 유지되는 원리</h3>
+          <p><strong>생태계 평형</strong>이란 안정된 생태계에서 생물의 종류나 개체 수가 거의 변하지 않고 안정된 상태가 유지되는 것을 말합니다.</p>
+          <p>먹이 그물이 복잡할수록 어떤 요인에 의해 생태계 평형이 일시적으로 깨져도 생물들 사이의 먹이 관계에 따라 각 개체 수가 연쇄적으로 조절되어 다시 처음의 상태로 회복합니다.</p>
+        </div>`},
+        {t:"callout", variant:"green", title:"📊 우리나라의 외래종 현황", body:"2018년 기준 국내에 유입된 외래 생물은 동물 1,826종, 식물 334종으로 총 2,160종에 이릅니다. 이는 2011년 대비 약 95% 늘어난 수치로, 외래 생물의 국내 유입은 지속해서 증가하고 있습니다."},
+        {t:"html", v:`<div class="callout blue"><div class="c-title">🎬 [릴스② 핵심 개념]</div><div class="c-body">주제: 생태 피라미드의 한 단계가 무너지면 위·아래가 어떻게 흔들리는지 도미노 비유로 시각화한 핵심 개념 영상<br>길이: 60~90초 / 학부생 팀 제작 예정</div></div>`}
+      ]
+    },
+
+    // 활동해요 1: 시뮬레이션 코드 작성
+    {
+      id:"p6", cat:"활동해요", icon:"💻", title:"1. 시뮬레이션 코드 작성하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 외래종이 생물 다양성에 미치는 영향 시각화하기</h3>
+          <p>생산자(P0), 소비자1(H0), 소비자2(C0)의 수를 입력하고 시간이 지날 때마다 개체수의 변화를 관찰하는 시뮬레이션 코드를 작성해 봅시다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk">
+          <h4>📊 초기 개체수 최소 조건</h4>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <thead><tr style="background:var(--surface-alt)">
+              <th style="padding:10px;border-bottom:1px solid var(--border);text-align:left">개체</th>
+              <th style="padding:10px;border-bottom:1px solid var(--border);text-align:left">역할</th>
+              <th style="padding:10px;border-bottom:1px solid var(--border);text-align:left">권장 초기 범위</th>
+              <th style="padding:10px;border-bottom:1px solid var(--border);text-align:left">이유</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:10px;border-bottom:1px solid var(--border-lt)">생산자</td><td style="padding:10px;border-bottom:1px solid var(--border-lt)">식물, 조류 등</td><td style="padding:10px;border-bottom:1px solid var(--border-lt)">300 ~ 1200</td><td style="padding:10px;border-bottom:1px solid var(--border-lt)">먹이그물의 기반이므로 가장 많아야 함</td></tr>
+              <tr><td style="padding:10px;border-bottom:1px solid var(--border-lt)">소비자1</td><td style="padding:10px;border-bottom:1px solid var(--border-lt)">초식동물</td><td style="padding:10px;border-bottom:1px solid var(--border-lt)">50 ~ 300</td><td style="padding:10px;border-bottom:1px solid var(--border-lt)">식물에 비해 적지만, 육식동물보다는 많음</td></tr>
+              <tr><td style="padding:10px;border-bottom:1px solid var(--border-lt)">소비자2</td><td style="padding:10px;border-bottom:1px solid var(--border-lt)">육식동물</td><td style="padding:10px;border-bottom:1px solid var(--border-lt)">10 ~ 100</td><td style="padding:10px;border-bottom:1px solid var(--border-lt)">먹이사슬 상위 단계 → 개체수 가장 적음</td></tr>
+              <tr><td style="padding:10px">외래종</td><td style="padding:10px">처음엔 없음</td><td style="padding:10px">0으로 시작</td><td style="padding:10px">시뮬레이션 중 중간 등장하도록 설계됨</td></tr>
+            </tbody>
+          </table>
+        </div>`},
+        {t:"code", lang:"Python", code:`!pip install plotly
+
+import math, random
+import plotly.graph_objects as go
+
+print("=== 생태계 초기 개체 수 입력 ===")
+P0 = float(input("생산자 (예: 500) → "))
+H0 = float(input("소비자1 (초식동물, 예: 200) → "))
+C0 = float(input("소비자2 (육식동물, 예: 50) → "))
+
+def simulate(steps=200, P0=500, H0=200, C0=50, I0=0,
+             rP=0.2, rH=0.1, rC=0.05, rI=0.2,
+             KP=1000, KH=500, KC=200, KI=1000,
+             a_PH=0.0005, a_HC=0.0002, a_HI=0.0006, a_CI=0.0003,
+             noise=0.0, invasion_time=30):
+
+    P, H, C, I = P0, H0, C0, I0
+    P_hist, H_hist, C_hist, I_hist = [], [], [], []
+
+    for t in range(steps):
+        if t == invasion_time:
+            I += 50
+
+        dP = rP * P * (1 - P/KP) - a_PH * P * H
+        dH = rH * H * (1 - H/KH) + 0.0003 * P * H - a_HC * H * C - a_HI * H * I
+        dC = rC * C * (1 - C/KC) + 0.0002 * H * C - a_CI * C * I
+        dI = rI * I * (1 - I/KI)
+
+        P = max(0, P + dP + (random.random()-0.5)*noise)
+        H = max(0, H + dH + (random.random()-0.5)*noise)
+        C = max(0, C + dC + (random.random()-0.5)*noise)
+        I = max(0, I + dI + (random.random()-0.5)*noise)
+
+        P_hist.append(P); H_hist.append(H); C_hist.append(C); I_hist.append(I)
+
+    return P_hist, H_hist, C_hist, I_hist
+
+P, H, C, I = simulate(P0=P0, H0=H0, C0=C0)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(y=P, mode='lines', name='생산자'))
+fig.add_trace(go.Scatter(y=H, mode='lines', name='소비자1 (초식동물)'))
+fig.add_trace(go.Scatter(y=C, mode='lines', name='소비자2 (육식동물)'))
+fig.add_trace(go.Scatter(y=I, mode='lines', name='외래종'))
+
+fig.update_layout(
+    title='생태계 먹이그물 상호작용 시뮬레이션',
+    xaxis_title='시간 (세대)',
+    yaxis_title='개체 수',
+    font=dict(family="Noto Sans KR", size=16),
+    legend=dict(title="개체군")
+)
+
+fig.show()`},
+        {t:"link", url:"https://colab.research.google.com/", icon:"🐍", title:"Google Colab", desc:"브라우저에서 바로 파이썬 코드를 실행할 수 있는 무료 클라우드 노트북"},
+        {t:"callout", variant:"green", title:"📝 권장 입력값", body:"생산자 800, 소비자1 200, 소비자2 50을 입력하고 실행 결과를 관찰해 봅시다. 생산자는 주기적으로 변동하고, 초식동물은 지연된 파형, 육식동물은 더 완만한 곡선을 보일 것입니다."}
+      ]
+    },
+
+    // 활동해요 2: 변수 설계 이해
+    {
+      id:"p7", cat:"활동해요", icon:"📖", title:"2. 변수 설계 이해하기",
+      blocks:[
+        {t:"tabs", tabs:[
+          {label:"초기 개체수", content:"<p><strong>P0</strong> 생산자 초기 개체수 (먹이사슬의 가장 아래)<br><strong>H0</strong> 소비자1(초식동물) 초기 개체수<br><strong>C0</strong> 소비자2(육식동물) 초기 개체수<br><strong>I0</strong> 외래종 초기 개체수 (처음엔 없지만 시뮬레이션 중 등장)</p>"},
+          {label:"성장률", content:"<p><strong>rP</strong> 생산자 성장률 — 빛·물만으로 번식이 쉬워 상대적으로 큼<br><strong>rH</strong> 초식동물 성장률 — 먹이가 있을 때 번식<br><strong>rC</strong> 육식동물 성장률 — 먹이(초식동물)를 잡아야 증가<br><strong>rI</strong> 외래종 성장률 — 빠르게 번식하도록 모델링됨</p>"},
+          {label:"수용력", content:"<p><strong>KP</strong> 생산자 수용력 — 식물은 땅의 면적이 허용하는 범위까지 증가<br><strong>KH</strong> 초식동물 수용력 — 먹이양·서식 공간에 따라 제한<br><strong>KC</strong> 육식동물 수용력 — 먹이(초식동물)의 수가 제한 요인<br><strong>KI</strong> 외래종 수용력 — 환경이 버틸 수 있는 외래종 개체 한계</p>"},
+          {label:"포식 계수", content:"<p><strong>a_PH</strong> 생산자 → 초식동물 — 초식동물이 생산자를 얼마나 많이 먹는지<br><strong>a_HC</strong> 초식동물 → 육식동물 — 육식동물이 초식동물을 얼마나 사냥하는지<br><strong>a_HI</strong> 초식동물 → 외래종 — 외래종이 초식동물에 미치는 영향<br><strong>a_CI</strong> 육식동물 → 외래종 — 외래종이 육식동물에 미치는 영향</p>"},
+          {label:"환경변화", content:"<p><strong>noise</strong> 무작위 변화(환경 변동) — 온도·물·기후 변화와 같은 불확실성 재현<br><strong>invasion_time</strong> 외래종 등장 시간 — 외래종이 갑자기 유입되는 순간</p>"}
+        ]}
+      ]
+    },
+
+    // 활동해요 3: 외래종 영향 분석
+    {
+      id:"p8", cat:"활동해요", icon:"💻", title:"3. 외래종 영향 분석하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 변수를 조정하며 외래종이 생물 다양성에 미치는 영향 분석하기</h3>
+          <p>각 변수를 바꾸어가며 시뮬레이션을 실행하고, 그 결과를 관찰하여 외래종의 영향을 분석해 봅시다.</p>
+        </div>`},
+        {t:"input", label:"① 외래종의 번식력이 높을수록 (rI ↑) 생태 피라미드는 어떻게 변할까요?", ph:"rI 값을 0.1, 0.3, 0.5로 바꾸어 비교 관찰한 결과를 적어 보세요.", rows:3},
+        {t:"input", label:"② 외래종이 초기에 들어올 때 vs 나중에 들어올 때 (invasion_time)", ph:"invasion_time을 10, 30, 100으로 바꾸어 비교해 보세요.", rows:3},
+        {t:"input", label:"③ 외래종이 기존 생물을 잡아먹는 정도가 커질수록 (a_HI, a_CI ↑)", ph:"포식 계수 값을 조정하며 관찰한 변화를 적어 보세요.", rows:3},
+        {t:"input", label:"④ 환경 변화(noise)가 생태계 안정성에 미치는 영향", ph:"noise 값을 0, 5, 20 등으로 바꾸어 비교해 보세요.", rows:3}
+      ]
+    },
+
+    // 활동해요 4: 문제와 해결방안 조사
+    {
+      id:"p9", cat:"활동해요", icon:"💡", title:"4. 문제와 해결방안 조사",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 외래종이 생태계 평형에 미치는 문제와 해결방안</h3>
+          <p>인터넷·ChatGPT 등을 활용해 외래종이 생태계에 유입되었을 때 발생하는 문제와 그 해결방안을 조사하고, <strong>Canva</strong>로 발표 자료를 만들어 봅시다.</p>
+        </div>`},
+        {t:"link", url:"https://www.canva.com/", icon:"🎨", title:"Canva", desc:"발표 자료·인포그래픽·AI 이미지를 한 곳에서 만들 수 있는 디자인 도구"},
+        {t:"input", label:"▶ 외래종이 생태계 평형에 미치는 문제 (3가지 이상)", ph:"구체적 사례와 함께 적어 보세요.", rows:4},
+        {t:"input", label:"▶ 위 문제를 해결할 수 있는 방안", ph:"제도적·기술적·시민 참여 측면을 고루 생각해 보세요.", rows:4}
+      ]
+    },
+
+    // 정리 - 스스로 진단하기
+    {
+      id:"p10", cat:"정리", icon:"✅", title:"스스로 진단하기",
+      blocks:[
+        {t:"assessment", title:"스스로 진단하기", ratings:["잘함","보통","미흡"], items:[
+          "먹이 관계와 생태 피라미드를 중심으로 생태계 평형 유지 과정을 이해하고 환경 변화의 영향을 설명할 수 있다.",
+          "외래종이 생태계 평형에 미치는 문제를 시뮬레이션으로 시각화할 수 있다.",
+          "외래종이 생태계 평형에 미치는 문제를 해결할 수 있는 방법을 탐색하여 발표할 수 있다."
+        ]}
+      ]
+    },
+
+    // 정리 - 활동퀴즈
+    {
+      id:"p11", cat:"정리", icon:"❓", title:"활동퀴즈",
+      blocks:[
+        {t:"quiz", num:"01", q:"외래종에 대한 설명으로 옳은 것은?",
+          opts:["생태계 평형을 유지하는 주요 생산자","환경부에서 보호 대상으로 지정한 멸종 위기 생물","토착 생물이 일시적으로 다른 지역으로 이동한 생물","원래 그 지역에 서식하던 생물로, 인간의 영향 없이 살아가는 생물","외국으로부터 인위적 또는 자연적으로 유입되어 본래 서식지를 벗어나 살아가는 생물"], ans:4,
+          ok:"정답입니다! 외래종은 본래 서식지를 벗어나 새로운 환경에 정착한 생물입니다.", no:"외래종의 정의를 다시 살펴보세요."},
+        {t:"quiz", num:"02", q:"외래 생물에 해당하는 것은?",
+          opts:["까치","청설모","참나무","개나리","미국쑥부쟁이"], ans:4,
+          ok:"정답입니다! 미국쑥부쟁이는 북미 원산의 외래 식물입니다.", no:"각 종의 원산지를 다시 살펴보세요."},
+        {t:"quiz", num:"03", q:"생태계교란 생물로 지정될 가능성이 있는 생물의 특징으로 옳은 것은?",
+          opts:["외래종 중에서 경쟁력이 약한 생물","멸종 위기라 보호가 필요한 생물","기후변화로 인해 서식지를 잃은 생물","생태계에 아무런 영향을 미치지 않는 생물","생태계의 균형을 교란하거나 교란할 우려가 있는 생물"], ans:4,
+          ok:"정답입니다! 위해성평가에서 생태계 균형을 교란할 우려가 있다고 판단된 생물이 지정됩니다.", no:"생태계교란 생물의 정의를 다시 확인해 보세요."},
+        {t:"quiz", num:"04", q:"외래종이 유입되는 경로로 옳지 않은 것은?",
+          opts:["무역 과정에서 수입 물품·포장재 등에 섞여 들어온다.","농업이나 양식 목적의 의도적 도입 후 자연으로 유출되기도 한다.","애완·관상 목적의 생물이 유기되거나 탈출해 야생화되기도 한다.","기후 변화로 외래종의 국내 정착이 어려워지고 사라지는 경우가 많다.","국제 이동 증가로 사람의 짐이나 신발에 종자가 묻어 들어오기도 한다."], ans:3,
+          ok:"정답입니다! 기후 변화는 오히려 외래종의 정착을 더 쉽게 만드는 요인입니다.", no:"기후 변화와 외래종 정착의 관계를 다시 생각해 보세요."},
+        {t:"quiz", num:"05", q:"외래종이 의도적으로 유입된 경우로 옳은 것은?",
+          opts:["수입 화물에 섞여 들어온 곤충","양식 산업을 위해 들여온 어류","관광객 신발에 붙어 들어온 종자","기후 변화로 인해 이동하여 정착한 동물","선박의 밸러스트 워터를 통해 들어온 플랑크톤"], ans:1,
+          ok:"정답입니다! 양식·농업 목적의 도입은 대표적인 의도적 유입 경로입니다.", no:"'의도적' 유입과 '비의도적' 유입을 구분해 보세요."},
+        {t:"quiz", num:"06", q:"외래종 유입 경로에 대한 설명으로 옳은 것은?",
+          opts:["애완동물은 외래종 유입과는 무관하다.","외래종은 기후 변화와는 아무런 관련이 없다.","모든 외래종은 사람들이 고의로 들여오기 때문에 발생한다.","국제 무역·운송 과정에서 외래종이 무의도적으로 유입될 수 있다.","온라인 해외 구매를 통한 종자·생물의 밀반입은 외래종 유입 경로에 해당하지 않는다."], ans:3,
+          ok:"정답입니다! 국제 물류는 가장 흔한 비의도적 유입 경로입니다.", no:"무역·운송 과정의 유입 사례를 다시 떠올려 보세요."},
+        {t:"quiz", num:"07", q:"먹이 사슬에 대한 설명으로 옳지 않은 것은?",
+          opts:["생태계 유지에 중요한 역할을 한다.","복잡한 먹이 관계를 모두 나타낸다.","한 생물의 에너지가 다른 생물로 전달된다.","군집 내에서 먹고 먹히는 관계를 나타낸다.","생산자와 소비자 간의 에너지 흐름을 보여준다."], ans:1,
+          ok:"정답입니다! 복잡한 먹이 관계를 모두 나타내는 것은 '먹이 그물'입니다.", no:"먹이 사슬과 먹이 그물의 차이를 다시 살펴보세요."},
+        {t:"quiz", num:"08", q:"생태계 평형이 잘 유지되기 위한 조건으로 옳은 것은?",
+          opts:["분해자가 없을 때","한 종이 급격히 증가할 때","복잡한 먹이 그물을 이룰 때","외래종이 지속적으로 유입될 때","단순한 먹이사슬 구조를 가질 때"], ans:2,
+          ok:"정답입니다! 먹이 그물이 복잡할수록 생태계는 더 안정적입니다.", no:"평형 유지의 핵심 조건을 다시 떠올려 보세요."},
+        {t:"quiz", num:"09", q:"생태계 평형이 깨졌을 때 나타날 수 있는 현상으로 옳은 것은?",
+          opts:["분해자의 활동이 활발해진다.","먹이 그물의 균형이 회복된다.","에너지의 흐름이 안정적으로 유지된다.","생물의 종류와 개체 수가 일정하게 유지된다.","특정 생물의 개체 수가 급격히 증가하거나 감소한다."], ans:4,
+          ok:"정답입니다! 평형이 깨지면 특정 종이 폭증하거나 급감하는 현상이 나타납니다.", no:"평형이 깨졌을 때의 변화를 다시 살펴보세요."}
+      ]
+    },
+
+    // 정리 - 읽기 자료
+    {
+      id:"p12", cat:"정리", icon:"📚", title:"읽기 자료",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>★ 환경부, 생태계 교란 외래식물 퇴치에 인공지능 자동 구분 기술 활용</h3>
+          <p>환경부 소속 국립환경과학원은 첨단 원격탐사 기술과 인공지능(AI)을 융합하여 금강 유역의 생태 교란 외래식물을 자동으로 구분할 수 있는 기술을 개발하고, 이를 적용한 <strong>'생태 교란 식물 군락지 지도'</strong>를 관련 지자체 등에 제공한다고 밝혔습니다.</p>
+          <p>이 군락지 지도는 인공지능(AI)을 기반으로 <strong>초분광 원격탐사 기술과 심층학습</strong>을 융합하여 제작된 것이 특징입니다. 특히 초분광 기술을 통해 빛에 반응하는 식물의 특징을 7가지 색으로 정확히 포착합니다.</p>
+          <p style="font-size:12px;color:var(--txt3);margin-top:8px">* 출처: 데일리환경</p>
+        </div>`},
+        {t:"tabs", tabs:[
+          {label:"🇺🇸 미국", content:"<p>5대호 연안 등에서 외래생물로 피해를 경험한 미국은 여러 부처가 관리하던 외래종 관리를 한곳에서 <strong>통합관리</strong>하는 체계로 전환하고 있다. 외래생물 관리에 <strong>원인자부담원칙</strong>을 적용하여 민·형사상 책임을 묻는다.</p>"},
+          {label:"🇯🇵 일본", content:"<p>섬나라 특성상 외래생물 유입을 엄격히 통제. 피해를 발생시킨 자에게 고의·과실을 불문하고 <strong>원인자부담원칙</strong>을 적용해 방제비용의 전부 또는 일부를 부담시킨다.</p>"},
+          {label:"🇦🇺 호주", content:"<p>세계에서 가장 엄격한 수준의 <strong>생물보안 체계</strong>를 운영. 외래생물 반입은 사전에 지정된 허용종(화이트리스트)만 가능하며, 그 외 생물자원은 원칙적으로 금지된다.</p>"},
+          {label:"🇳🇿 뉴질랜드", content:"<p>'국가 전체가 검역소'라 불릴 만큼 강력한 외래생물 관리 정책 시행. 공항·항만에서 식물·동물·토양 등 모든 생물자원 반입을 철저하게 차단하며, <strong>탐지견</strong> 운영 등 입국 단계의 검사가 특징이다.</p>"}
+        ]}
+      ]
+    },
+
+    // 정리 - 진로 연계
+    {
+      id:"p13", cat:"정리", icon:"🧭", title:"진로 연계",
+      blocks:[
+        {t:"tabs", tabs:[
+          {label:"생명과학과", content:"<p>생물의 구조와 유전, 진화를 연구하여 멸종위기종 복원과 생물다양성 보전을 연구하는 학과. 연구 결과를 바탕으로 생태계 관리와 환경 정책 수립에도 활용할 수 있다.</p>"},
+          {label:"생태학과", content:"<p>생물과 환경의 상호작용을 탐구하여 생태계 균형 유지와 종 다양성 보호를 연구하는 학과. 서식지 복원, 환경 영향 평가, 생태계 모니터링 분야와 연결된다.</p>"},
+          {label:"수의학과", content:"<p>야생동물과 멸종위기종의 질병 예방과 치료를 통해 개체 수 보전과 생물다양성 유지를 연구한다. 보호시설, 국립공원, 연구소 등에서 현장 보전 활동을 지원한다.</p>"},
+          {label:"환경공학과", content:"<p>대기, 물, 토양 등 환경 문제를 해결하는 기술을 연구하는 학과. 환경오염 저감, 생태 복원, 에너지 자원 관리에 기여한다.</p>"}
+        ]},
+        {t:"link", url:"https://www.nie.re.kr/", icon:"🌿", title:"국립생태원", desc:"생물다양성과 생태계를 연구·교육하는 국가 기관. 충남 서천 소재"},
+        {t:"link", url:"https://www.knps.or.kr/", icon:"⛰️", title:"국립공원공단", desc:"국립공원을 관리·보전하는 기관. 등산로·탐방 시설 관리, 생태계 보호 수행"},
+        {t:"html", v:`<div class="blk">
+          <h4>관련 직업</h4>
+          <p><strong>생태학자</strong> · <strong>환경감시원</strong> · <strong>멸종위기종 보전 연구원</strong> · <strong>국립공원 레인저</strong></p>
+        </div>`},
+        {t:"html", v:`<div class="callout green"><div class="c-title">🎬 [릴스③ 실생활 적용]</div><div class="c-body">주제: 공주 금강 일대를 드론으로 촬영하여 가시박·미국쑥부쟁이·왕우렁이가 실제로 어떻게 퍼져 있는지 보여주고 "이건 우리 동네 이야기"로 마무리<br>길이: 45~60초 / 학부생 팀 제작 예정</div></div>`}
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>
