@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 수질 오염 경고 시스템 기획</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고·특성화 수학</h1>
+    <div class="topic">수질 오염 경고<br>시스템 기획</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  title: "수질 오염 경고 시스템 기획",
+
+  pages: [
+    // ===== 도입 - 학습목표 =====
+    {
+      id:"p1", cat:"도입", icon:"🎯", title:"학습목표",
+      blocks:[
+        {t:"html", v:`
+          <div class="blk" style="text-align:center;padding:20px 0">
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">수학 × 정보 융합 · 데이터 분석</div>
+            <h2 style="font-size:28px;font-weight:900;margin-bottom:8px">수질 오염 경고<br>시스템 기획</h2>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">데이터 수집·전처리</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">시각화·분석</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">경고 조건 구현</span>
+            </div>
+          </div>
+        `},
+        {t:"objectives", items:[
+          "공공데이터에서 제공되는 금강 수질 관련 데이터를 수집하고 전처리할 수 있다.",
+          "수집한 데이터를 표와 그래프로 시각화하여 수질 오염의 경향을 분석하고 그 의미를 해석할 수 있다.",
+          "분석한 데이터를 기반으로 수질 오염 경고 조건을 설정하고, 이를 프로그램으로 구현할 수 있다."
+        ]},
+        {t:"callout", variant:"blue", title:"🧰 이번 수업에서 사용하는 도구", body:"<strong>공공데이터포털</strong>에서 금강 수질 데이터를 수집하고, <strong>엑셀</strong>로 전처리한 뒤 <strong>파이썬·구글 코랩</strong>으로 시각화·분석합니다. <strong>ChatGPT</strong>는 코드 작성과 디버깅을 도와줍니다."}
+      ]
+    },
+
+    // ===== 도입 - 생각해요 =====
+    {
+      id:"p2", cat:"도입", icon:"💭", title:"생각해요",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 맑아 보이면 안전할까?</h3>
+          <p>이미 우리는 금강의 수질이 단순한 환경 문제가 아니라, 미래의 농업·관광·지역 생태계까지 위협할 수 있는 지표임을 알고 있습니다. 그러나 수질 오염은 눈으로 직접 확인하기 어렵기 때문에, 데이터를 수집하고 수학적으로 분석하여 오염의 징후를 조기에 탐지하는 과정이 필요합니다.</p>
+          <p>데이터를 통해 오염도가 특정 임계값을 초과하는 시점을 찾아내고, 이를 기준으로 경고를 자동으로 발생시키는 것은 "감"이 아닌 <strong>"근거 기반 의사결정"</strong>을 가능하게 합니다.</p>
+          <p style="margin-top:12px;font-weight:600;color:var(--accent)">강물이 맑아 보인다고 해서 '안전하다'고 단정할 수 있을까요? 수질 데이터를 보면 어떤 위험 신호를 더 빨리 발견할 수 있을까요?</p>
+        </div>`},
+        {t:"input", label:"▶ 금강의 수질에 영향을 미치는 요인에는 무엇이 있을까?", ph:"예: 계절, 강수량, 산업·농업 활동, 미생물 농도 등", rows:3},
+        {t:"callout", title:"💧 마시는 물 vs 하천의 수질 기준", body:"수질 기준은 마시는 물의 경우 일반세균, 총대장균군, 탁도, 잔류염소 등 다양한 항목을 포함하며, 하천 등의 수질 기준은 <strong>BOD(생물화학적산소요구량)</strong> 및 <strong>COD(화학적산소요구량)</strong> 등으로 오염 정도를 측정합니다. 각 항목별로 엄격한 수치가 정해져 있어, 기준을 초과하면 부적합한 물로 분류됩니다."}
+      ]
+    },
+
+    // ===== 알아봐요 1 - 빅데이터 =====
+    {
+      id:"p3", cat:"알아봐요", icon:"📖", title:"1. 빅데이터와 수질",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 왜 수질 문제 해결에 빅데이터가 필요할까?</h3>
+          <p>우리가 일상에서 마주하는 환경 문제는 단순히 눈으로 보고 판단할 수 있는 범위를 넘어서는 경우가 많습니다. 수질에는 사람의 눈으로는 확인할 수 없는 미세한 오염물질, 농업과 산업에서 흘러들어온 화학 성분, 미생물 농도, 계절 변화에 따른 수질 변동 등 다양한 변수가 복합적으로 영향을 미칩니다. 이처럼 보이지 않는 변화를 이해하고 예측하기 위해서는 길게 축적된 방대한 양의 수치 데이터가 필요하며, 바로 여기서 <strong>빅데이터</strong>가 중요한 역할을 합니다.</p>
+          <p>빅데이터는 단순히 데이터의 양이 많다는 의미에 그치지 않습니다. 누적 정보 속에서 숨겨진 규칙을 찾아내고, 그 결과를 근거로 미래를 예측하는 것이 빅데이터 분석의 핵심입니다. 이러한 데이터 기반 판단은 감각이나 추측의 영역이 아니라 <strong>수학적 분석과 통계적 근거</strong> 위에서 이루어질 때 훨씬 더 타당하고 재현 가능한 의사결정이 됩니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk"><h4>▷ 빅데이터의 특징 (5V)</h4></div>`},
+        {t:"cards", items:[
+          {front:"① 규모 (Volume)", back:"데이터의 규모가 크다."},
+          {front:"② 속도 (Velocity)", back:"데이터 생성, 수집, 처리 속도가 빠르다."},
+          {front:"③ 다양성 (Variety)", back:"다양한 유형(정형, 비정형)의 데이터를 처리한다."},
+          {front:"④ 정확성 (Veracity)", back:"유용하고 신뢰할 수 있는 데이터를 다룬다."},
+          {front:"⑤ 가치 (Value)", back:"숨겨진 가치를 찾을 수 있다."}
+        ]},
+        {t:"callout", title:"💡 더 알아보기", body:"빅데이터의 특징으로 가변성(Variability), 시각화(Visualization)의 특징이 추가되기도 합니다."}
+      ]
+    },
+
+    // ===== 알아봐요 2 - EDA와 시각화 =====
+    {
+      id:"p4", cat:"알아봐요", icon:"📖", title:"2. EDA와 데이터 시각화",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 탐색적 데이터 분석(EDA)이란?</h3>
+          <p><strong>탐색적 데이터 분석(Exploratory Data Analysis, EDA)</strong>은 본격적인 분석이나 모델링에 들어가기 전에 데이터를 관찰하고 구조를 파악하며 의미 있는 특징을 찾아내는 과정입니다. 수질 오염 문제처럼 다양한 요인이 복합적으로 영향을 미치는 경우에는, 어떤 변수가 어떻게 변하고 있는지 먼저 "눈을 뜨게" 하는 단계가 반드시 필요합니다.</p>
+        </div>`},
+        {t:"steps", title:"EDA의 5단계", items:[
+          {title:"1. 문제 정의", desc:"예: '최근 3년간 수질이 악화되고 있는가?'라는 문제를 정의한다."},
+          {title:"2. 데이터 수집", desc:"공공데이터포털에서 수질 지표를 수집한다."},
+          {title:"3. 전처리", desc:"결측치나 중복값을 제거하고 단위를 통일한다."},
+          {title:"4. 시각화 및 해석", desc:"pH·DO·총인(TP)·총질소(TN)·탁도 등 핵심 오염지표의 변동을 그래프로 시각화하여 변화 방향과 경향을 해석한다."},
+          {title:"5. 공유 및 평가", desc:"결과를 공유하며 '어떤 시점에서 경고를 발령해야 하는가?'라는 의사결정과 연결한다."}
+        ]},
+        {t:"html", v:`<div class="blk"><h4>▶ 목적에 맞는 그래프 선택</h4>
+          <p>표만으로는 보이지 않는 변화·위험 신호를 목적에 맞는 시각화 도구로 변환하면 직관적으로 파악할 수 있습니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"막대그래프", back:"지표 간 크기를 비교하는 데 적합하다."},
+          {front:"선그래프", back:"시간에 따른 변화를 추적하는 데 적합하다."},
+          {front:"원그래프", back:"구성 비율을 확인하는 데 적합하다."}
+        ]}
+      ]
+    },
+
+    // ===== 알아봐요 3 - 임계값과 행렬 =====
+    {
+      id:"p5", cat:"알아봐요", icon:"📖", title:"3. 임계값과 행렬",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 수질 오염 경고 조건의 수학적 설정</h3>
+          <p>경고 시스템은 임의의 감각적 판단이 아니라, "어떤 수치 이상이면 위험으로 간주한다"는 기준을 수학적으로 정의함으로써 작동합니다. 이러한 기준을 <strong>임계값(threshold)</strong>이라고 하며, 임계값은 평균값, 분산, 표준편차, 중앙값, 백분위 수 등의 통계적 근거를 기반으로 설정해야 신뢰성을 가질 수 있습니다.</p>
+          <p>예를 들어 과거 3년간 총인(TP) 수치를 분석했을 때 <strong>평균 + 2표준편차</strong>를 초과하면 "평상시 변동 범위를 벗어난 상태"로 판단하여 경고를 발생시키는 방식이 가능합니다.</p>
+        </div>`},
+        {t:"callout", variant:"purple", title:"📐 조건식으로 변환하기", body:"이와 같은 조건 설정은 곧 프로그램으로 구현 가능한 형태의 '조건식'으로 변환됩니다. 예를 들어 <code>if (TP > μ + 2σ) : 경고 출력</code>과 같은 구조는, 데이터가 업데이트될 때마다 시스템이 자동으로 위험 여부를 판별하도록 만듭니다. 이 조건식은 과거의 분포를 기준으로 이상치를 판별하기 때문에 예외적 상황에 흔들리지 않는 안정적인 의사결정 기준을 제공합니다."},
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 데이터를 표현하는 방식, 행렬</h3>
+          <p>우리가 수집한 데이터는 엑셀(Excel)에서 정리·분석되고, 이를 활용해 그래프도 그려집니다. 엑셀은 행과 열로 이루어져 있는데, <strong>행렬</strong>이란 여러 개의 수 또는 문자를 직사각형 모양으로 배열하여 괄호로 묶어놓은 것을 의미합니다. 행렬을 구성하는 각각의 수 또는 문자를 그 행렬의 <strong>성분</strong>이라고 합니다.</p>
+          <p>성분을 가로로 배열한 줄을 <strong>행</strong>, 세로로 배열한 줄을 <strong>열</strong>이라고 합니다. 일반적으로 m개의 행과 n개의 열로 이루어진 행렬을 m×n 행렬이라고 하며, 행의 개수와 열의 개수가 같은 행렬을 정사각행렬이라고 합니다. 수질 지표 데이터·이미지·데이터프레임은 모두 실질적으로 행렬 형태로 구성되어 있습니다.</p>
+        </div>`}
+      ]
+    },
+
+    // ===== 활동해요 1 - 데이터 수집·전처리 =====
+    {
+      id:"p6", cat:"활동해요", icon:"💻", title:"1. 데이터 수집·전처리",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 금강 수질 데이터 수집·전처리</h3>
+        </div>`},
+        {t:"steps", title:"데이터 수집·전처리 순서", items:[
+          {title:"1. 공공데이터포털 접속", desc:"검색창에 '금강 수질', '수질 환경', '측정망' 등의 키워드를 입력하여 사용할 데이터를 탐색한다."},
+          {title:"2. 데이터셋 선택·다운로드", desc:"기간, 지역(공주시), 항목(pH, DO, 탁도, 총인 TP 등)을 확인한 뒤 수업 목적에 적합한 자료를 CSV 또는 XLSX 형식으로 내려받는다."},
+          {title:"3. 엑셀로 데이터 정리", desc:"필요한 열만 남기고 불필요한 열을 제거한 뒤, 단위를 통일하고 누락값이나 이상값이 있는지 확인한다. (전처리)"},
+          {title:"4. ChatGPT로 구조 점검", desc:"열 이름의 의미, 단위 차이, 누락 데이터 처리 방식 등에 대해 질의하여 전처리 방향을 확인한다."},
+          {title:"5. 기준 변수 확정", desc:"pH·DO·총인(TP)·탁도 중 어떤 변수를 중심으로 시각화할지 결정하고, 활용할 열만 남겨 저장한다."},
+          {title:"6. 새 파일로 저장", desc:"'전처리완료_금강수질데이터.csv'와 같이 별도의 파일로 저장해 다음 단계에 사용한다."}
+        ]},
+        {t:"callout", variant:"blue", title:"✏️ ChatGPT 예시 프롬프트", body:'"금강 수질데이터 전처리 시 먼저 확인해야 할 항목이 무엇인지 설명해줘."'},
+        {t:"input", label:"✓ 내가 중심 변수로 선택한 수질 지표와 그 이유를 적어 봅시다.", ph:"예: 총인(TP)을 선택했다. 조류·녹조 발생과 직접 연관되기 때문이다.", rows:2}
+      ]
+    },
+
+    // ===== 활동해요 2 - 시각화·분석 =====
+    {
+      id:"p7", cat:"활동해요", icon:"💻", title:"2. 시각화 및 수학적 분석",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 공주시 수질 데이터 시각화 및 수학적 분석</h3>
+          <p>구글 코랩 또는 파이썬 환경을 실행하고, 데이터 분석에 필요한 라이브러리를 불러옵니다.</p>
+        </div>`},
+        {t:"code", lang:"Python", code:`import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns`},
+        {t:"html", v:`<div class="blk"><p>전처리된 수질 데이터를 불러옵니다.</p></div>`},
+        {t:"code", lang:"Python", code:`df = pd.read_csv('전처리완료_금강수질데이터.csv')`},
+        {t:"html", v:`<div class="blk"><p>분석할 핵심 변수의 분포를 선그래프로 시각화해 봅시다.</p></div>`},
+        {t:"code", lang:"Python", code:`sns.lineplot(data=df, x='date', y='TP')
+plt.show()`},
+        {t:"steps", title:"그래프 해석하기", items:[
+          {title:"5. 변화 경향 읽기", desc:"어떤 시기에 값이 상승/하락했는가? 계절과의 연관성이 있는가?"},
+          {title:"6. 해석을 문장으로 정리", desc:"예: 여름철 강수량 증가 시 탁도와 총인이 동시에 상승하는 경향이 나타난다."},
+          {title:"7. 경고 조건과 연결", desc:"'어떤 시점에서 경고를 보내야 타당할까?'라는 관점으로 다음 활동에 대비한다."}
+        ]},
+        {t:"input", label:"✓ 그래프에서 읽어낸 변화 경향을 한 문장으로 정리해 봅시다.", ph:"예: 7~8월에 총인 수치가 급격히 상승하는 계절성이 나타난다.", rows:2}
+      ]
+    },
+
+    // ===== 활동해요 3 - 경고 프로그램 구현 =====
+    {
+      id:"p8", cat:"활동해요", icon:"💡", title:"3. 경고 프로그램 구현",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 수질 오염 경고 프로그램 구현</h3>
+          <p>먼저 <strong>왜·무엇을 알릴지</strong> 경고 조건을 설계한 뒤 코드로 구현합니다.</p>
+        </div>`},
+        {t:"steps", title:"경고 조건 설계하기", items:[
+          {title:"1) 대상 지표 정하기", desc:"TP(총인), 탁도, DO(용존산소) 등 중 최소 1개, 권장 2개 이상을 선택한다."},
+          {title:"2) 기준 기간 정하기", desc:"계절성을 반영해 최근 90일 또는 최근 12주 데이터를 기준 분포로 삼는다."},
+          {title:"3) 임계값 방식 선택하기", desc:"평균+표준편차형, 백분위수형, 연속성 조건 중에서 선택한다."},
+          {title:"4) 복합 조건 설계", desc:"TP와 탁도가 동시에 임계선을 넘으면 '강한 경고', 한 가지만 넘으면 '주의'로 구분한다."}
+        ]},
+        {t:"callout", variant:"green", title:"🤖 코드 구현", body:"ChatGPT를 활용하여 위에서 설계한 경고 조건을 파이썬 코드로 구현해 봅시다. 설계한 임계값(예: 평균 + 2표준편차)을 조건식으로 바꾸고, 테스트 데이터로 경고가 잘 발생하는지 확인합니다."},
+        {t:"input", label:"✓ 내가 설계한 경고 조건을 조건식 형태로 적어 봅시다.", ph:"예: if (TP > 평균 + 2*표준편차) and (탁도 > 임계값): 강한 경고", rows:2}
+      ]
+    },
+
+    // ===== 정리 - 스스로 진단하기 =====
+    {
+      id:"p9", cat:"정리", icon:"✅", title:"스스로 진단하기",
+      blocks:[
+        {t:"assessment", title:"스스로 진단하기", ratings:["잘함","보통","미흡"], items:[
+          "공공데이터에서 제공되는 수질 관련 데이터를 수집할 수 있는가?",
+          "수집한 데이터를 시각화하여 수질 오염의 경향을 분석할 수 있는가?",
+          "분석한 데이터를 기반으로 수질 오염 경고 조건을 설정할 수 있는가?",
+          "설정한 수질 오염 경고 조건을 기반으로 프로그램을 구현했는가?"
+        ]}
+      ]
+    },
+
+    // ===== 정리 - 활동퀴즈 =====
+    {
+      id:"p10", cat:"정리", icon:"❓", title:"활동퀴즈 1. 상황에 맞는 분석",
+      blocks:[
+        {t:"quiz", num:"01", q:"다음 중 EDA(탐색적 데이터 분석)의 주요 목적을 가장 잘 설명한 것은?", opts:["데이터를 저장 공간에 보관하기 위함이다.","데이터의 오류를 제거하고 시각적으로 경향을 파악하기 위함이다.","미래 예측 모델을 바로 학습시키기 위함이다.","데이터 입력을 자동화하기 위함이다."], ans:1, ok:"정답! EDA는 데이터를 관찰하고 경향을 파악하는 과정입니다.", no:"다시 생각해 봅시다. EDA는 본격 분석 전에 데이터를 '들여다보는' 단계입니다."},
+        {t:"quiz", num:"02", q:"다음 중 임계값(threshold) 설정이 필요한 이유로 가장 적절한 것은?", opts:["데이터를 보기 좋게 꾸미기 위해서","눈으로 보기 어려운 위험 신호를 수학적으로 판별하기 위해서","데이터 파일 크기를 줄이기 위해서","표준편차를 계산하기 위한 전처리 단계이기 때문에"], ans:1, ok:"정답! 임계값은 위험 신호를 수학적으로 판별하는 기준입니다.", no:"다시 생각해 봅시다. 임계값은 '위험 판단의 기준선'입니다."},
+        {t:"quiz", num:"03", q:"조건식 'TP > (이동평균 + 2 × 표준편차)'가 의미하는 바를 고르시오.", opts:["항상 일정한 값을 유지해야 한다는 의미이다.","오염이 감소함을 의미한다.","임의로 경고를 발생시키는 조건이다.","값이 정상 범위를 벗어났음을 통계적으로 판단하는 기준이다."], ans:3, ok:"정답! 평균에서 2표준편차 이상 벗어난 값을 이상치로 판단합니다.", no:"다시 생각해 봅시다. 평균과 표준편차로 무엇을 판단하는 조건일까요?"}
+      ]
+    },
+    {
+      id:"p11", cat:"정리", icon:"❓", title:"활동퀴즈 2. 빅데이터",
+      blocks:[
+        {t:"quiz", num:"04", q:"다음 중 빅데이터가 환경 문제 해결에 유용한 이유로 가장 적절한 것은?", opts:["데이터를 많이 저장하면 시스템 속도가 빨라지기 때문이다.","오염 현상이 눈으로 보이지 않아도 장기간 데이터를 통해 변화 추세를 파악할 수 있기 때문이다.","빅데이터는 항상 정확한 결론을 자동으로 제공하기 때문이다.","환경 문제는 감각적으로 판단하는 것이 더 효율적이기 때문이다."], ans:1, ok:"정답! 보이지 않는 변화도 장기간 데이터로 추세를 파악할 수 있습니다.", no:"다시 생각해 봅시다. 빅데이터의 핵심은 '누적된 데이터로 패턴을 읽는 것'입니다."},
+        {t:"quiz", num:"05", q:"금강 수질 오염을 감지하기 위해 빅데이터 분석을 활용할 때 고려해야 할 사항으로 옳은 것은?", opts:["단일 지점을 한 번 측정하여 결과를 바로 판단한다.","데이터의 양보다는 한 번의 측정값이 더 중요하다.","과거 데이터와 비교하여 이상값이 추세인지 일시적 현상인지 판단해야 한다.","그래프는 미적으로 보기 좋게 꾸미는 용도로만 활용한다."], ans:2, ok:"정답! 과거 데이터와 비교해 추세인지 일시적 현상인지 판단해야 합니다.", no:"다시 생각해 봅시다. 한 번의 측정만으로 판단하는 것은 위험합니다."}
+      ]
+    },
+
+    // ===== 정리 - 읽기 자료 =====
+    {
+      id:"p12", cat:"정리", icon:"📚", title:"읽기 자료",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>★ 수질 오염 지표와 데이터의 의미</h3>
+          <p>수질의 상태는 물의 겉모습만으로 판단할 수 없기 때문에, 데이터로 측정된 수질 지표를 통해 판단합니다. 수질 데이터를 일정 기간 누적하여 관찰하면 오염이 '갑자기 생긴 문제'인지 '서서히 누적된 문제'인지 판별할 수 있고, 이는 향후 대응 전략을 결정하는 근거가 됩니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk blk-card">
+          <h4>📋 대표적 수질 지표와 의미</h4>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
+            <thead><tr style="background:var(--surface-alt)">
+              <th style="border:1px solid var(--border);padding:8px">지표</th>
+              <th style="border:1px solid var(--border);padding:8px">해석 기준의 예</th>
+              <th style="border:1px solid var(--border);padding:8px">의미</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="border:1px solid var(--border);padding:8px;text-align:center">pH</td><td style="border:1px solid var(--border);padding:8px">6.5~8.5 권장</td><td style="border:1px solid var(--border);padding:8px">범위를 벗어나면 생물 서식에 부정적 영향</td></tr>
+              <tr><td style="border:1px solid var(--border);padding:8px;text-align:center">DO</td><td style="border:1px solid var(--border);padding:8px">높을수록 좋음</td><td style="border:1px solid var(--border);padding:8px">수중 생물 호흡 가능성 판단 지표</td></tr>
+              <tr><td style="border:1px solid var(--border);padding:8px;text-align:center">TP</td><td style="border:1px solid var(--border);padding:8px">낮을수록 좋음</td><td style="border:1px solid var(--border);padding:8px">급증 시 조류·녹조 발생과 연관</td></tr>
+              <tr><td style="border:1px solid var(--border);padding:8px;text-align:center">탁도</td><td style="border:1px solid var(--border);padding:8px">낮을수록 좋음</td><td style="border:1px solid var(--border);padding:8px">오염물질·토사 유입 여부 파악에 사용</td></tr>
+            </tbody>
+          </table>
+        </div>`},
+        {t:"callout", variant:"blue", title:"📌 임계값(Threshold)과 경고 판단", body:"임계값은 '이 수치를 넘으면 위험으로 간주한다'고 정한 기준선입니다. 감으로 정하는 것이 아니라 과거 데이터의 평균, 표준편차, 분포 등을 근거로 설정해야 합니다. 예를 들어 '최근 90일 평균 + 2×표준편차'를 초과한다면 평상시 변동 범위를 벗어난 것으로 보고 경고를 발생시킬 수 있습니다."},
+        {t:"html", v:`<div class="blk"><h4>🔗 공주시 하천 관련 데이터 자료</h4></div>`},
+        {t:"link", url:"https://water.nier.go.kr/", icon:"💧", title:"물환경정보시스템", desc:"공주시 수질 측정 데이터를 확인할 수 있는 국립환경과학원 시스템"},
+        {t:"link", url:"https://www.geumriver.go.kr/", icon:"🌊", title:"금강홍수통제소", desc:"공주시 수위자료·금강 보 자료를 확인할 수 있는 사이트"}
+      ]
+    },
+
+    // ===== 정리 - 진로 연계 =====
+    {
+      id:"p13", cat:"정리", icon:"🧭", title:"진로 연계",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 환경 + 데이터 + 인공지능은 어떤 직업으로 이어질까?</h3>
+          <p>환경 문제 해결은 과학적 감수성과 함께 데이터를 읽고 판단하는 수학적 사고가 동시에 요구되는 영역입니다. 데이터 기반 환경 의사결정 능력은 앞으로 점점 더 중요한 핵심 역량이 될 것입니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"환경데이터 분석가\n(환경 분석)", back:"기후·수질·대기 데이터를 분석해 위험 지표를 예측하고 정책 의사결정을 지원한다."},
+          {front:"수질 관리 연구원\n(공공기관)", back:"하천·상수원을 감시하고, 수질 개선 계획을 수립하며 경보 체계를 설계한다."},
+          {front:"데이터 사이언티스트\n(AI/빅데이터)", back:"방대한 환경 데이터를 모델링하여 경고 알고리즘을 설계하고 자동화를 구현한다."},
+          {front:"ESG 리스크 분석가\n(민간기업)", back:"환경 리스크를 정량화하여 기업 의사결정과 지속가능성 지표를 관리한다."}
+        ]},
+        {t:"callout", variant:"green", title:"💧 한국이 수질이 좋은 편이라고?", body:"우리나라 수돗물은 바로 마셔도 괜찮다고 합니다. 주요 수계 상수원에서는 BOD가 1 mg/L 이하로 유지되어 '매우 좋음' 등급에 들고, 아리수 등 수돗물은 '원수→정수→수도꼭지'까지 엄격한 수질검사를 거칩니다. 해양수산부는 '수질평가지수(WQI)' 제도로 해양 수질을 평가하고 있습니다."},
+        {t:"link", url:"https://www.career.go.kr/", icon:"🧭", title:"커리어넷 — 직업·전공 탐색", desc:"환경·데이터·AI 관련 직업과 학과 정보를 더 자세히 살펴볼 수 있습니다"}
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>

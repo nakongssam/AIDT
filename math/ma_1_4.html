@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 생성형 AI로 만드는 문화·역사 홍보 포스터</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고·특성화 수학</h1>
+    <div class="topic">생성형 AI로 만드는<br>문화·역사 홍보 포스터</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  title: "생성형 AI로 만드는 문화·역사 홍보 포스터",
+
+  pages: [
+    // ===== 도입 - 학습목표 =====
+    {
+      id:"p1", cat:"도입", icon:"🎯", title:"학습목표",
+      blocks:[
+        {t:"html", v:`
+          <div class="blk" style="text-align:center;padding:20px 0">
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">수학 × 정보 융합 · 생성형 AI</div>
+            <h2 style="font-size:28px;font-weight:900;margin-bottom:8px">생성형 AI로 만드는<br>문화·역사 홍보 포스터</h2>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">기계학습·생성형 AI</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">데이터 시각화</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">합리적 의사결정</span>
+            </div>
+          </div>
+        `},
+        {t:"objectives", items:[
+          "기계학습의 개념과 유형을 바탕으로 생성형 AI의 원리와 활용 방법을 이해할 수 있다.",
+          "데이터가 표현되는 방식을 행렬 개념을 바탕으로 이해할 수 있다.",
+          "문화·역사 자원과 관련된 자료를 수집·정리하여 표와 그래프로 시각화하고, 그 결과를 분석·해석할 수 있다.",
+          "수집한 데이터와 생성형 AI의 결과를 근거로 가장 효과적인 포스터 디자인을 선택하고, 합리적인 의사결정을 할 수 있다."
+        ]},
+        {t:"callout", variant:"blue", title:"🧰 이번 수업에서 사용하는 도구", body:"<strong>ChatGPT·캔바(Canva)</strong>로 문화·역사 자원 이미지를 생성하고, 결과물을 표·그래프로 정리·분석한 뒤, <strong>패들렛(Padlet)</strong>으로 완성한 포스터를 공유하고 동료평가합니다."}
+      ]
+    },
+
+    // ===== 도입 - 생각해요 =====
+    {
+      id:"p2", cat:"도입", icon:"💭", title:"생각해요",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ AI는 우리 삶을 어떻게 도울까?</h3>
+          <p>오늘날 인공지능 기술은 빠르게 발전하여 우리의 생활 곳곳에 활용되고 있습니다. 만약 병원에서 수많은 환자의 진료 기록과 의료 영상을 단시간에 분석하지 못한다면 의료진의 판단이 늦어져 환자의 생명을 구할 수 있는 골든타임을 놓칠 수 있습니다.</p>
+          <p>이때 생성형 AI는 의료 영상 판독을 도와 빠르게 이상 신호를 찾아내는 데 도움을 줄 수 있습니다. 동시에 학생들의 학습 과정에서도 방대한 정보를 요약하고, 이해하기 쉽게 설명하거나 새로운 아이디어를 제시하는 역할을 할 수 있습니다.</p>
+          <p style="margin-top:12px;font-weight:600;color:var(--accent)">앞으로 인공지능을 다양한 분야에서 어떻게 활용하면 사람들의 안전과 편의를 지킬 수 있을지, 또 어떤 점들을 조심해야 할지 함께 이야기해 봅시다.</p>
+        </div>`},
+        {t:"input", label:"▶ AI 활용 방안", ph:"예: 의료 영상 판독, 학습 도우미, 번역, 디자인 등", rows:2},
+        {t:"input", label:"▶ 유의점", ph:"예: 저작권 문제, 잘못된 정보(환각), 개인정보 보호 등", rows:2}
+      ]
+    },
+
+    // ===== 알아봐요 1 - 기계학습 =====
+    {
+      id:"p3", cat:"알아봐요", icon:"📖", title:"1. 기계학습의 이해",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 기계학습이란?</h3>
+          <p><strong>기계학습(Machine Learning, 머신러닝)</strong>은 사람의 학습 능력을 컴퓨터로 구현하는 인공지능 기술입니다. 컴퓨터가 수많은 데이터로 학습하여 모델을 만들고, 이 모델에 새로운 데이터를 적용하여 새로운 예측과 같은 지능적인 판단을 할 수 있습니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk"><h4>▷ 인공지능 · 기계학습 · 딥러닝의 관계</h4></div>`},
+        {t:"cards", items:[
+          {front:"인공지능", back:"인간이 가진 지적 능력을 컴퓨터로 구현한 기술이다. (가장 넓은 개념)"},
+          {front:"기계학습", back:"컴퓨터가 스스로 학습하는 알고리즘을 연구하고 구현하는 기술이다. (인공지능의 한 분야)"},
+          {front:"딥러닝", back:"인간의 뉴런과 비슷한 인공 신경망으로 스스로 정보를 처리·학습하는 인공지능 기술이다. (기계학습의 한 분야)"}
+        ]},
+        {t:"callout", title:"🏥 기계학습의 활용 분야", body:"기상 예측, 수요 예측, 주가 예측, 스팸 메일 분류, 의료 영상 분석을 통한 질병 진단, 신용 카드 부정 거래 탐지, 상품 추천, 지능형 게임 로봇 등 사람이 직접 알고리즘을 설계하기 어려운 분야에서 활용되어 우리 삶에 큰 영향을 미치고 있습니다."},
+        {t:"html", v:`<div class="blk"><h4>▶ 기계학습의 유형</h4>
+          <p>기계학습은 학습 데이터에 <strong>'정답(레이블, label)'</strong>이 있는지 여부에 따라 일반적으로 세 가지 유형으로 나뉩니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"① 지도학습", back:"정답이 주어진 데이터를 이용하여 학습하는 방법. 예: 스팸메일 분류, 시험 점수 예측"},
+          {front:"② 비지도학습", back:"정답이 없는 데이터를 스스로 구조화하거나, 유사한 데이터끼리 묶는 방법. 예: 고객 세분화 마케팅"},
+          {front:"③ 강화학습", back:"환경과 상호작용하며 '보상'을 최대화하는 방향으로 학습하는 방법. 행동 결과에 따른 보상으로 올바른 행동을 찾아간다."}
+        ]}
+      ]
+    },
+
+    // ===== 알아봐요 2 - 생성형 AI =====
+    {
+      id:"p4", cat:"알아봐요", icon:"📖", title:"2. 생성형 AI",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 생성형 AI란 무엇인가?</h3>
+          <p><strong>생성형 AI(Generative AI)</strong>는 새로운 것을 만들어내는 인공지능입니다. 단순히 정답을 맞히는 것이 아니라, 학습한 내용을 바탕으로 새로운 문장, 그림, 음악, 코드 등을 만들어냅니다.</p>
+          <p>생성형 AI는 기계학습의 한 종류인 딥러닝 기술을 이용해 만들어졌는데, 기계학습 중에서도 데이터를 보고 스스로 새로운 데이터를 생성할 수 있는 모델이라는 뜻에서 '생성형' AI라는 이름이 붙여졌습니다. 데이터를 이해하고 분석하는 단계를 넘어 창의적인 산출물까지 만들어내는 인공지능인 것입니다.</p>
+        </div>`},
+        {t:"callout", variant:"purple", title:"📝 자연어(Natural Language)", body:"사람들이 일상적으로 쓰는 언어를, 인공적으로 만들어진 언어인 인공어와 구분하여 부르는 개념입니다. ChatGPT는 자연어 생성 모델로, 주어진 텍스트의 다음에 적합한 단어를 선택하는 작업을 학습하여 사람처럼 의미 있는 텍스트를 생성합니다."},
+        {t:"html", v:`<div class="blk"><h4>▷ 생성형 AI의 특징과 활용</h4>
+          <p><strong>특징:</strong> 기계학습 모델을 사용하여 새로운 글, 이미지, 영상 등을 생성하는 기술</p>
+        </div>`},
+        {t:"tabs", tabs:[
+          {label:"이미지 제작", content:`<p>디자인, 마케팅, 광고, 건축 등에서 필요한 이미지를 만들고 가상 인물을 실물과 유사하게 제작할 수 있습니다.</p>`},
+          {label:"영상 제작", content:`<p>달에 위성이 충돌하는 영상, 실제 사람과 유사한 배우가 연기하는 영상 등을 제작할 수 있습니다.</p>`},
+          {label:"글 제작", content:`<p>단순한 질의응답뿐만 아니라 번역, 프로그래밍, 논문 작성, 광고 문구, 소설 등 광범위한 작업이 가능합니다.</p>`}
+        ]},
+        {t:"html", v:`<div class="blk"><p style="color:var(--txt2);font-size:13px">대표적인 생성형 AI에는 <strong>ChatGPT, DALL·E, Bing Image Creator</strong> 등이 있습니다.</p></div>`}
+      ]
+    },
+
+    // ===== 알아봐요 3 - 행렬 =====
+    {
+      id:"p5", cat:"알아봐요", icon:"📖", title:"3. 데이터를 표현하는 방식, 행렬",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 행렬이란?</h3>
+          <p>우리가 수집한 데이터는 엑셀(Excel)에서 정리·분석되고, 이를 활용해 그래프도 그려집니다. 엑셀은 행과 열로 이루어져 있는데, <strong>행렬</strong>이란 여러 개의 수 또는 문자를 직사각형 모양으로 배열하여 괄호로 묶어놓은 것을 의미합니다. 행렬을 구성하는 각각의 수 또는 문자를 그 행렬의 <strong>성분</strong>이라고 합니다.</p>
+          <p>성분을 가로로 배열한 줄을 <strong>행</strong>(위에서부터 제1행, 제2행, …), 세로로 배열한 줄을 <strong>열</strong>(왼쪽에서부터 제1열, 제2열, …)이라고 합니다. 일반적으로 m개의 행과 n개의 열로 이루어진 행렬을 <strong>m×n 행렬</strong>이라 하고, 행과 열의 개수가 같은 행렬을 <strong>정사각행렬</strong>이라고 합니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk blk-card" style="text-align:center">
+          <p style="font-family:monospace;font-size:17px;line-height:1.9">
+            A = ( a&#8321;&#8321;&nbsp;&nbsp;a&#8321;&#8322;&nbsp;&nbsp;a&#8321;&#8323; )<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( a&#8322;&#8321;&nbsp;&nbsp;a&#8322;&#8322;&nbsp;&nbsp;a&#8322;&#8323; )
+          </p>
+          <p style="font-size:13px;color:var(--txt2);margin-top:8px">2×3 행렬의 예. 행렬 A의 (i, j) 성분은 a<sub>ij</sub>로 나타냅니다.</p>
+        </div>`},
+        {t:"callout", title:"📊 표와 행렬", body:"생성형 AI가 만든 포스터의 특징을 정리한 표도, 색상·키워드별 빈도를 담은 그래프 데이터도 모두 행과 열로 이루어진 행렬 구조입니다. 데이터를 다루기 위해 반드시 알아야 할 개념입니다."}
+      ]
+    },
+
+    // ===== 활동해요 1 - 이미지 데이터 수집 =====
+    {
+      id:"p6", cat:"활동해요", icon:"💻", title:"1. 이미지 데이터 수집하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 공주시 문화·역사 자원 이미지 데이터 수집하기</h3>
+        </div>`},
+        {t:"steps", title:"이미지 생성 순서", items:[
+          {title:"1. 키워드 정리", desc:"다양한 공주시 문화·역사 자원을 조사하여 인상적인 키워드를 정리한다. (예: '석장리 박물관', '무령왕릉 석수', '백제 오감 체험관')"},
+          {title:"2. 생성형 AI에 프롬프트 입력", desc:"정리한 키워드를 바탕으로 ChatGPT와 같은 생성형 AI에 프롬프트를 입력해 다양한 이미지와 문구를 생성한다. (예: \"석장리 박물관을 그려줘\")"},
+          {title:"3. 결과물 비교·공유", desc:"AI가 그린 그림을 보고 받은 느낌을 정리하고, 작성한 프롬프트에 따라 어떤 결과물이 완성되었는지 짝과 이야기한다."}
+        ]},
+        {t:"callout", variant:"blue", title:"✏️ 프롬프트 작성 팁", body:'표현하고 싶은 주제·키워드뿐 아니라 색상 톤, 배경 분위기, 화풍 스타일 등을 세부적으로 지정하면 원하는 결과물에 더 가까워집니다. (예: "무령왕릉 석수를 따뜻한 색감의 수채화 스타일로 그려줘")'},
+        {t:"input", label:"✓ 내가 조사한 공주시 문화·역사 자원 키워드를 적어 봅시다.", ph:"예: 공산성, 무령왕릉, 백제문화제, 석장리 박물관 등", rows:2}
+      ]
+    },
+
+    // ===== 활동해요 2 - 표·그래프 정리 =====
+    {
+      id:"p7", cat:"활동해요", icon:"💻", title:"2. 표·그래프로 정리하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 수집한 데이터를 표와 그래프로 정리하기</h3>
+          <p>생성형 AI가 제작한 포스터 결과물은 단순히 감각적으로 선택하는 것이 아니라, 자료로서 수집·정리하여 분석할 수 있습니다. AI 출력물을 기준에 따라 분류하고 표로 정리하면 각 포스터의 특징을 비교 가능한 형태로 구조화할 수 있습니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk blk-card">
+          <h4>📋 수집한 데이터 표 정리 예시</h4>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
+            <thead><tr style="background:var(--surface-alt)">
+              <th style="border:1px solid var(--border);padding:8px">번호</th>
+              <th style="border:1px solid var(--border);padding:8px">프롬프트 키워드</th>
+              <th style="border:1px solid var(--border);padding:8px">색상 톤</th>
+              <th style="border:1px solid var(--border);padding:8px">중심 이미지</th>
+              <th style="border:1px solid var(--border);padding:8px">주요 키워드</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="border:1px solid var(--border);padding:8px;text-align:center">1</td><td style="border:1px solid var(--border);padding:8px">석장리 박물관</td><td style="border:1px solid var(--border);padding:8px">부드러움</td><td style="border:1px solid var(--border);padding:8px">박물관</td><td style="border:1px solid var(--border);padding:8px">평화, 포근, 전통</td></tr>
+              <tr><td style="border:1px solid var(--border);padding:8px;text-align:center">2</td><td style="border:1px solid var(--border);padding:8px">무령왕릉 석수</td><td style="border:1px solid var(--border);padding:8px">부드러움</td><td style="border:1px solid var(--border);padding:8px">돌 동상</td><td style="border:1px solid var(--border);padding:8px">평화, 포근, 진지</td></tr>
+            </tbody>
+          </table>
+        </div>`},
+        {t:"steps", title:"캔바로 그래프 만들기", items:[
+          {title:"1. 캔바 로그인 후 만들기", desc:"[만들기] - [프레젠테이션(16:9)]을 선택한다."},
+          {title:"2. 그래프 도구 찾기", desc:"왼쪽 하단 '빠른 도구' 검색 - '그래프' - 원그래프를 선택한다."},
+          {title:"3. 차트 선택", desc:"원하는 원그래프 차트를 선택한다."},
+          {title:"4. 데이터 입력", desc:"원그래프 '더보기(…)' - 데이터 가져오기 또는 데이터 입력하기로 표 내용을 입력한다."}
+        ]},
+        {t:"callout", variant:"green", title:"📊 무엇을 시각화할까?", body:"표에 정리한 항목을 막대그래프·원그래프·방사형그래프로 시각화하면 색상 선호도, 키워드 빈도, 주제 표현의 경향 등을 한눈에 파악할 수 있습니다. 이는 AI가 특정 문화 요소를 어떻게 해석하고 재현하는지 판단할 수 있는 근거가 됩니다."}
+      ]
+    },
+
+    // ===== 활동해요 3 - 해석·포스터 제작 =====
+    {
+      id:"p8", cat:"활동해요", icon:"💡", title:"3. 해석 및 포스터 제작",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 그래프 해석하기</h3>
+          <p>완성된 그래프를 보고 다음 질문에 대해 생각하고, 조별로 해석을 발표하며 서로 비교해 봅시다.</p>
+        </div>`},
+        {t:"input", label:"✓ AI가 가장 많이 사용한 색상은 무엇일까?", ph:"그래프에서 가장 큰 비중을 차지한 색상 톤을 적어 봅시다.", rows:1},
+        {t:"input", label:"✓ 특정 키워드(예: 전통, 자연)가 강조된 이유는 무엇일까?", ph:"AI가 문화·역사 자원을 어떻게 해석했는지 생각해 봅시다.", rows:2},
+        {t:"input", label:"✓ 어떤 이미지가 '문화적'으로 더 어울린다고 판단할 수 있을까?", ph:"그래프 분석 결과를 근거로 적어 봅시다.", rows:2},
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 포스터 제작하기</h3>
+        </div>`},
+        {t:"steps", title:"포스터 제작·공유 순서", items:[
+          {title:"1. 포스터 프롬프트 작성", desc:"가장 효과적인 포스터 디자인을 바탕으로, 문화·역사 자원을 홍보할 수 있는 포스터를 제작하는 프롬프트를 작성한다."},
+          {title:"2. 포스터 제작·공유", desc:"프롬프트를 바탕으로 생성형 AI를 활용해 포스터를 제작하고, 결과물을 패들렛에 공유한다."},
+          {title:"3. 동료평가", desc:"게시된 포스터를 확인하고 느낌·장점·제안 등을 댓글로 남기며 의견을 공유한다. (비판보다 공감·제안 중심으로!)"}
+        ]},
+        {t:"input", label:"✓ 내가 만들 홍보 포스터의 프롬프트를 작성해 봅시다.", ph:"예: 무령왕릉을 중심 이미지로, 전통적이고 따뜻한 색감의 백제문화제 홍보 포스터를 만들어줘.", rows:3},
+        {t:"link", url:"https://www.canva.com/", icon:"🎨", title:"캔바(Canva)", desc:"포스터·그래프를 만들 수 있는 그래픽 디자인 플랫폼"}
+      ]
+    },
+
+    // ===== 정리 - 스스로 진단하기 =====
+    {
+      id:"p9", cat:"정리", icon:"✅", title:"스스로 진단하기",
+      blocks:[
+        {t:"assessment", title:"스스로 진단하기", ratings:["잘함","보통","미흡"], items:[
+          "데이터를 조사해 표로 제작하고, 그래프로 표현할 수 있다.",
+          "만든 그래프를 해석할 수 있다.",
+          "생성형 AI를 활용하여 홍보 포스터 프롬프트를 작성할 수 있다.",
+          "공주시 문화·역사 자원 홍보 포스터를 제작할 수 있다."
+        ]}
+      ]
+    },
+
+    // ===== 정리 - 활동퀴즈 =====
+    {
+      id:"p10", cat:"정리", icon:"❓", title:"활동퀴즈 1. 기계학습",
+      blocks:[
+        {t:"quiz", num:"01", q:"기계학습에 대한 설명으로 옳은 것은?", opts:["사람의 지시 없이 스스로 데이터를 입력할 수 있다.","기계학습은 사람의 학습 능력을 컴퓨터로 구현한 기술이다.","사람이 직접 알고리즘을 코딩해야만 학습이 가능하다.","기계학습은 주로 감정 표현이나 예술 창작에만 사용된다.","모든 데이터는 반드시 정답이 포함되어야 학습할 수 있다."], ans:1, ok:"정답! 기계학습은 사람의 학습 능력을 컴퓨터로 구현한 기술입니다.", no:"다시 생각해 봅시다. 기계학습의 기본 정의를 떠올려 보세요."},
+        {t:"quiz", num:"02", q:"다음 중 기계학습의 주요 유형으로 옳지 않은 것은?", opts:["지도학습","비지도학습","강화학습","감정학습"], ans:3, ok:"정답! '감정학습'은 기계학습의 유형이 아닙니다.", no:"다시 생각해 봅시다. 기계학습의 세 가지 유형을 떠올려 보세요."},
+        {t:"quiz", num:"03", q:"지도학습에 대한 설명으로 옳은 것은?", opts:["정답이 없는 데이터를 스스로 구조화한다.","행동 결과에 따른 보상으로 학습한다.","정답(레이블)이 주어진 데이터를 이용해 학습한다.","주로 새로운 데이터를 생성하는 데 사용된다."], ans:2, ok:"정답! 지도학습은 정답이 주어진 데이터로 학습합니다.", no:"다시 생각해 봅시다. '지도(supervised)'라는 말의 의미를 떠올려 보세요."},
+        {t:"quiz", num:"04", q:"비지도학습의 예로 가장 적절한 것은?", opts:["스팸메일 분류","날씨 예측","고객 세분화 마케팅","시험 점수 예측"], ans:2, ok:"정답! 고객 세분화는 정답 없이 유사한 데이터끼리 묶는 비지도학습입니다.", no:"다시 생각해 봅시다. 정답(레이블)이 없는 작업을 찾아야 합니다."}
+      ]
+    },
+    {
+      id:"p11", cat:"정리", icon:"❓", title:"활동퀴즈 2. 행렬·생성형 AI",
+      blocks:[
+        {t:"quiz", num:"05", q:"행렬에 대한 설명으로 옳지 않은 것은?", opts:["성분을 가로로 배열한 줄은 행이다.","m개의 행과 n개의 열로 이루어진 행렬을 m×n 행렬이라고 한다.","행과 열의 개수가 같은 행렬을 정사각행렬이라고 한다.","여러 개의 수 또는 문자를 직사각형 모양으로 배열하여 괄호로 묶어놓은 것이다.","행렬을 구성하는 각각의 수 또는 문자를 '열'이라고 한다."], ans:4, ok:"정답! 행렬을 구성하는 각각의 수·문자는 '성분'이라고 합니다.", no:"다시 생각해 봅시다. 행렬을 이루는 각 요소를 무엇이라 부를까요?"},
+        {t:"quiz", num:"06", q:"생성형 AI의 특징으로 옳지 않은 것은?", opts:["학습된 내용을 바탕으로 새로운 문장, 그림, 음악 등을 만든다.","기존 데이터를 단순히 분류하거나 예측한다.","딥러닝 기술을 이용한다.","창의적인 산출물을 만들어낼 수 있다.","ChatGPT와 DALL·E가 대표적 예이다."], ans:1, ok:"정답! 단순 분류·예측이 아니라 '새로운 것을 생성'하는 것이 생성형 AI의 특징입니다.", no:"다시 생각해 봅시다. 생성형 AI의 핵심은 '생성'입니다."},
+        {t:"quiz", num:"07", q:"'ChatGPT에 「공주 문화 포스터」를 입력했더니 다양한 색감과 문구를 가진 이미지가 생성되었다.' 이 상황에 해당하는 것은?", opts:["지도학습","비지도학습","강화학습","생성형 AI"], ans:3, ok:"정답! 새로운 이미지를 만들어냈으므로 생성형 AI입니다.", no:"다시 생각해 봅시다. '새로운 이미지를 만들어낸' 것이 핵심입니다."}
+      ]
+    },
+
+    // ===== 정리 - 읽기 자료 =====
+    {
+      id:"p12", cat:"정리", icon:"📚", title:"읽기 자료",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>★ 생성형 AI의 빛과 그림자</h3>
+          <p>생성형 AI는 인간의 창의력을 돕는 훌륭한 도구이지만, <strong>저작권과 윤리 문제</strong>라는 숙제를 안고 있습니다. AI가 만들어낸 이미지가 다른 사람의 작품을 모방하거나, 거짓 정보를 사실처럼 표현할 수도 있기 때문입니다. 그래서 AI를 사용할 때는 <strong>출처 명시와 비판적 사고</strong>가 필수입니다.</p>
+        </div>`},
+        {t:"callout", variant:"purple", title:"🎨 '창의성'의 경계를 넘다", body:"한 AI 화가가 그린 그림이 실제 미술대회에서 인간 화가들의 작품을 제치고 1위를 차지했습니다. 그러나 일부 심사위원은 \"AI의 작품은 '창작'이 아니라 '모방'\"이라며 수상 결과에 반대했습니다. 생성형 AI가 만든 예술작품도 '창작물'로 인정해야 할까요?"},
+        {t:"html", v:`<div class="blk">
+          <h4>🤔 기계학습의 정확함, 인간의 판단은 어디까지 필요할까?</h4>
+          <p>한 병원에서 인공지능이 수천 장의 X-ray 사진을 분석해 폐 질환을 찾아내는데, AI의 정확도는 95%에 달합니다. 그렇다면 나머지 5%의 오진은 누가 책임져야 할까요? 의사일까요, 인공지능일까요?</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"기계학습\n(Machine Learning)", back:"컴퓨터가 데이터를 스스로 학습하여 판단하는 기술."},
+          {front:"편향 (Bias)", back:"데이터의 불균형이나 오류로 인해 결과가 왜곡되는 현상."},
+          {front:"생성형 AI\n(Generative AI)", back:"학습한 데이터를 바탕으로 새로운 콘텐츠를 만들어내는 인공지능."},
+          {front:"프롬프트 (Prompt)", back:"AI에게 창작 지시를 내리는 문장이나 질문."}
+        ]}
+      ]
+    },
+
+    // ===== 정리 - 진로 연계 =====
+    {
+      id:"p13", cat:"정리", icon:"🧭", title:"진로 연계",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ AI를 활용하면 나도 화가!</h3>
+          <p>생성형 AI 기술의 발전으로 사용자가 직접 이미지를 만들지 않아도, 원하는 조건을 입력하기만 하면 새로운 이미지를 자동으로 생성해주는 웹사이트가 빠르게 늘어나고 있습니다. 사용자는 주제·키워드, 색상 톤, 배경 분위기, 화풍 스타일 등을 세부적으로 지정하여 자신만의 결과물을 얻을 수 있으며, 디자인 경험이 없는 사람도 손쉽게 시각 콘텐츠를 제작할 수 있습니다.</p>
+        </div>`},
+        {t:"callout", variant:"green", title:"🖌️ 새로운 표현과 직업의 확장", body:"생성형 AI는 디자인·예술 분야에서 새로운 표현 방식과 직업 선택의 폭을 넓혀주고 있습니다. 프롬프트 엔지니어, AI 아티스트, 콘텐츠 디자이너 등 AI를 활용하는 창의적 직업이 새롭게 등장하고 있습니다."},
+        {t:"html", v:`<div class="blk"><h4>🔗 대표적인 생성형 이미지 웹사이트</h4></div>`},
+        {t:"link", url:"https://playground.com/", icon:"🎨", title:"플레이그라운드 AI (Playground AI)", desc:"웹 기반으로 다양한 스타일의 이미지를 생성할 수 있는 도구"},
+        {t:"link", url:"https://www.midjourney.com/", icon:"🖼️", title:"미드저니 (Midjourney)", desc:"고품질 이미지를 생성하는 대표적인 생성형 AI 도구"},
+        {t:"link", url:"https://labs.google/fx/ko/tools/image-fx", icon:"✨", title:"구글 이미지FX (Image FX)", desc:"구글의 이미지 생성 도구(Imagen 기반)"},
+        {t:"link", url:"https://www.career.go.kr/", icon:"🧭", title:"커리어넷 — 직업·전공 탐색", desc:"AI·디자인 관련 직업과 학과 정보를 더 자세히 살펴볼 수 있습니다"}
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 무령왕릉 구조를 통한 부피 계산</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root{--bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;--txt:#1A1A1A;--txt2:#555;--txt3:#999;--accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;--blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;--purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;--radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1)}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+.app{display:flex;min-height:100vh}.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px}.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all}.nav-item:hover{background:var(--surface-alt);color:var(--txt)}.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px}.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}@media(max-width:900px){.sidebar{transform:translateX(-100%);transition:transform .3s}.sidebar.open{transform:translateX(0)}.content{margin-left:0;padding:18px 14px 60px}.mobile-tog{display:flex!important}}
+.pg-hd{margin-bottom:28px}.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}.pg-title{font-size:26px;font-weight:800;line-height:1.3}.blk{margin-bottom:22px}.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}.blk p+p{margin-top:10px}.blk ul{padding-left:20px;margin:8px 0}.blk ul li{margin-bottom:4px}
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}.callout.blue{background:var(--blue-lt);border-color:var(--blue)}.callout.green{background:var(--green-lt);border-color:var(--green)}.callout.purple{background:var(--purple-lt);border-color:var(--purple)}.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+.obj-list{list-style:none;padding:0}.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.input-group{margin-bottom:14px}.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}.step:last-child{border-bottom:none}.step:hover{background:var(--surface-alt)}.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}.flip-card{height:130px;perspective:1000px;cursor:pointer}.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}.flip-card.flipped .flip-inner{transform:rotateY(180deg)}.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}.quiz-q .qn{color:var(--accent);font-weight:800}.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}.quiz-fb.show{display:block}.quiz-fb.ok{background:var(--green-lt);color:var(--green)}.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}.assess-item:last-child{border-bottom:none}.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}.r-btn:hover{color:var(--txt)}.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}.link-card .l-info{flex:1;min-width:0}.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}.pg-nav .btn{min-width:130px;justify-content:center}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 수학</h1>
+    <div class="topic">무령왕릉 구조를 통한<br>부피 계산</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+<main class="content" id="main"></main>
+</div>
+<script>
+const D={title:"무령왕릉 구조를 통한 부피 계산",pages:[
+{id:"p1",cat:"도입",icon:"🎯",title:"학습목표",blocks:[
+{t:"html",v:`<div class="blk" style="text-align:center;padding:20px 0"><div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">수학 × 정보 융합 · 3D 모델링 부피 계산</div><h2 style="font-size:28px;font-weight:900;margin-bottom:8px">무령왕릉 구조를 통한<br>부피 계산</h2><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px"><span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">수학(입체도형·적분)</span><span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">정보(3D모델링)</span><span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">AI 활용</span></div></div>`},
+{t:"objectives",items:["무령왕릉의 실제 구조를 이해하고 이를 입체도형으로 단순화하여 부피를 계산할 수 있다.","무령왕릉의 입체 구조를 3D 모델링 및 알고리즘적 사고와 연결할 수 있다.","공학 도구를 활용해 문제 해결 과정을 탐구하고, 수학적 사고력과 디지털 역량을 함께 기를 수 있다."]}
+]},
+{id:"p2",cat:"도입",icon:"💭",title:"생각해요",blocks:[
+{t:"html",v:`<div class="blk"><h3>무령왕릉 내부 공간을 수학적으로 탐구한다면?</h3><p>무령왕릉은 백제 시대의 대표적인 왕릉으로, 내부 구조가 복잡하고 다양한 입체 도형으로 이루어져 있다. 우리가 배우는 수학의 개념을 적용하면, 이러한 고분의 내부 공간을 계산해 실제 크기를 추정할 수 있다.</p></div>`},
+{t:"input",label:"무령왕릉 내부 구조를 어떤 입체도형으로 단순화할 수 있을까?",ph:"예: 직육면체(석실 본체) + 반원형 아치(천장) + 직육면체(연도) 등",rows:2},
+{t:"input",label:"각 입체도형의 부피를 어떻게 계산할 수 있을까?",ph:"예: 직육면체는 가로×세로×높이, 반원통은 적분 또는 π×r²×L/2",rows:2},
+{t:"input",label:"계산한 결과와 실제 구조의 부피는 얼마나 차이가 있을까?",ph:"예: 단순화 과정에서 세부 구조를 무시했으므로 약간의 오차가 있을 것이다.",rows:2}
+]},
+{id:"p3",cat:"알아봐요",icon:"📖",title:"1. 입체도형의 부피",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 입체도형의 부피란?</h3><p>입체도형의 부피란 도형이 차지하는 공간의 크기를 수치로 나타낸 것이다. 무령왕릉 내부를 직육면체, 원기둥, 반원형 아치 등으로 나누어 각 도형의 부피를 구하고, 이를 합산하여 전체 내부 공간을 추정할 수 있다.</p></div>`},
+{t:"html",v:`<div class="blk blk-card"><h4>주요 부피 공식</h4><p>• 직육면체: V = 가로 × 세로 × 높이</p><p>• 원기둥: V = πr²h</p><p>• 원뿔: V = (1/3)πr²h</p><p>• 구: V = (4/3)πr³</p></div>`},
+{t:"callout",variant:"blue",title:"▷ 활용 포인트",body:"① 건축물의 공간 크기를 수학적으로 해석할 수 있음<br>② 복잡한 구조를 단순화하여 계산 가능<br>③ 실제 고분 연구에 활용할 수 있는 수학적 접근 제공"}
+]},
+{id:"p4",cat:"알아봐요",icon:"📖",title:"2. 3D 모델링과 적분",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 3D 모델링이란?</h3><p>3D 모델링은 실제 사물이나 건축 구조를 디지털 환경에서 3차원 형태로 구현하는 과정이다. Tinkercad와 같은 도구를 사용하면 무령왕릉 내부를 가상으로 재현하여 수학적 계산 결과와 비교·검증할 수 있다.</p></div>`},
+{t:"html",v:`<div class="blk"><h3>▶ 적분을 통한 부피 계산이란?</h3><p>적분은 일정 구간에서 넓이나 부피를 구하는 수학적 방법이다. 무령왕릉의 곡선 구조(예: 아치형 천장)는 단순 공식으로 계산하기 어렵기 때문에, 회전체의 부피 공식을 활용한 적분 계산으로 보다 정확하게 추정할 수 있다.</p><p style="text-align:center;font-size:16px;font-weight:700;margin:12px 0">V = π ∫<sub>a</sub><sup>b</sup> [f(x)]² dx</p></div>`},
+{t:"cards",items:[
+{front:"ChatGPT",back:"무령왕릉 관련 배경 조사, 탐구 방향 설정, 질문 생성 및 자료 요약에 활용"},
+{front:"Google Colab",back:"Python 코드로 무령왕릉 부피 계산 자동화. 알고리즘 구현 및 자동 계산 실행"},
+{front:"Tinkercad",back:"온라인 3D 모델링 도구. 무령왕릉 내부 구조를 직접 모델링하여 계산 결과와 비교"},
+{front:"GeoGebra",back:"입체도형 시각화 및 부피 계산 과정을 시각적으로 표현. 문제 해결 관련 계산 지원"}
+]},
+{t:"link",url:"https://www.tinkercad.com",icon:"🧊",title:"Tinkercad 공식 사이트",desc:"직관적인 블록식 3D 모델링 도구"},
+{t:"link",url:"https://gongju.museum.go.kr",icon:"🏛️",title:"국립공주박물관",desc:"무령왕릉을 포함한 백제문화권의 역사 연구와 전시 자료"}
+]},
+{id:"p5",cat:"알아봐요",icon:"📖",title:"참고: 건축물 내부 공간 계산",blocks:[
+{t:"callout",variant:"purple",title:"🏠 건축물의 내부 공간은 어떻게 계산할 수 있을까?",body:"무령왕릉처럼 과거의 고분뿐 아니라, 오늘날 우리가 살고 있는 교실, 아파트, 도서관, 체육관도 모두 입체도형으로 단순화해 부피를 구할 수 있다.<br><br>• 교실: 직육면체<br>• 도서관 홀: 직육면체 + 원기둥<br>• 체육관: 직육면체 + 아치형 지붕<br><br>이러한 공간 계산은 단순한 수학 문제가 아니라, 건축 설계, 냉난방 효율 계산, 안전 진단 등 다양한 분야에 활용된다."}
+]},
+{id:"p6",cat:"활동해요",icon:"✏️",title:"1. 무령왕릉을 입체도형으로 단순화하기",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 무령왕릉을 입체도형으로 단순화하기</h3></div>`},
+{t:"steps",title:"활동 순서",items:[
+{title:"1. 구조 관찰",desc:"무령왕릉 내부 구조를 관찰하고, 직육면체·원기둥·아치형 등 기본 입체도형으로 나누어 본다."},
+{title:"2. 도형 분담",desc:"모둠원 각각이 분석할 도형을 분담한다. (예: 직육면체 1명, 원기둥 1명, 아치형 1명 등)"},
+{title:"3. 기초 자료 정리",desc:"ChatGPT를 사용하여 각각이 맡은 도형의 계산에 필요한 길이, 높이, 반지름 등의 기초 자료를 정리한다."}
+]},
+{t:"input",label:"1. 무령왕릉 내부 구조를 관찰하고, 어떤 입체도형으로 나눌 수 있는지 정리해 보자.",ph:"예: 석실 본체 → 직육면체, 천장 → 반원통(반원형 아치), 연도 → 직육면체",rows:3},
+{t:"input",label:"2. 각 도형의 길이, 높이, 반지름 등을 설정하여 계산에 필요한 기초 자료를 정리해 보자.",ph:"예: 석실 본체 - 길이 4m, 폭 3m, 높이 2.5m / 아치 천장 - 반지름 1.5m, 길이 4m",rows:3}
+]},
+{id:"p7",cat:"활동해요",icon:"💻",title:"2. 부피 계산 및 디지털 모델링 검증",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 부피 계산 및 디지털 모델링으로 검증하기</h3></div>`},
+{t:"steps",title:"활동 순서",items:[
+{title:"1. Colab으로 부피 계산",desc:"Google Colab을 이용하여 각 도형의 부피 계산 공식을 입력하여 자동 부피 계산 프로그램을 만든다."},
+{title:"2. 전체 부피 산출",desc:"앞서 정리한 기초 자료를 활용하여 무령왕릉 전체 내부 공간의 근사 부피를 계산한다."},
+{title:"3. 3D 모델 제작",desc:"Tinkercad를 활용해 무령왕릉을 단순화한 3D 모델을 제작한다."},
+{title:"4. 결과 비교",desc:"GeoGebra를 활용해 부피를 계산하여 실제 값과 비교한다."}
+]},
+{t:"input",label:"1. 각 도형의 부피 공식을 활용하여 무령왕릉 전체 내부 공간의 근사 부피를 계산해 보자.",ph:"예: 직육면체 30m³ + 반원통 14.13m³ + 연도 5m³ = 총 약 49.13m³",rows:3},
+{t:"input",label:"2. Tinkercad로 3D 모델을 제작하고, GeoGebra로 부피를 계산하여 비교해 보자.",ph:"수동 계산 결과와 도구 계산 결과의 차이점과 원인을 기록하세요.",rows:3},
+{t:"input",label:"3. 활동 소감: 성공감과 실패감 나누기",ph:"모둠 활동에서 잘된 점과 어려웠던 점을 기록하세요.",rows:3}
+]},
+{id:"p8",cat:"활동해요",icon:"🏛️",title:"3. 다른 고분 구조 확장 탐구",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 다른 고분 구조 적용으로의 AI 활용 문제 확장</h3><p>무령왕릉 외에 다른 역사적 건축물이나 고분에도 같은 방법을 적용하여 부피를 계산해 보자.</p></div>`},
+{t:"input",label:"적용 대상 선정 및 계산 결과",ph:"예: 경주 천마총, 석굴암 등에 동일한 방법을 적용",rows:3},
+{t:"input",label:"무령왕릉과의 비교 분석",ph:"예: 구조의 복잡도, 사용한 입체도형의 종류, 계산 난이도 등을 비교",rows:3}
+]},
+{id:"p9",cat:"정리",icon:"✅",title:"스스로 진단하기",blocks:[
+{t:"assessment",title:"스스로 진단하기",ratings:["잘함","보통","미흡"],items:[
+"무령왕릉 구조를 입체도형으로 단순화할 수 있다.",
+"입체도형의 부피를 공식에 따라 계산할 수 있다.",
+"디지털 도구(Tinkercad, GeoGebra)를 활용해 계산 결과를 검증할 수 있다.",
+"역사적 건축물 탐구와 수학적 개념을 연결할 수 있다."
+]}
+]},
+{id:"p10",cat:"정리",icon:"❓",title:"활동퀴즈 1. 입체도형의 부피",blocks:[
+{t:"quiz",num:"01",q:"직육면체의 부피를 구하는 공식으로 옳은 것은?",opts:["V = πr²h","V = (4/3)πr³","V = (1/3)πr²h","V = 가로 × 세로 × 높이","V = πr² + 2πrh"],ans:3,ok:"정답입니다! 직육면체의 부피는 가로 × 세로 × 높이입니다.",no:"힌트: 직육면체는 세 변의 길이를 곱합니다."},
+{t:"quiz",num:"02",q:"원기둥의 부피를 구할 때 필요하지 않은 정보는?",opts:["밑면의 반지름","원주율 π","높이","모서리의 개수","밑면의 넓이"],ans:3,ok:"정답입니다! 모서리의 개수는 원기둥 부피 계산에 필요하지 않습니다.",no:"힌트: 원기둥의 부피 = πr²h에서 필요한 것은?"},
+{t:"quiz",num:"03",q:"무령왕릉 석실을 직육면체로 단순화하여 길이 4m, 폭 3m, 높이 2.5m라면 그 부피는?",opts:["24m³","25m³","28m³","29.5m³","30m³"],ans:4,ok:"정답입니다! 4 × 3 × 2.5 = 30m³입니다.",no:"힌트: 가로 × 세로 × 높이를 계산하세요."},
+{t:"quiz",num:"04",q:"입체도형의 부피 계산이 중요한 이유로 가장 적절한 것은?",opts:["도형의 색깔을 알 수 있다.","공간이 차지하는 크기를 수치로 확인할 수 있다.","도형의 둘레를 구할 수 있다.","도형의 무게를 알 수 있다.","직선을 측정할 수 있다."],ans:1,ok:"정답입니다! 부피 계산은 공간의 크기를 수치로 확인하는 데 핵심적입니다.",no:"힌트: '부피'는 무엇의 크기를 나타내나요?"}
+]},
+{id:"p11",cat:"정리",icon:"❓",title:"활동퀴즈 2. 적분을 통한 부피",blocks:[
+{t:"quiz",num:"05",q:"곡선 y = x²와 x축, x=0 및 x=2로 둘러싸인 영역을 x축 회전시킨 입체의 부피는?",opts:["(16/5)π","(32/5)π","(8/3)π","4π","8π"],ans:1,ok:"정답입니다! V = π∫₀² (x²)² dx = π∫₀² x⁴ dx = π[x⁵/5]₀² = (32/5)π입니다.",no:"힌트: 회전체 부피 공식 V = π∫[f(x)]²dx를 적용하세요."},
+{t:"quiz",num:"06",q:"무령왕릉의 아치형 천장을 반원으로 가정했을 때, 반지름이 2m이고 길이가 5m인 반원통 구조의 부피는?",opts:["4πm³","10πm³","20πm³","5πm³","8πm³"],ans:1,ok:"정답입니다! 반원통의 부피 = (1/2)πr²L = (1/2)π(4)(5) = 10π m³입니다.",no:"힌트: 반원통은 원기둥의 절반입니다. V = (1/2)πr²L"},
+{t:"quiz",num:"07",q:"적분을 활용해 부피를 구하는 이유로 가장 적절한 것은?",opts:["계산이 단순해져서 공식을 외울 필요가 없다.","직선 구조만 계산할 수 있다.","복잡한 곡선 구조도 정밀하게 계산할 수 있다.","모든 도형을 직육면체로 바꿀 수 있다.","부피 대신 넓이를 구할 수 있다."],ans:2,ok:"정답입니다! 적분은 곡선 구조의 부피도 정밀하게 계산할 수 있습니다.",no:"힌트: 아치형 천장처럼 곡선이 있는 구조를 생각해 보세요."}
+]},
+{id:"p12",cat:"정리",icon:"📚",title:"읽기 자료",blocks:[
+{t:"html",v:`<div class="blk"><h3>★ 무령왕릉의 구조와 특징</h3><p>무령왕릉은 백제 25대 왕인 무령왕과 왕비의 합장릉으로, 지하 석실 구조를 가지고 있다. 내부는 직사각형 석실에 반원형 아치 천장이 얹힌 형태이며, 입구에는 좁은 연도가 연결되어 있다. 이러한 구조는 단순한 직육면체와 곡선 구조의 결합으로 볼 수 있어 수학적 계산에 적합하다.</p></div>`},
+{t:"html",v:`<div class="blk"><h3>★ 디지털 도구를 활용한 모델링</h3><p>GeoGebra와 Tinkercad 같은 디지털 도구를 이용하면 복잡한 구조를 3차원 모델로 재현할 수 있다. GeoGebra는 수학적 그래프와 입체 시각화를 지원하고, Tinkercad는 간단한 블록식 3D 모델링이 가능하며, Google Colab은 Python 코드로 부피 계산을 자동화할 수 있다.</p></div>`},
+{t:"html",v:`<div class="blk"><h3>★ 건축물 부피 계산의 실제 활용</h3><p>부피 계산은 단순한 수학 학습을 넘어 건축·공학 분야에서 매우 중요한 역할을 한다. 건축물 내부 공간 설계, 냉·난방 효율 계산, 재료의 사용량 추정 등에 활용된다. 무령왕릉의 사례를 통해 수학이 실생활과 역사적 건축물 연구에 어떻게 적용되는지 이해할 수 있다.</p></div>`}
+]},
+{id:"p13",cat:"정리",icon:"🧭",title:"진로 연계",blocks:[
+{t:"html",v:`<div class="blk"><h3>📖 책 소개</h3><p><strong>《수학 언어로 건축을 읽다》</strong>(저자: 오혜정) — 건축 속에 숨어 있는 수학 원리를 다양한 사례와 함께 소개하는 책</p><p><strong>《디지털 유산: 문화유산의 3차원 기록과 활용》</strong>(저자: 안재홍) — 문화유산 연구와 디지털 기술(3D 모델링, 빅데이터 분석)의 융합을 다룬 교양서</p></div>`},
+{t:"cards",items:[
+{front:"건축공학자",back:"건축물의 구조적 안정성을 분석하고 효율적인 설계를 담당하는 전문가"},
+{front:"문화재 보존 전문가",back:"역사적 건축물의 보존·복원 및 연구를 수행하는 직업"},
+{front:"데이터 분석가",back:"수학·프로그래밍을 활용해 건축·문화유산 데이터를 분석 및 예측하는 전문가"}
+]},
+{t:"html",v:`<div class="blk"><h3>🎓 대학 전공 소개</h3><p><strong>건축공학과</strong> — 건축물 설계, 구조 해석, 부피·공간 활용을 실제 건축에 적용</p><p><strong>컴퓨터공학과</strong> — 알고리즘, 3D 모델링, AI 기술을 활용한 디지털 문화유산 복원 연구 가능</p><p><strong>문화재학과</strong> — 역사·문화유산 연구와 보존, 디지털 인문학 융합 연구 수행</p></div>`},
+{t:"html",v:`<div class="blk"><h3>🏢 기업 소개</h3><p><strong>Autodesk (오토데스크)</strong> — Tinkercad, AutoCAD 등의 소프트웨어를 제공하는 글로벌 3D 설계 기업</p><p><strong>국립공주박물관</strong> — 무령왕릉을 포함한 백제문화권의 역사 연구와 전시, 디지털 자료 제공을 담당</p></div>`}
+]}
+]};
+let cur='p1',visited=new Set();
+function rBlock(b,pid){switch(b.t){case 'html':return b.v;case 'objectives':return`<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;case 'callout':return`<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;case 'input':{const id='i-'+Math.random().toString(36).substr(2,5);return`<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;}case 'steps':return`<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;case 'link':return`<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;case 'cards':return`<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;case 'prediction':return`<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;case 'quiz':{const qid='q-'+Math.random().toString(36).substr(2,8);return`<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;}case 'assessment':return`<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;case 'code':{const cid='c-'+Math.random().toString(36).substr(2,8);return`<div class="blk" style="border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);margin-bottom:18px;box-shadow:0 4px 6px rgba(0,0,0,0.05);"><div style="background:#2d2d2d;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;"><span style="color:#e0e0e0;font-size:13px;font-weight:600;font-family:monospace;">${b.lang}</span><button style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#e0e0e0;border-radius:4px;padding:5px 10px;font-size:12px;cursor:pointer;" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent);this.textContent='복사 완료 ✔';setTimeout(()=>this.textContent='코드 복사',2000);">코드 복사</button></div><div style="background:#1e1e1e;padding:16px;overflow-x:auto;"><pre id="${cid}" style="margin:0;color:#d4d4d4;font-family:Consolas,Monaco,monospace;font-size:14px;line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></div></div>`;}default:return'';}}
+function render(pid){const pg=D.pages.find(p=>p.id===pid);if(!pg)return;visited.add(pid);cur=pid;const idx=D.pages.indexOf(pg);const m=document.getElementById('main');m.innerHTML=`<div class="pg-hd"><div class="pg-crumb">${D.title} ${pg.cat?`> ${pg.cat}`:''}</div><h2 class="pg-title">${pg.icon} ${pg.title}</h2></div>${pg.blocks.map(b=>rBlock(b,pid)).join('')}<div class="pg-nav">${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}</div>`;document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});const pct=Math.round(visited.size/D.pages.length*100);document.getElementById('pTxt').textContent=pct+'%';document.getElementById('pBar').style.width=pct+'%';window.scrollTo({top:0,behavior:'smooth'});document.querySelector('.sidebar').classList.remove('open');}
+function go(pid){render(pid)}
+function swTab(tid,idx,btn){btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));document.getElementById(`${tid}-${idx}`).classList.add('active');}
+function chkQ(qid,sel,ans){const qz=document.getElementById(qid);qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{o.classList.remove('correct','wrong');const oc=o.querySelector('.oc');if(i===sel){o.classList.add(sel===ans?'correct':'wrong');oc.textContent=sel===ans?'✓':'✗';}if(i===ans&&sel!==ans){o.classList.add('correct');oc.textContent='✓';}o.style.pointerEvents='none';});document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');}
+function selR(btn){btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+let navHTML='',curCat=null;D.pages.forEach(p=>{if(p.cat!==curCat){if(p.cat)navHTML+=`<div class="nav-cat">${p.cat}</div>`;curCat=p.cat;}navHTML+=`<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;});document.getElementById('nav').innerHTML=navHTML;
+render('p1');
+</script>
+</body>
+</html>

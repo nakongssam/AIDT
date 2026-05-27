@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 정안면 밤 생산 농가 보조금 조건 정하기</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 수학</h1>
+    <div class="topic">정안면 밤 생산 농가<br>보조금 조건 정하기</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  title: "정안면 밤 생산 농가 보조금 조건 정하기",
+
+  pages: [
+    // ===== 도입 - 학습목표 =====
+    {
+      id:"p1", cat:"도입", icon:"🎯", title:"학습목표",
+      blocks:[
+        {t:"html", v:`
+          <div class="blk" style="text-align:center;padding:20px 0">
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">수학 × 정보 융합 · 이차함수·이차부등식</div>
+            <h2 style="font-size:26px;font-weight:900;margin-bottom:8px">정안면 밤 생산 농가의<br>보조금 조건 정하기</h2>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">이차함수 모델링</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">이차부등식 설계</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">데이터 시각화</span>
+            </div>
+          </div>
+        `},
+        {t:"objectives", items:[
+          "농가 감소 현황 데이터를 수집하고, 이차함수를 활용하여 생산량 변화를 수학적으로 분석할 수 있다.",
+          "빅데이터 분석 도구를 통해 농업 데이터를 시각화하고 의미를 해석할 수 있다.",
+          "정부 보조금 조건을 이차부등식 모델로 설계하여 정책적 대안을 탐구할 수 있다.",
+          "데이터 의사결정 과정을 학습하고 활용할 수 있다."
+        ]},
+        {t:"callout", variant:"blue", title:"🧰 이번 수업에서 사용하는 도구", body:"<strong>Algeomath</strong>로 데이터를 좌표평면에 표시하고, <strong>Python·Google Colab</strong>으로 그래프를 그려 이차함수에 근사합니다. <strong>캔바(Canva)</strong>로 정책 포스터를 만들고 <strong>ChatGPT</strong>로 아이디어와 문구를 다듬습니다."}
+      ]
+    },
+
+    // ===== 도입 - 생각해요 =====
+    {
+      id:"p2", cat:"도입", icon:"💭", title:"생각해요",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 밤 생산량이 줄어드는 이유는?</h3>
+          <p>정안면은 밤 생산으로 유명했지만, 농가 수와 인구 감소로 생산량이 줄고 있습니다. 이 상황을 수학적으로 탐구한다면 어떤 의미가 있을까요?</p>
+          <p style="margin-top:12px;font-weight:600;color:var(--accent)">정안면의 밤 생산량이 해마다 줄어들고 있습니다. 단순히 농가 수가 줄어서일까요? 농가 수와 생산량의 관계를 함수로 나타낼 수 있을까요?</p>
+        </div>`},
+        {t:"input", label:"▶ 농가 수와 생산량의 관계를 함수로 나타낼 수 있을까?", ph:"예: 농가가 너무 적으면 생산량이 부족하고, 너무 많으면 자원 부족으로 생산성이 떨어질 것 같다.", rows:2},
+        {t:"input", label:"▶ 보조금 조건을 이차부등식으로 표현한다면 어떤 현실적인 제안이 가능할까?", ph:"예: 생산량이 일정 기준 이상인 농가에만 보조금을 지급하는 조건을 만들 수 있다.", rows:2}
+      ]
+    },
+
+    // ===== 알아봐요 1 - 이차함수 모델링 =====
+    {
+      id:"p3", cat:"알아봐요", icon:"📖", title:"1. 이차함수 모델링",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 이차함수로 생산량을 설명하기</h3>
+          <p>정안면 밤 생산 농가는 농가 수가 너무 적으면 생산량이 부족하고, 너무 많으면 인력 및 자원 부족으로 오히려 생산성이 떨어질 수 있습니다. 이 현상을 그래프로 나타내면 처음에는 증가하다가 일정 시점 이후 감소하는 양상을 띱니다.</p>
+          <p>수학적으로 이 현상을 설명하는 가장 대표적인 모델이 이차함수 <strong>y = ax² + bx + c</strong>입니다. a &lt; 0일 때 그래프는 위로 볼록한 포물선 형태이고, 어느 지점에서 최대 생산량인지 알 수 있습니다. 꼭짓점 좌표에서 x좌표값은 <strong>최적 농가 수</strong>, y좌표값은 <strong>최대 생산량</strong>을 의미합니다.</p>
+        </div>`},
+        {t:"callout", variant:"green", title:"📈 예시로 이해하기", body:"y = −0.5x² + 20x 라면, 꼭짓점 좌표는 (20, 200)이고 <strong>농가 20곳일 때 최대 생산량 200</strong>으로 해석할 수 있습니다."},
+        {t:"html", v:`<div class="blk"><h4>🔍 탐구 포인트</h4></div>`},
+        {t:"cards", items:[
+          {front:"❶ 포물선 확인", back:"농가 수와 생산량 데이터가 포물선 형태를 따르는지 확인한다."},
+          {front:"❷ 꼭짓점 구하기", back:"꼭짓점 좌표를 구해 정안면에 필요한 최적 농가 수를 제안한다."},
+          {front:"❸ 근사의 한계", back:"현실 데이터와 모델의 차이를 비교해 근사의 한계를 이해한다."}
+        ]}
+      ]
+    },
+
+    // ===== 알아봐요 2 - 이차부등식 응용 =====
+    {
+      id:"p4", cat:"알아봐요", icon:"📖", title:"2. 이차부등식 응용",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 보조금 조건을 이차부등식으로</h3>
+          <p>정부는 농가의 생산량이 일정 기준 이상일 때 보조금을 지급합니다. 예를 들어 '생산량이 300 이상일 때 지원'이라는 조건을 수학적으로 표현하면 이차부등식이 됩니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk blk-card">
+          <h4>📐 풀이 과정</h4>
+          <p style="font-family:monospace;font-size:15px;line-height:2">
+            생산량 함수: y = −x² + 40x<br>
+            보조금 조건: y ≥ 300<br>
+            ⇒ −x² + 40x ≥ 300<br>
+            ⇒ x² − 40x + 300 ≤ 0<br>
+            ⇒ <strong>10 ≤ x ≤ 30</strong>
+          </p>
+          <p style="margin-top:10px">즉, 농가 수가 <strong>10곳 이상 30곳 이하</strong>일 때 생산량이 300 이상이 되므로, 이 구간에서 보조금이 지급됩니다.</p>
+        </div>`},
+        {t:"callout", variant:"purple", title:"🔗 연립이차부등식", body:"만약 '생산량 ≥ 300'이면서 '농가 수 ≥ 20' 조건을 추가하면, 연립이차부등식을 활용하여 <strong>20 ≤ x ≤ 30</strong>으로 범위를 구할 수 있습니다."},
+        {t:"html", v:`<div class="blk"><h4>🤔 함께 생각해 봅시다</h4>
+          <ul>
+            <li>보조금 기준을 바꾸면 지급 구간이 어떻게 달라질까요?</li>
+            <li>지나치게 높은 기준을 설정하면 어떤 문제가 발생할까요?</li>
+            <li>너무 낮은 기준을 설정하면 어떤 문제가 발생할까요?</li>
+          </ul>
+        </div>`}
+      ]
+    },
+
+    // ===== 알아봐요 3 - 빅데이터 분석과 시각화 =====
+    {
+      id:"p5", cat:"알아봐요", icon:"📖", title:"3. 빅데이터 분석과 시각화",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 데이터로 정책을 연결하기</h3>
+          <p>최근 10년간 정안면 농가 수와 생산량 데이터를 수집하고, 감소 추세를 그래프로 시각화합니다. 데이터 분석을 통해 '보조금이 없을 경우'와 '보조금 조건이 있을 경우'의 생산량 차이를 비교할 수 있습니다. Python, Google Colab을 활용하면 그래프 자동화 및 예측 모형을 시도할 수 있으며, <strong>최소제곱법</strong>을 이용해 데이터를 함수로 근사할 수 있습니다.</p>
+        </div>`},
+        {t:"callout", title:"💰 농가 보조금과 생산량의 관계", body:"농가 소득에서 정부 보조금이 차지하는 비중이 높고, 생산량 증가와 보조금 지급이 상호 연관되어 있습니다. 보조금은 농가 소득의 안정성을 유지하는 중요한 장치이고, 생산량과 보조금 지급은 상호 영향을 주고받는 관계에 있으므로, 정책 설계 과정에서 이차함수나 이차부등식 같은 수학적 모델을 활용해 합리적인 조건을 찾는 노력이 필요합니다."},
+        {t:"link", url:"https://www.algeomath.kr/", icon:"📐", title:"알지오매스(Algeomath)", desc:"데이터를 좌표평면에 표시하고 그래프를 탐구할 수 있는 수학 도구"},
+        {t:"link", url:"https://colab.research.google.com/", icon:"🐍", title:"Google Colab", desc:"Python으로 그래프 자동화와 함수 근사를 시도할 수 있는 환경"}
+      ]
+    },
+
+    // ===== 활동해요 1 - 데이터 탐색 =====
+    {
+      id:"p6", cat:"활동해요", icon:"💻", title:"1. 농가 데이터 탐색하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 정안면 농가 수·생산량 데이터 탐색하기</h3>
+        </div>`},
+        {t:"steps", title:"데이터 탐색 순서", items:[
+          {title:"1. 통계 찾기", desc:"정안면의 농가 수·생산량 통계를 찾아본다."},
+          {title:"2. 정리·시각화", desc:"모둠별로 데이터를 정리하고, 생산량 감소 현황을 시각적으로 표현한다."},
+          {title:"3. 이차함수 근사", desc:"데이터를 좌표평면에 표시하고 이차함수로 근사한다. (AI·디지털 기기 활용)"},
+          {title:"4. 이차부등식 표현", desc:"보조금 조건을 생산량과 연관지어 이차부등식으로 표현한다."}
+        ]},
+        {t:"callout", variant:"blue", title:"🔍 탐구 발문", body:"농가 수가 너무 적거나 많을 때 생산량은 어떻게 변할까요? 생산량을 최대로 만드는 '적정 농가 수'는 얼마일까요?"},
+        {t:"input", label:"✓ 수집한 데이터를 보고 알게 된 점을 적어 봅시다.", ph:"예: 농가 수가 일정 수준을 넘으면 생산량이 오히려 줄어드는 경향이 보인다.", rows:2}
+      ]
+    },
+
+    // ===== 활동해요 2 - 모델링·시뮬레이션 =====
+    {
+      id:"p7", cat:"활동해요", icon:"💡", title:"2. 모델링과 정책 설계",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 데이터로 이차함수 모델 만들고 보조금 조건 설계하기</h3>
+        </div>`},
+        {t:"steps", title:"창의적 설계 활동", items:[
+          {title:"활동① 데이터 수집·정리", desc:"정안면 농가 수–생산량 데이터를 팀별로 수집·정리한다. (Google Colab 사용)"},
+          {title:"활동② 이차함수 근사", desc:"그래프를 그려 이차함수에 근사한다."},
+          {title:"활동③ 이차부등식 표현", desc:"정부 보조금 지급 조건을 이차부등식으로 표현한다. (예: y = −x² + 30x, y ≥ 300 ⇒ 10 ≤ x ≤ 30)"},
+          {title:"활동④ 시뮬레이션", desc:"지급 조건을 조정하면서 보조금 대상 범위가 어떻게 변화하는지 시뮬레이션한다. (Colab 사용)"},
+          {title:"활동⑤ 정책 포스터 제작", desc:"캔바(Canva)를 이용해 '우리 조의 정책 포스터'를 제작하고, 데이터 시각화를 통해 내용을 정리한다."}
+        ]},
+        {t:"callout", variant:"green", title:"🗣️ 발표와 동료 피드백", body:"조별 포스터를 발표한 뒤 서로의 아이디어에 대해 피드백합니다. '현실적 타당성은 어떠한가?', '너무 높거나 낮은 보조금 기준이 가져올 문제는 무엇인가?'를 중심으로 토의해 봅시다."},
+        {t:"input", label:"✓ 우리 조가 제안한 보조금 조건(이차부등식)과 그 근거를 적어 봅시다.", ph:"예: y ≥ 350일 때 지급 → 15 ≤ x ≤ 25. 적정 농가 수를 유지하도록 유도한다.", rows:3}
+      ]
+    },
+
+    // ===== 정리 - 스스로 진단하기 =====
+    {
+      id:"p8", cat:"정리", icon:"✅", title:"스스로 진단하기",
+      blocks:[
+        {t:"assessment", title:"스스로 진단하기", ratings:["잘함","보통","미흡"], items:[
+          "농가 수와 생산량을 함수로 나타내고 그래프로 설명할 수 있다.",
+          "이차함수 꼭짓점을 구하여 최적 농가 수와 최대 생산량을 해석할 수 있다.",
+          "보조금 지급 조건을 이차부등식으로 표현하고, 그 범위를 구할 수 있다.",
+          "디지털 도구를 활용하여 데이터를 시각화하고 결과를 해석할 수 있다."
+        ]}
+      ]
+    },
+
+    // ===== 정리 - 활동퀴즈 1 =====
+    {
+      id:"p9", cat:"정리", icon:"❓", title:"활동퀴즈 1. 이차함수와 생산량",
+      blocks:[
+        {t:"html", v:`<div class="blk"><p style="color:var(--txt2);font-size:13px">아래 문제는 생산량 함수 <strong>y = −x² + 40x</strong>를 기준으로 합니다.</p></div>`},
+        {t:"quiz", num:"01", q:"함수 y = −x² + 40x 의 최댓값은?", opts:["300","400","500","600","700"], ans:1, ok:"정답! 꼭짓점 x=20에서 y = −400+800 = 400 입니다.", no:"다시 계산해 봅시다. 꼭짓점의 x좌표는 −b/2a = 20입니다."},
+        {t:"quiz", num:"02", q:"농가 수가 0, 10, 20일 때 각각의 생산량은?", opts:["0, 200, 300","0, 300, 400","0, 400, 600","0, 200, 500","0, 100, 200"], ans:2, ok:"정답! x=0→0, x=10→300, x=20→400 입니다. (x=10일 때 −100+400=300, x=20일 때 −400+800=400)", no:"다시 계산해 봅시다. 각 x값을 y = −x² + 40x 에 대입해 보세요."},
+        {t:"quiz", num:"03", q:"정부가 생산량이 300 이상일 때 보조금을 지급한다는 조건을 수학적으로 표현한 것은?", opts:["−x² + 40x ≤ 300","−x² + 40x ≥ 300","x² − 40x + 300 ≥ 0","x² − 40x + 300 ≤ 0","x² − 40x − 300 ≤ 0"], ans:1, ok:"정답! 생산량(y)이 300 이상이어야 하므로 −x² + 40x ≥ 300 입니다.", no:"다시 생각해 봅시다. '생산량 ≥ 300'을 부등식으로 옮겨 보세요."}
+      ]
+    },
+    {
+      id:"p10", cat:"정리", icon:"❓", title:"활동퀴즈 2. 이차부등식과 보조금",
+      blocks:[
+        {t:"quiz", num:"04", q:"보조금 지급 조건(생산량 300 이상)을 만족하는 농가 수의 범위는?", opts:["x ≤ 10 또는 x ≥ 30","x ≤ 20 또는 x ≥ 40","10 ≤ x ≤ 30","15 ≤ x ≤ 25","20 ≤ x ≤ 30"], ans:2, ok:"정답! x² − 40x + 300 ≤ 0 을 풀면 10 ≤ x ≤ 30 입니다.", no:"다시 풀어 봅시다. x² − 40x + 300 = (x−10)(x−30) ≤ 0 입니다."},
+        {t:"quiz", num:"05", q:"보조금 지급 조건에 '농가 수가 최소 15 이상'이 추가되었다. 실제로 보조금을 받을 수 있는 농가 수의 범위는?", opts:["15 ≤ x ≤ 25","15 ≤ x ≤ 30","20 ≤ x ≤ 30","25 ≤ x ≤ 40","30 ≤ x ≤ 40"], ans:1, ok:"정답! 10 ≤ x ≤ 30 과 x ≥ 15 의 공통 범위는 15 ≤ x ≤ 30 입니다.", no:"다시 생각해 봅시다. 두 조건(10≤x≤30, x≥15)의 공통 부분을 찾아야 합니다."},
+        {t:"quiz", num:"06", q:"보조금 기준을 400으로 높이면, 보조금 지급의 범위는?", opts:["더 넓어진다.","더 좁아진다.","변하지 않는다.","지급 대상이 없어진다.","모든 농가가 지원받게 된다."], ans:1, ok:"정답! 기준이 높아지면 조건을 만족하는 구간이 줄어들어 범위가 좁아집니다.", no:"다시 생각해 봅시다. 최댓값이 400인데 기준도 400이면 범위는 어떻게 될까요?"},
+        {t:"quiz", num:"07", q:"보조금 기준이 지나치게 낮을 때 발생할 수 있는 문제는?", opts:["지원 대상이 거의 없어 농가가 불만을 가진다.","예산 낭비와 비효율적인 지원이 발생한다.","농가 수가 반드시 감소하게 된다.","생산량이 자동으로 증가한다.","농산물 가격이 항상 상승한다."], ans:1, ok:"정답! 기준이 낮으면 대부분 농가가 대상이 되어 예산 낭비와 비효율이 생깁니다.", no:"다시 생각해 봅시다. 기준이 낮으면 너무 많은 농가가 지원 대상이 됩니다."}
+      ]
+    },
+
+    // ===== 정리 - 읽기 자료 =====
+    {
+      id:"p11", cat:"정리", icon:"📚", title:"읽기 자료",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>★ 농가 소득과 정부 보조금</h3>
+          <p>2023년 기준 우리나라 농가의 평균 연소득은 약 4,206만 원이며, 이 가운데 989만 원(23.5%)이 정부 보조금 등 이전소득으로 조사되었습니다. 이는 농가 소득의 약 4분의 1을 차지하는 비율입니다. 순수하게 농업 활동으로 얻는 농업 소득은 21.9%에 불과하여, 농사로 얻는 수입보다 보조금이 차지하는 비중이 비슷하거나 더 큰 수준입니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk"><h4>▶ 정부 보조금의 형태</h4></div>`},
+        {t:"cards", items:[
+          {front:"농업직불제", back:"일정 면적을 경작하는 농민에게 지급되는 제도적 지원금."},
+          {front:"재해보험", back:"자연재해로 인한 농작물 피해를 보전해 주는 보험 성격의 지원."},
+          {front:"수매 보조금", back:"쌀 등 주요 작물을 정부가 직접 구매하거나 가격을 보장해 주는 형태."}
+        ]},
+        {t:"callout", variant:"green", title:"🌱 농업 고령화와 이차함수", body:"우리나라 농촌은 빠른 고령화로 노동력이 줄고 있습니다. 특히 정안면 밤 농가는 수확·선별·저장 과정이 인력에 의존적이어서 인구 감소와 고령화가 생산량 감소로 이어집니다. 농가 수가 늘수록 생산량은 증가하다가 일정 수준을 지나면 줄어드는데, 이런 현상은 이차함수의 포물선 그래프로 잘 설명되며, 꼭짓점은 '가장 적절한 농가 수와 최대 생산량'을 의미합니다."},
+        {t:"callout", variant:"blue", title:"🚜 스마트팜과 데이터 혁신", body:"최근에는 스마트팜을 통해 데이터 기반 농업 혁신이 이루어지고 있습니다. 토양 수분·온도·일사량 등을 센서로 측정하고 빅데이터로 분석하여 물주기·비료량·환기 시점을 자동 조절합니다. 정부 보조금은 초기 시설 투자에 중요한 역할을 하며, '생산량이 일정 기준 이상일 때 지원' 같은 조건을 이차부등식으로 표현할 수 있습니다."}
+      ]
+    },
+
+    // ===== 정리 - 진로 연계 =====
+    {
+      id:"p12", cat:"정리", icon:"🧭", title:"진로 연계",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 직업 소개</h3>
+          <p>이번 수업의 탐구 과정(이차함수 모델링 → 이차부등식 설계 → 정책 제안)은 다양한 직업과 연결됩니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"농업공학자", back:"스마트팜·농업 자동화를 연구한다. 관수·환기·시비 자동화, 수확·선별 기계 설계, 저장·건조 공정 최적화. 핵심 역량: 물리·기계(센서/제어), 미적분·최적화, 데이터 해석."},
+          {front:"데이터 과학자", back:"농업 데이터를 분석·예측한다. 생산량/품질/가격 예측, 이상치 탐지, 수요-공급 시뮬레이션. 핵심 역량: 통계·확률, 회귀/분류, 시계열, 데이터 시각화."},
+          {front:"농정정책 전문가", back:"농촌 인구 문제 해결과 지원 정책을 수립한다. 보조금·직불제 설계, 비용-편익 분석, 지역 산업 연계 전략. 핵심 역량: 경제학 기초, 정책평가, 커뮤니케이션."}
+        ]},
+        {t:"html", v:`<div class="blk"><h4>🎓 대학 전공 소개</h4></div>`},
+        {t:"cards", items:[
+          {front:"수리환경학", back:"미분방정식·수문학·최적화로 물/토양/기후 시스템을 모델링한다. 밤 과수원 물관리 최적화, 홍수·가뭄 리스크 평가 등을 다룬다."},
+          {front:"농업경제학", back:"미시경제·계량경제·정책평가로 농업·농촌의 자원 배분을 분석한다. 직불제 설계, 가격 안정, 지역 산업 전략에 직접 연결된다."},
+          {front:"데이터과학", back:"통계·ML·프로그래밍·시각화로 데이터 기반 의사결정을 지원한다. 생산량 예측, 수요-공급 분석, 품질 분류 모델을 다룬다."}
+        ]},
+        {t:"callout", variant:"green", title:"💡 포트폴리오 아이디어", body:"'정안면 밤 생산량 예측 대시보드' 제작, '보조금 기준(이차부등식) 변화에 따른 지급 대상·예산 시뮬레이션' 보고서 등 이번 수업 경험을 진로 탐구로 확장해 봅시다."},
+        {t:"link", url:"https://www.career.go.kr/", icon:"🧭", title:"커리어넷 — 직업·전공 탐색", desc:"농업공학·데이터과학·농업경제 관련 직업과 학과 정보를 살펴볼 수 있습니다"}
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>

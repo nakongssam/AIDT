@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 유구읍 실크의 물결: 생산량 변화 분석과 미래 예측</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root{--bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;--txt:#1A1A1A;--txt2:#555;--txt3:#999;--accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;--blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;--purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;--radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1)}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}.app{display:flex;min-height:100vh}.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px}.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all}.nav-item:hover{background:var(--surface-alt);color:var(--txt)}.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px}.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}@media(max-width:900px){.sidebar{transform:translateX(-100%);transition:transform .3s}.sidebar.open{transform:translateX(0)}.content{margin-left:0;padding:18px 14px 60px}.mobile-tog{display:flex!important}}.pg-hd{margin-bottom:28px}.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}.pg-title{font-size:26px;font-weight:800;line-height:1.3}.blk{margin-bottom:22px}.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}.blk p+p{margin-top:10px}.blk ul{padding-left:20px;margin:8px 0}.blk ul li{margin-bottom:4px}.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}.callout.blue{background:var(--blue-lt);border-color:var(--blue)}.callout.green{background:var(--green-lt);border-color:var(--green)}.callout.purple{background:var(--purple-lt);border-color:var(--purple)}.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}.obj-list{list-style:none;padding:0}.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}.input-group{margin-bottom:14px}.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}.step:last-child{border-bottom:none}.step:hover{background:var(--surface-alt)}.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}.step .s-c p{font-size:13px;color:var(--txt2);margin:0}.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}.flip-card{height:130px;perspective:1000px;cursor:pointer}.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}.flip-card.flipped .flip-inner{transform:rotateY(180deg)}.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}.quiz-q .qn{color:var(--accent);font-weight:800}.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}.quiz-fb.show{display:block}.quiz-fb.ok{background:var(--green-lt);color:var(--green)}.quiz-fb.no{background:var(--red-lt);color:var(--red)}.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}.assess-item:last-child{border-bottom:none}.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}.r-btn:hover{color:var(--txt)}.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}.link-card .l-info{flex:1;min-width:0}.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}.btn-o:hover{border-color:var(--accent);color:var(--accent)}.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}.pg-nav .btn{min-width:130px;justify-content:center}@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd"><h1>AIDT 일반고 수학</h1><div class="topic">유구읍 실크의 물결<br>생산량 변화 분석과 미래 예측</div></div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft"><div class="prog-label">진행률 <span id="pTxt">0%</span></div><div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div></div>
+</aside>
+<main class="content" id="main"></main>
+</div>
+<script>
+const D={title:"유구읍 실크의 물결",pages:[
+{id:"p1",cat:"도입",icon:"🎯",title:"학습목표",blocks:[
+{t:"html",v:`<div class="blk" style="text-align:center;padding:20px 0"><div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">수학(또는 과학) × 정보 융합 · 지수 로그 데이터 분석</div><h2 style="font-size:28px;font-weight:900;margin-bottom:8px">유구읍 실크의 물결<br>생산량 변화 분석과 미래 예측</h2><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px"><span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">수학(지수·로그·미분)</span><span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">정보(Python)</span><span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">데이터 예측</span></div></div>`},
+{t:"objectives",items:["유구읍 연도별 실크 생산량 데이터를 분석하여 생산량 변화 분석 및 미래를 예측할 수 있다.","지수·로그 함수의 도함수를 구해 특정 연도의 순간 변화율을 계산하고, 이를 바탕으로 생산량의 증가·감소 속도를 해석할 수 있다.","함수 모델을 이용해 단기(3년) 예측표를 작성하고 그 수학적 근거로 현실적 정책을 제안·정리하여 시각 콘텐츠로 제작·공유·발표할 수 있다."]}
+]},
+{id:"p2",cat:"도입",icon:"💭",title:"생각해요",blocks:[
+{t:"html",v:`<div class="blk"><h3>유구 실크 산업의 미래를 데이터로 읽다</h3><p>'유구'하면 한때 대한민국 비단 생산의 70%를 차지했던 '실크 도시'라는 별명을 떠올린다. 밤낮없이 돌아가던 직조 기계 소리와 활기 넘치던 골목은 지역의 큰 자랑이었다. 그런데 1980년대 후반을 지나며 값싼 수입 원단이 밀려오고 사람들의 생활 방식이 바뀌면서, 수많은 공장의 기계 소리는 멈추고 생산량은 급격히 줄어들었다.</p><p>그렇다면 유구 실크는 이대로 사라지게 될까? 어쩌면 유구의 비단은 단순히 옷감이 아니라, 우리의 근대 산업 역사를 보여주는 '문화유산'이나, 전통 직조 방식을 직접 체험하는 '관광 상품'으로 새롭게 태어날 수 있지 않을까?</p></div>`},
+{t:"input",label:"유구 실크 산업의 변화를 제대로 이해하고 미래를 준비하기 위해 어떤 데이터가 필요하며, 그 데이터를 어떻게 분석하고 해석하면 합리적일까?",ph:"예: 연도별 생산량 데이터를 수집하고, 지수함수로 감소 추세를 모델링한 뒤, 도함수로 변화 속도를 분석한다.",rows:3}
+]},
+{id:"p3",cat:"알아봐요",icon:"📖",title:"1. 추세선이란?",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 추세선이란 무엇인가?</h3><p>추세선은 시간이나 다른 변수에 따른 자료의 '전반적인 경향(추세)'을 한 줄(또는 곡선)로 나타낸 것이다. 많은 점들(관측값)을 한눈에 보았을 때 "대체로 오른다/내려간다/비슷하다" 같은 큰 흐름을 보여주려고 쓴다.</p></div>`},
+{t:"html",v:`<div class="blk blk-card"><h4>주로 쓰는 형태</h4><p>• <strong>선형(직선)</strong>: 일정한 양으로 증가·감소할 때</p><p>• <strong>지수형(지수함수)</strong>: 일정한 비율로(퍼센트로) 증가·감소할 때</p><p>• <strong>이동평균</strong>: 잡음을 줄이고 부드러운 흐름을 볼 때</p><h4>추세선 평가 지표</h4><p>• <strong>R²(결정계수)</strong>: 모델이 데이터 변동을 얼마나 잘 설명하는지 (1에 가까우면 좋음)</p><p>• <strong>RMSE</strong>: 예측 오차의 평균 크기 (작을수록 좋음)</p></div>`},
+{t:"callout",variant:"blue",title:"⚠️ 주의할 점",body:"추세선은 미래로 연장할 때 불확실성이 커진다. R²만으로 모델을 결정하지 말고 잔차 패턴·현실성(모델이 실제 상황에 맞는지)도 살펴야 한다."}
+]},
+{id:"p4",cat:"알아봐요",icon:"📖",title:"2. 함수의 극한, 미분계수, 도함수",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 함수의 극한</h3><p>함수 y = f(x)의 그래프에서 x의 값이 한없이 커질 때(x → ∞) y의 값이 특정 값에 한없이 가까워지는 것을 극한이라 한다.</p></div>`},
+{t:"html",v:`<div class="blk"><h3>▶ 미분계수와 도함수</h3><p><strong>미분계수</strong>: 함수 f(x)에서 x = a에서의 순간변화율</p><p style="text-align:center;font-size:16px;font-weight:700;margin:8px 0">f'(a) = lim<sub>Δx→0</sub> [f(a+Δx) − f(a)] / Δx</p><p><strong>도함수</strong>: 정의역의 각 원소 x에 미분계수 f'(x)를 대응시키는 새로운 함수이다. 도함수 기반으로 "언제 산업 감소가 더 빨라졌는지" 해석할 수 있다.</p></div>`},
+{t:"html",v:`<div class="blk blk-card"><h4>지수·로그 함수의 도함수</h4><p>• f(x) = eˣ → f'(x) = eˣ</p><p>• f(x) = ln x → f'(x) = 1/x</p></div>`},
+{t:"cards",items:[
+{front:"ChatGPT",back:"아이디어 발상, 분석 보고서 초안 작성, 문장 다듬기, 정책 제안 문장 생성에 활용"},
+{front:"Excel",back:"수집한 유구면 실크생산량 데이터를 표 형태로 정리하고 기본 차트 생성"},
+{front:"GeoGebra",back:"스프레드시트에 데이터를 붙여넣어 적합선(선형·지수·로그)을 비교하고 도함수 그래프 표시"},
+{front:"Google Colab",back:"Python으로 데이터 불러오기, curve_fit 회귀, sympy 도함수 계산, 시각화 실행"},
+{front:"미리캔버스",back:"분석 결과를 바탕으로 슬라이드·포스터 제작"},
+{front:"Padlet",back:"모둠별 결과물 업로드 및 전체 학급 공유, 동료 피드백 실시간 작성"}
+]}
+]},
+{id:"p5",cat:"알아봐요",icon:"📖",title:"참고: 추세선과 도함수의 활용",blocks:[
+{t:"callout",variant:"purple",title:"☕ 변화의 '방향'과 '속도'를 읽는 법",body:"커피 판매량이 f(x) = 50 + 2x라는 추세선을 따른다면, 도함수 f'(x) = 2는 매월 평균적으로 2잔씩 증가한다는 뜻이다.<br><br>만약 최근 추세선이 f(x) = 50 + 0.5x²으로 바뀐다면, 도함수 f'(x) = x는 시간이 지날수록 판매량 증가 속도가 점차 빨라짐을 의미한다.<br><br>이처럼 수학에서는 '추세선'으로 전체적인 경향성을 바라보고, '도함수'로 현재 변화의 속도를 파악하여 미래의 시장 변화에 능동적으로 대응하는 도구로 쓰인다."}
+]},
+{id:"p6",cat:"활동해요",icon:"✏️",title:"1. 데이터 탐색 및 추세선",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 활동①: 유구면 실크 생산량 데이터 정리하기</h3></div>`},
+{t:"steps",title:"활동 순서",items:[
+{title:"1. 데이터 수집·정리",desc:"연도별 생산량 데이터를 CSV 혹은 표 형태로 정리한다."},
+{title:"2. 그래프 그리기",desc:"Excel을 이용해 그래프를 그려 변화를 시각적으로 확인한다."},
+{title:"3. 시기 식별",desc:"급격한 감소 시기와 안정적인 시기를 식별한다."}
+]},
+{t:"input",label:"1. 엑셀에서 공주시 유구면 실크 생산량 데이터를 바탕으로 그래프를 만들어 보자.",ph:"사용한 데이터 범위와 그래프 유형을 기록하세요.",rows:3},
+{t:"html",v:`<div class="blk"><h3>▶ 활동②: 추세선 비교하기</h3><p>GeoGebra 스프레드시트를 활용하여 추세선을 구해 보자. (명령어: 적합선, 지수적합선, 로그적합선)</p></div>`},
+{t:"input",label:"2. 지오지브라에서 선형 적합선, 지수 적합선, 로그 적합선을 비교해 보자.",ph:"각 모델의 R² 값과 시각적 적합도를 기록하세요.",rows:3}
+]},
+{id:"p7",cat:"활동해요",icon:"💻",title:"2. 도함수 계산 및 변화율 해석",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 활동③: 선택한 모델의 도함수를 구해 변화율을 해석하기</h3></div>`},
+{t:"steps",title:"활동 순서",items:[
+{title:"1. 도함수 계산",desc:"sympy 또는 GeoGebra로 도함수를 자동 계산한다."},
+{title:"2. 순간 변화율 확인",desc:"특정 연도의 순간 변화율이 양수인지 음수인지 확인한다."},
+{title:"3. 정책 시사점 분석",desc:"변화율이 큰 시기를 중심으로 정책적 개입 필요성을 분석한다."}
+]},
+{t:"input",label:"3. 지오지브라 또는 Colab(sympy)에서 미분계수, 도함수, 극한을 구해 보자.",ph:"사용한 함수식, 도함수, 특정 연도의 변화율 값을 기록하세요.",rows:3},
+{t:"input",label:"변화율이 급격히 변하는 시기는 언제이며, 그 원인은 무엇으로 추정되는가?",ph:"예: 1990년대 초 변화율이 가장 급격히 음수로 커졌으며, 이는 저가 수입 원단의 유입 시기와 일치한다.",rows:3}
+]},
+{id:"p8",cat:"활동해요",icon:"📊",title:"3. 미래 예측 및 정책 제안",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 활동④: 미래 예측 및 정책 제안 작성하기</h3></div>`},
+{t:"steps",title:"활동 순서",items:[
+{title:"1. 예측 생성",desc:"선택한 모델로 향후 3년 예측표를 만든다."},
+{title:"2. AI 검증",desc:"예측 수치를 ChatGPT에 입력해 해석·정책 제안 문장을 생성한다."},
+{title:"3. 정책 제안 작성",desc:"변화율이 급격히 떨어지는 시기를 근거로 지원 시점, 장비 현대화, 브랜드 마케팅 등 해결 방안을 제시한다."}
+]},
+{t:"input",label:"향후 3년 예측표 (모델식과 예측값)",ph:"예: 2025년 약 XX, 2026년 약 XX, 2027년 약 XX (지수모델 기준)",rows:3},
+{t:"input",label:"데이터 기반 정책 제안 (2가지 이상)",ph:"예: 1) 변화율 급감 시기에 맞춘 보조금 지원 2) 체험관광 상품화로 신규 수요 창출",rows:3}
+]},
+{id:"p9",cat:"활동해요",icon:"🎨",title:"4. 시각 자료 제작 및 발표",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 활동⑤: 시각 자료 제작 및 공유하기</h3></div>`},
+{t:"steps",title:"활동 순서",items:[
+{title:"1. 슬라이드/포스터 제작",desc:"미리캔버스(또는 Canva)로 발표 슬라이드를 제작한다. 핵심 구성: 데이터 그래프, 모델식, 변화율, 정책 제안"},
+{title:"2. Padlet 업로드",desc:"완성된 결과물을 Padlet에 업로드하여 다른 팀 결과를 보고 피드백한다."},
+{title:"3. 모둠별 발표",desc:"모둠별 5분 발표 + 동료 질문·교사 피드백을 진행한다."}
+]},
+{t:"input",label:"발표 후 느낀 점 및 다른 모둠의 분석에서 배운 점",ph:"예: 다른 모둠은 로그 모델을 사용하여 장기적 안정화를 예측했는데, 우리 모둠의 지수 모델과 비교하면...",rows:3}
+]},
+{id:"p10",cat:"정리",icon:"✅",title:"스스로 진단하기",blocks:[
+{t:"assessment",title:"스스로 진단하기",ratings:["잘함","보통","미흡"],items:[
+"유구면 연도별 실크 생산량 데이터를 분석하여 생산량 변화 분석 및 미래를 예측할 수 있다.",
+"지수·로그 함수의 도함수를 구해 특정 연도의 순간 변화율을 계산할 수 있다.",
+"생산량의 증가·감소 속도를 해석할 수 있다.",
+"함수 모델을 이용해 예측표를 작성할 수 있다."
+]}
+]},
+{id:"p11",cat:"정리",icon:"❓",title:"활동퀴즈 1. 극한과 도함수",blocks:[
+{t:"quiz",num:"01",q:"다음 극한값은 얼마인가? lim(x→∞) ln(x)/x",opts:["1","0","∞","−∞","존재하지 않는다"],ans:1,ok:"정답입니다! 로피탈 정리에 의해 lim(x→∞) ln(x)/x = lim(x→∞) (1/x)/1 = 0입니다.",no:"힌트: 로피탈 정리를 적용해 봅시다."},
+{t:"quiz",num:"02",q:"어떤 지역의 실크 생산량이 지수모델 y = Ae^(bt)로 증가한다고 한다. 생산량이 5년마다 2배가 된다면, 상수 b의 값(연 단위)은 대략 얼마인가?",opts:["ln 5","ln 2 / 5","5 / ln 2","ln 2","ln 5 / 2"],ans:1,ok:"정답입니다! 2 = e^(5b)에서 5b = ln 2, b = ln 2 / 5 ≈ 0.1386입니다.",no:"힌트: A·e^(5b) = 2A에서 e^(5b) = 2를 풀어봅시다."},
+{t:"quiz",num:"03",q:"함수 f(x) = eˣ와 g(x) = ln x의 도함수 f'(x), g'(x) 중 옳게 짝지은 것은?",opts:["f'(x) = eˣ, g'(x) = 1/x","f'(x) = xeˣ, g'(x) = x","f'(x) = eˣ, g'(x) = x","f'(x) = 1/x, g'(x) = eˣ","f'(x) = ln x, g'(x) = eˣ"],ans:0,ok:"정답입니다! (eˣ)' = eˣ, (ln x)' = 1/x입니다.",no:"힌트: 지수함수와 로그함수의 기본 미분 공식을 떠올려 봅시다."}
+]},
+{id:"p12",cat:"정리",icon:"❓",title:"활동퀴즈 2. 추세선과 예측",blocks:[
+{t:"quiz",num:"04",q:"로그함수 y = a·ln(x) + b가 점 (1, 0)과 (e, 3)을 지나면 a, b는?",opts:["a = 1, b = 3","a = 3, b = 0","a = 0, b = 3","a = 3, b = −3","a = e, b = 0"],ans:1,ok:"정답입니다! (1,0): b = 0, (e,3): a·ln(e) + 0 = a = 3입니다.",no:"힌트: ln(1) = 0, ln(e) = 1을 이용합시다."},
+{t:"quiz",num:"05",q:"연도별 생산량 데이터에서 (2018년, 3000상자), (2022년, 3600상자) 두 점으로 단순 선형 추세선을 만들었다. 연간 기울기와 2025년의 예측 생산량은?",opts:["기울기 150, 예측 4050","기울기 120, 예측 3960","기울기 200, 예측 4200","기울기 100, 예측 3900","기울기 180, 예측 4140"],ans:0,ok:"정답입니다! 기울기 = (3600−3000)/(2022−2018) = 150. 예측: 3600 + 150×3 = 4050",no:"힌트: 기울기 = (y₂−y₁)/(x₂−x₁)로 계산합니다."},
+{t:"quiz",num:"06",q:"회귀 분석에서 결정계수 R²의 의미로 가장 알맞은 것은?",opts:["R²는 모델의 기울기를 나타낸다.","R²가 1에 가까우면 모델이 데이터의 변동량을 잘 설명한다.","R²가 음수이면 반드시 모델이 틀렸음을 의미한다.","R²는 항상 0.5보다 크다.","R²가 크면 항상 예측이 정확하다는 뜻이다."],ans:1,ok:"정답입니다! R²가 1에 가까울수록 모델이 데이터를 잘 설명합니다.",no:"힌트: 결정계수는 모델의 '설명력'을 나타내는 지표입니다."},
+{t:"quiz",num:"07",q:"어떤 데이터에 대해 선형모델의 R²=0.72, 지수모델의 R²=0.91이 나왔다. 이 경우 옳은 해석은?",opts:["선형모델이 지수모델보다 데이터를 더 잘 설명한다.","지수모델이 선형모델보다 데이터를 더 잘 설명한다.","R²값만으로 반드시 지수모델을 택해야 한다.","두 모델 모두 틀렸다고 볼 수 있다.","R²가 클수록 모델의 복잡성이 낮다."],ans:1,ok:"정답입니다! R² = 0.91인 지수모델이 데이터를 더 잘 설명합니다. 다만 잔차 패턴 등도 함께 확인해야 합니다.",no:"힌트: R²가 더 큰 모델이 데이터를 더 잘 설명하지만, 그것만으로 최종 결정하지는 않습니다."}
+]},
+{id:"p13",cat:"정리",icon:"📚",title:"읽기 자료",blocks:[
+{t:"html",v:`<div class="blk"><h3>★ 유구면 실크 생산량 이야기</h3><p>유구면은 한때 국내 실크(비단) 생산의 중요한 거점이었고, 지역 경제와 문화에 큰 영향을 미쳤다. 시간이 지나면서 외부 환경(저가 수입품, 소비패턴 변화)과 내부 요인(인구 구조·기술 변화)으로 생산 양상이 바뀌었고, 현재는 '산업으로서의 생산'과 '문화·체험 자원'으로서의 가치가 동시에 논의되고 있다.</p></div>`},
+{t:"html",v:`<div class="blk"><h3>★ 추세선 분야별 실제 활용</h3><p><strong>농업·지역산업</strong>: 연도별 생산량에 추세선을 그려 장기적 감소/회복 경향을 확인하고, 축제나 프로모션 전후의 실제 생산량과 추세선 차이를 비교해 단기 이벤트 효과를 추정한다.</p><p><strong>경제·정책</strong>: 실업률·물가·지역 생산 지표에 추세선을 적용해 정책 효과(시점·지속성)를 평가한다.</p><p><strong>비즈니스·마케팅</strong>: 제품 판매량에 추세선과 이동평균을 적용해 프로모션 시기·재고 계획을 수립한다.</p></div>`}
+]},
+{id:"p14",cat:"정리",icon:"🧭",title:"진로 연계",blocks:[
+{t:"html",v:`<div class="blk"><h3>📖 책 소개</h3><p><strong>《환경수학: 데이터로 읽는 자연》</strong> — 수학적 기법을 환경 문제에 적용하는 사례 소개</p><p><strong>《파이썬으로 하는 데이터 분석 입문》</strong> — pandas·matplotlib을 이용한 데이터 처리·시각화 기초</p><p><strong>《지역산업과 문화유산의 재생》</strong> — 전통 산업을 관광·브랜딩으로 연결한 국내외 사례 정리</p></div>`},
+{t:"cards",items:[
+{front:"데이터 분석가",back:"생산·판매 데이터 정리, 추세 분석, 보고서 작성을 담당하는 지역산업 분석 전문가"},
+{front:"텍스타일 디자이너",back:"전통 직조 기법을 현대 디자인으로 재해석하고 상품화를 기획하는 직업"},
+{front:"관광·문화기획자",back:"체험코스 기획, 축제·문화콘텐츠 운영, 마케팅을 담당"},
+{front:"공정관리·품질기술자",back:"생산공정 개선, 품질 표준화, 설비 효율화를 수행"}
+]},
+{t:"html",v:`<div class="blk"><h3>🎓 대학 전공 소개</h3><p><strong>통계학·데이터사이언스</strong> — 데이터 분석가·정책분석가로 진로 연결</p><p><strong>컴퓨터공학·AI</strong> — 분석·모델링, AI 도구 개발·활용</p><p><strong>섬유·패션학(직물공학)</strong> — 텍스타일 디자인·제품 개발</p><p><strong>관광학·문화콘텐츠학</strong> — 체험관광 기획, 지역브랜딩·문화경제 연계</p></div>`},
+{t:"html",v:`<div class="blk"><h3>🏢 기업·기관 소개</h3><p><strong>공주시청(지역경제·문화관광과)</strong> — 지역 통계·축제 데이터, 현장협업 지원 창구</p><p><strong>지자체 농업기술센터 / 협동조합</strong> — 뽕 재배·사육 관련 기술 자문, 농가 연결</p></div>`}
+]}
+]};
+let cur='p1',visited=new Set();
+function rBlock(b,pid){switch(b.t){case 'html':return b.v;case 'objectives':return`<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;case 'callout':return`<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;case 'input':{const id='i-'+Math.random().toString(36).substr(2,5);return`<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;}case 'steps':return`<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;case 'link':return`<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;case 'cards':return`<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;case 'prediction':return`<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;case 'quiz':{const qid='q-'+Math.random().toString(36).substr(2,8);return`<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;}case 'assessment':return`<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;case 'code':{const cid='c-'+Math.random().toString(36).substr(2,8);return`<div class="blk" style="border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);margin-bottom:18px;"><div style="background:#2d2d2d;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;"><span style="color:#e0e0e0;font-size:13px;font-weight:600;font-family:monospace;">${b.lang}</span><button style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#e0e0e0;border-radius:4px;padding:5px 10px;font-size:12px;cursor:pointer;" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent);this.textContent='복사 완료 ✔';setTimeout(()=>this.textContent='코드 복사',2000);">코드 복사</button></div><div style="background:#1e1e1e;padding:16px;overflow-x:auto;"><pre id="${cid}" style="margin:0;color:#d4d4d4;font-family:Consolas,Monaco,monospace;font-size:14px;line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></div></div>`;}default:return'';}}
+function render(pid){const pg=D.pages.find(p=>p.id===pid);if(!pg)return;visited.add(pid);cur=pid;const idx=D.pages.indexOf(pg);const m=document.getElementById('main');m.innerHTML=`<div class="pg-hd"><div class="pg-crumb">${D.title} ${pg.cat?`> ${pg.cat}`:''}</div><h2 class="pg-title">${pg.icon} ${pg.title}</h2></div>${pg.blocks.map(b=>rBlock(b,pid)).join('')}<div class="pg-nav">${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}</div>`;document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});const pct=Math.round(visited.size/D.pages.length*100);document.getElementById('pTxt').textContent=pct+'%';document.getElementById('pBar').style.width=pct+'%';window.scrollTo({top:0,behavior:'smooth'});document.querySelector('.sidebar').classList.remove('open');}
+function go(pid){render(pid)}
+function swTab(tid,idx,btn){btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));document.getElementById(`${tid}-${idx}`).classList.add('active');}
+function chkQ(qid,sel,ans){const qz=document.getElementById(qid);qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{o.classList.remove('correct','wrong');const oc=o.querySelector('.oc');if(i===sel){o.classList.add(sel===ans?'correct':'wrong');oc.textContent=sel===ans?'✓':'✗';}if(i===ans&&sel!==ans){o.classList.add('correct');oc.textContent='✓';}o.style.pointerEvents='none';});document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');}
+function selR(btn){btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+let navHTML='',curCat=null;D.pages.forEach(p=>{if(p.cat!==curCat){if(p.cat)navHTML+=`<div class="nav-cat">${p.cat}</div>`;curCat=p.cat;}navHTML+=`<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;});document.getElementById('nav').innerHTML=navHTML;
+render('p1');
+</script>
+</body>
+</html>

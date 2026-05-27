@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 정안면 밤 생산 데이터로 소득 예측하기</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 수학</h1>
+    <div class="topic">정안면 밤 생산 데이터로<br>소득 예측하기</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  title: "정안면 밤 생산 데이터로 소득 예측하기",
+
+  pages: [
+    // ===== 도입 - 학습목표 =====
+    {
+      id:"p1", cat:"도입", icon:"🎯", title:"학습목표",
+      blocks:[
+        {t:"html", v:`
+          <div class="blk" style="text-align:center;padding:20px 0">
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">수학 × 정보 융합 · 행렬 연산</div>
+            <h2 style="font-size:26px;font-weight:900;margin-bottom:8px">정안면 밤 생산 데이터로<br>소득 예측하기</h2>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">행렬로 표현</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">행렬 연산</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">데이터 시각화</span>
+            </div>
+          </div>
+        `},
+        {t:"objectives", items:[
+          "정안면 밤 생산량, 농가 수, 단가 데이터를 행렬로 정리할 수 있다.",
+          "행렬의 덧셈, 곱셈 연산을 활용하여 농가의 연간 소득을 추정할 수 있다.",
+          "디지털 도구를 활용해 데이터를 자동 계산하고 시각화할 수 있다.",
+          "행렬을 이용한 분석 결과를 바탕으로 지역 산업의 문제 해결 방안을 토의·발표할 수 있다."
+        ]},
+        {t:"callout", variant:"blue", title:"🧰 이번 수업에서 사용하는 도구", body:"<strong>엑셀(Excel)</strong>로 데이터를 정리해 행렬로 만들고, <strong>Python·Google Colab</strong>으로 행렬 연산을 자동화합니다. <strong>캔바(Canva)</strong>로 발표 자료를 만들고 <strong>패들렛(Padlet)</strong>으로 결과를 공유합니다."}
+      ]
+    },
+
+    // ===== 도입 - 생각해요 =====
+    {
+      id:"p2", cat:"도입", icon:"💭", title:"생각해요",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 복잡한 데이터를 어떻게 정리할까?</h3>
+          <p>정안면 밤 생산량과 농가 수는 해마다 변하고, 각 농가마다 생산량·단가·비용이 달라서 데이터를 한눈에 비교하기 어렵습니다.</p>
+          <p style="margin-top:12px;font-weight:600;color:var(--accent)">만약 농가가 10곳이라면, 각각의 데이터를 어떤 방법으로 정리하면 좋을까요?</p>
+        </div>`},
+        {t:"input", label:"▶ 농가가 10곳이라면 각각의 데이터를 어떻게 정리하면 좋을까?", ph:"예: 행과 열을 가진 표(행렬) 형태로 정리하면 한눈에 보기 쉽다.", rows:2},
+        {t:"input", label:"▶ 농가별 생산량과 단가를 한 번에 계산하려면 어떤 수학적 방법이 효율적일까?", ph:"예: 행렬의 곱셈을 이용하면 여러 농가의 소득을 한 번에 계산할 수 있다.", rows:2}
+      ]
+    },
+
+    // ===== 알아봐요 1 - 행렬로 나타내기 =====
+    {
+      id:"p3", cat:"알아봐요", icon:"📖", title:"1. 행렬로 나타내기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 데이터를 행렬로 정리하기</h3>
+          <p>정안면 밤 생산 농가의 수, 생산량, 연간 수익을 표로 정리하면 숫자가 많아 복잡합니다. 이때 여러 수치를 한꺼번에 정리하고 계산하기 위해 <strong>행렬(matrix)</strong>을 활용할 수 있습니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk blk-card">
+          <h4>📋 농가별 생산량과 단가</h4>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;text-align:center">
+            <thead><tr style="background:var(--surface-alt)">
+              <th style="border:1px solid var(--border);padding:8px">농가</th>
+              <th style="border:1px solid var(--border);padding:8px">생산량(kg)</th>
+              <th style="border:1px solid var(--border);padding:8px">단가(원/kg)</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="border:1px solid var(--border);padding:8px">A농가</td><td style="border:1px solid var(--border);padding:8px">1500</td><td style="border:1px solid var(--border);padding:8px">4000</td></tr>
+              <tr><td style="border:1px solid var(--border);padding:8px">B농가</td><td style="border:1px solid var(--border);padding:8px">2000</td><td style="border:1px solid var(--border);padding:8px">4200</td></tr>
+            </tbody>
+          </table>
+        </div>`},
+        {t:"html", v:`<div class="blk">
+          <p>각 농가의 총수익은 '생산량 × 단가'로, 순수익은 '총수익 − 인건비'로 구할 수 있습니다. 수식이 많아질수록 계산이 복잡해지므로, 여러 데이터를 한눈에 정리하고 효율적으로 계산하기 위해 행렬을 이용합니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk blk-card" style="text-align:center">
+          <p style="font-family:monospace;font-size:16px;line-height:1.9">
+            A = ( 1500&nbsp;&nbsp;4000 )&nbsp;&nbsp;&nbsp;&nbsp;B = ( 1500&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0 )<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;( 2000&nbsp;&nbsp;4200 )&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( &nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;2000 )
+          </p>
+          <p style="font-size:13px;color:var(--txt2);margin-top:8px">A 행렬에서 행은 농가, 열은 생산 관련 항목(생산량·단가)을 나타냅니다.</p>
+        </div>`}
+      ]
+    },
+
+    // ===== 알아봐요 2 - 행렬 연산으로 소득 추정 =====
+    {
+      id:"p4", cat:"알아봐요", icon:"📖", title:"2. 행렬 연산으로 소득 추정",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 행렬 곱셈으로 총수익 구하기</h3>
+          <p>생산량과 단가의 곱으로 총수익을 구하려면 행렬 곱셈을 이용합니다. 각 성분이 어떤 경제적 의미를 가지는지 해석하는 것이 중요합니다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk blk-card">
+          <h4>📐 행렬 곱셈의 의미</h4>
+          <p>행렬 곱셈의 결과로 나온 각 성분은 '생산량 × 단가'의 형태로 계산된 값입니다. 예를 들어 어떤 성분은 A 농가의 실제 총 생산액을, 다른 성분은 B 농가의 실제 총 생산액을 의미하게 됩니다.</p>
+          <p style="margin-top:8px;color:var(--txt2);font-size:13px">교과서에서는 2×2 행렬 연산을 다루지만, 디지털 기기와 AI를 이용하면 더 큰 형태의 행렬 연산도 가능합니다.</p>
+        </div>`},
+        {t:"callout", variant:"purple", title:"📊 행렬 연산이 활용되는 실제 사례", body:"행렬은 단순한 계산 도구를 넘어 여러 산업에서 활용됩니다. <strong>경제 분야</strong>에서는 생산량·단가·인건비를 행렬로 구성해 전체 생산 비용·이익을 계산하고, <strong>교통·물류</strong>에서는 도시 간 이동 시간·운송 비용을 행렬로 나타내 최적 경로를 탐색합니다. 최근에는 대규모 데이터를 행렬로 변환해 머신러닝 모델의 입력으로 사용하는 사례도 많습니다."}
+      ]
+    },
+
+    // ===== 알아봐요 3 - 디지털 도구 행렬 연산 =====
+    {
+      id:"p5", cat:"알아봐요", icon:"📖", title:"3. 디지털 도구로 행렬 연산",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 스프레드시트로 행렬 다루기</h3>
+          <p>스프레드시트를 이용하면 행렬 형태로 이루어진 데이터를 다룰 수 있습니다. 기존 행렬에서는 수치 데이터를 주로 다루었지만, 문자·날짜·통화 등 다양한 형태의 데이터가 모여 하나의 행렬을 이룰 수 있습니다.</p>
+          <p>특히 스프레드시트에서는 다양한 함수를 활용하여 단순 숫자 계산부터 자료 탐색, 문자열 처리, 날짜 계산, 논리 연산까지 지원하므로 자료의 계산·검색·관리를 쉽게 할 수 있습니다. 마이크로소프트의 <strong>엑셀(Excel)</strong>, 구글의 <strong>구글 시트</strong> 등이 많이 활용되며, 구글 시트는 클라우드 기반으로 여러 사용자가 동시에 작업할 수 있습니다.</p>
+        </div>`},
+        {t:"callout", title:"📌 스프레드시트란?", body:"행과 열이 교차하면서 만든 셀에 자료를 입력하여 계산·검색·관리 등을 손쉽게 하도록 개발된 응용 소프트웨어입니다. 행렬과 구조가 같아 행렬 데이터를 다루기에 적합합니다."},
+        {t:"link", url:"https://colab.research.google.com/", icon:"🐍", title:"Google Colab", desc:"Python으로 행렬 연산을 자동화하고 결과를 시각화할 수 있는 환경"}
+      ]
+    },
+
+    // ===== 활동해요 1 - 데이터 수집·행렬 변환 =====
+    {
+      id:"p6", cat:"활동해요", icon:"💻", title:"1. 데이터 수집·행렬 변환",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 정안면 밤 생산 데이터를 행렬로 만들기</h3>
+        </div>`},
+        {t:"steps", title:"데이터 수집·정리 활동", items:[
+          {title:"활동① 데이터 조사", desc:"정안면의 농가 수, 연간 밤 생산량, 단가 정보를 공공 데이터나 지역 자료에서 찾아 정리한다. 계산에 사용할 수 있도록 단위와 기준을 통일한다."},
+          {title:"활동② 표로 정리", desc:"농가별 생산량과 단가를 행과 열로 구분해 표로 작성한다. 농가 간 생산 구조의 차이를 살펴보고, 이후 행렬 변환이 쉽도록 표 구조를 균일하게 정리한다."},
+          {title:"활동③ 행렬로 변환", desc:"생산량 행렬과 단가 행렬을 각각 구성한다. 행은 농가를, 열은 항목을 나타내도록 일관성 있게 만들고, 표에서 행렬로 바뀌었을 때 데이터가 어떻게 구조화되는지 확인한다."}
+        ]},
+        {t:"callout", variant:"blue", title:"🔍 탐구 발문", body:"농가별 생산량과 단가가 다르기 때문에 계산이 복잡해지는 문제는 어떤 것이 있을까요? 복잡한 수치를 구조화하기 위해 무엇을 활용할 수 있을까요?"},
+        {t:"input", label:"✓ 내가 만든 표를 행렬로 바꿀 때 행과 열에 무엇을 두었는지 적어 봅시다.", ph:"예: 행은 농가(A, B, C…), 열은 생산량·단가로 두었다.", rows:2}
+      ]
+    },
+
+    // ===== 활동해요 2 - 행렬 곱셈·소득 계산 =====
+    {
+      id:"p7", cat:"활동해요", icon:"💡", title:"2. 소득 계산·시각화",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 행렬 곱셈으로 농가 소득 계산하기</h3>
+        </div>`},
+        {t:"steps", title:"소득 계산·공유 활동", items:[
+          {title:"활동④ 행렬 곱셈 계산", desc:"생산량 행렬과 단가 행렬을 곱하여 농가별 총소득을 계산한다. 곱셈 결과의 각 성분이 어떤 경제적 의미를 가지는지 해석하고, 직접 계산한 값과 디지털 도구로 자동 계산한 값이 일치하는지 비교한다."},
+          {title:"활동⑤ 패들렛에 게시·토의", desc:"농가별 소득 차이가 나타나는 원인을 토의한다. 시각화 자료로 소득 격차나 주요 요인을 확인하고, 생산량 증가·단가 조정·유통 구조 개선 등 해결 방안을 토의한 뒤 패들렛에 게시해 다른 조와 비교한다."}
+        ]},
+        {t:"callout", variant:"green", title:"🤖 디지털 도구로 자동화", body:"Python과 Google Colab을 이용하면 복잡한 행렬 곱셈이나 덧셈도 단 몇 줄의 코드로 계산할 수 있습니다. 정안면의 농가별 생산량과 단가 데이터를 입력하면 전체 소득을 자동으로 계산하고 시각화 그래프로 보여줄 수 있습니다."},
+        {t:"input", label:"✓ 행렬 곱셈으로 구한 농가별 소득에서 가장 큰 영향을 준 요인은 무엇이었나요?", ph:"예: 단가보다는 생산량의 차이가 소득 격차에 더 큰 영향을 주었다.", rows:2}
+      ]
+    },
+
+    // ===== 정리 - 스스로 진단하기 =====
+    {
+      id:"p8", cat:"정리", icon:"✅", title:"스스로 진단하기",
+      blocks:[
+        {t:"assessment", title:"스스로 진단하기", ratings:["잘함","보통","미흡"], items:[
+          "생산량과 단가 데이터를 표로 정리하고, 행렬로 나타낼 수 있다.",
+          "2×2 행렬의 곱셈을 계산하고, 각 성분의 의미를 실생활 상황과 연결지어 해석할 수 있다.",
+          "디지털 도구를 활용하여 행렬 연산을 자동으로 수행하고 결과를 시각화할 수 있다.",
+          "행렬 연산 결과를 바탕으로 생산량 변화나 소득 추이를 설명할 수 있다."
+        ]}
+      ]
+    },
+
+    // ===== 정리 - 활동퀴즈 1 =====
+    {
+      id:"p9", cat:"정리", icon:"❓", title:"활동퀴즈 1. 행렬의 성분과 등식",
+      blocks:[
+        {t:"quiz", num:"01", q:"2×2 행렬 A의 (i, j) 성분이 a_ij = 2i + j − 2 일 때, a_12 의 값은?", opts:["0","1","2","3","4"], ans:2, ok:"정답! a_12 = 2(1) + 2 − 2 = 2 입니다.", no:"다시 계산해 봅시다. i=1, j=2를 2i+j−2 에 대입해 보세요."},
+        {t:"html", v:`<div class="blk blk-card">
+          <h4>📋 02~03번 공통 조건</h4>
+          <p style="font-family:monospace;font-size:15px;line-height:1.9">
+            ( −4&nbsp;&nbsp;&nbsp;4 )&nbsp;&nbsp;=&nbsp;&nbsp;( a+1&nbsp;&nbsp;b )<br>
+            ( c−2&nbsp;&nbsp;c )&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( &nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;3 )
+          </p>
+          <p style="font-size:13px;color:var(--txt2);margin-top:6px">두 행렬이 서로 같을 때, 대응하는 성분이 각각 같아야 합니다.</p>
+        </div>`},
+        {t:"quiz", num:"02", q:"위 등식이 성립할 때, 실수 a의 값은?", opts:["−5","−3","0","3","5"], ans:0, ok:"정답! a+1 = −4 이므로 a = −5 입니다.", no:"다시 생각해 봅시다. (1,1) 성분끼리 비교하면 a+1 = −4 입니다."},
+        {t:"quiz", num:"03", q:"위 등식이 성립할 때, 실수 b의 값은?", opts:["1","2","3","4","5"], ans:3, ok:"정답! (1,2) 성분끼리 비교하면 b = 4 입니다.", no:"다시 생각해 봅시다. (1,2) 성분끼리 비교하면 b = 4 입니다."}
+      ]
+    },
+    {
+      id:"p10", cat:"정리", icon:"❓", title:"활동퀴즈 2. 행렬의 연산",
+      blocks:[
+        {t:"html", v:`<div class="blk blk-card">
+          <h4>📋 04번 조건</h4>
+          <p style="font-family:monospace;font-size:14px;line-height:1.9">
+            A = (1&nbsp;&nbsp;−1 / 3&nbsp;&nbsp;−2),&nbsp;&nbsp;B = (3&nbsp;&nbsp;−2 / 0&nbsp;&nbsp;−1)
+          </p>
+        </div>`},
+        {t:"quiz", num:"04", q:"위 두 행렬에 대하여, 행렬 3A − 2B 의 모든 성분의 합은?", opts:["1","2","3","4","5"], ans:2, ok:"정답! 3A−2B 의 각 성분을 계산해 모두 더하면 3 입니다.", no:"다시 계산해 봅시다. 3A와 2B를 각각 구한 뒤 빼고, 네 성분을 모두 더해 보세요."},
+        {t:"html", v:`<div class="blk blk-card">
+          <h4>📋 05~06번 조건</h4>
+          <p style="font-family:monospace;font-size:14px;line-height:1.9">
+            A = (−2&nbsp;&nbsp;1 / 3&nbsp;&nbsp;0),&nbsp;&nbsp;B = (3&nbsp;&nbsp;5 / 1&nbsp;&nbsp;−3)
+          </p>
+        </div>`},
+        {t:"quiz", num:"05", q:"C = AB − BA 일 때, 행렬 C의 성분 (1, 2)의 값은?", opts:["1","2","3","4","5"], ans:3, ok:"정답! AB와 BA를 각각 구해 빼면 (1,2) 성분은 4 입니다.", no:"다시 계산해 봅시다. AB와 BA의 (1,2) 성분을 각각 구해 빼야 합니다."},
+        {t:"html", v:`<div class="blk blk-card">
+          <h4>📋 06번 조건</h4>
+          <p style="font-family:monospace;font-size:14px;line-height:1.9">
+            A = (3&nbsp;&nbsp;−2 / 1&nbsp;&nbsp;−4),&nbsp;&nbsp;B = (−8&nbsp;&nbsp;2 / 3&nbsp;&nbsp;−1)
+          </p>
+        </div>`},
+        {t:"quiz", num:"06", q:"C = 2(A − B) − 3A 일 때, 행렬 C의 성분 (2, 2)의 값은?", opts:["2","6","−2","−6","−13"], ans:1, ok:"정답! C = −A − 2B 이고, (2,2) 성분은 −(−4) − 2(−1) = 6 입니다.", no:"다시 계산해 봅시다. C = 2A − 2B − 3A = −A − 2B 로 정리한 뒤 (2,2) 성분을 구하세요."},
+        {t:"html", v:`<div class="blk blk-card">
+          <h4>📋 07번 조건</h4>
+          <p style="font-family:monospace;font-size:14px;line-height:1.9">
+            A = (1&nbsp;&nbsp;0 / 2&nbsp;&nbsp;−1),&nbsp;&nbsp;B = (2&nbsp;&nbsp;1 / k&nbsp;&nbsp;3)
+          </p>
+        </div>`},
+        {t:"quiz", num:"07", q:"행렬 AB − BA 의 모든 성분의 합이 2일 때, 실수 k의 값은?", opts:["−2","−1","0","1","−13"], ans:1, ok:"정답! AB−BA 의 성분 합을 k에 대해 정리해 2와 같다고 놓으면 k = −1 입니다.", no:"다시 계산해 봅시다. AB와 BA를 k를 포함해 계산한 뒤 성분 합을 2로 놓고 k를 구하세요."}
+      ]
+    },
+
+    // ===== 정리 - 읽기 자료 =====
+    {
+      id:"p11", cat:"정리", icon:"📚", title:"읽기 자료",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>★ 행렬이 쓰이는 세상의 수학</h3>
+          <p>행렬은 단순히 숫자를 모아놓은 표가 아니라, 복잡한 데이터를 한눈에 정리하고 계산을 자동화하는 수학적 언어입니다. 행렬의 덧셈·곱셈과 같은 연산은 실제 사회의 여러 분야에서 다양하게 활용됩니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"경제·경영", back:"여러 산업의 생산량과 소비량을 동시에 계산할 때 행렬을 사용한다. 산업 간 관계를 행렬로 나타내면 전체 경제 구조를 빠르게 파악할 수 있다."},
+          {front:"영상 처리", back:"이미지를 구성하는 픽셀을 행렬로 저장하고, 밝기 조절·회전·필터 효과 등을 행렬 곱으로 표현한다. 작은 수학적 변화가 시각적 변화를 만든다."},
+          {front:"교통·물류", back:"지역 간 이동 경로를 행렬로 표현하여 최단거리·운송비·시간 효율성을 동시에 계산한다. 내비게이션의 경로 탐색 알고리즘에도 활용된다."}
+        ]},
+        {t:"callout", variant:"blue", title:"🤖 인공지능과 행렬 계산의 자동화", body:"AI 시대의 데이터 분석은 대부분 행렬 연산으로 시작됩니다. 머신러닝과 딥러닝에서 모든 수치 정보(농가별 생산량, 연도별 매출, RGB 색상값 등)는 행렬 형태로 컴퓨터에 전달됩니다. 입력 데이터가 행렬로 표현되고 여러 층(layer)을 거치며 수많은 행렬 곱셈이 반복되어 패턴을 학습합니다. 수학에서 배우는 행렬 연산은 단순한 계산이 아니라, AI와 데이터 과학으로 연결되는 기초 언어라고 할 수 있습니다."}
+      ]
+    },
+
+    // ===== 정리 - 진로 연계 =====
+    {
+      id:"p12", cat:"정리", icon:"🧭", title:"진로 연계",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 직업 소개</h3>
+          <p>행렬과 데이터 분석을 핵심으로 활용하는 직업들을 살펴봅시다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"데이터 과학자\n(Data Scientist)", back:"농업·경제·환경 분야의 데이터를 수집·분석하여 예측 모델을 개발한다. 관련 역량: 통계적 사고, Python·R 코딩, 시각화 도구 활용."},
+          {front:"농업공학자\n(Agricultural Engineer)", back:"스마트팜, 자동화된 농업 시스템을 개발한다. 관련 역량: 공학적 설계, 수리 모델링, 데이터 분석."},
+          {front:"경제분석가\n(Economic Analyst)", back:"지역 산업의 소득 구조를 분석하고 정책 개선안을 제안한다. 관련 역량: 수학적 모델링, 통계 해석, 보고서 작성."}
+        ]},
+        {t:"html", v:`<div class="blk"><h4>🎓 대학 전공 소개</h4></div>`},
+        {t:"cards", items:[
+          {front:"수리경제학", back:"수학적 모델을 이용하여 생산·소득 구조를 연구한다."},
+          {front:"농업데이터과학", back:"농업 현장에서 수집된 빅데이터를 분석·예측하는 학문이다."},
+          {front:"정보통계학", back:"데이터의 상관관계와 구조를 수학적으로 탐구한다."}
+        ]},
+        {t:"callout", variant:"green", title:"💡 포트폴리오 아이디어", body:"'정안면 농가 소득 예측 시각화 대시보드 제작', '행렬 연산을 활용한 생산량 변화 시뮬레이션 설계', '정부 보조금 정책 변화에 따른 소득 구조 변화 분석' 등으로 이번 수업 경험을 확장해 봅시다."},
+        {t:"link", url:"https://www.career.go.kr/", icon:"🧭", title:"커리어넷 — 직업·전공 탐색", desc:"데이터과학·농업공학·경제분석 관련 직업과 학과 정보를 살펴볼 수 있습니다"}
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>

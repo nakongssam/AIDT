@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 평균을 넘어 변화율로, 데이터로 기후의 미래를 읽다</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root{--bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;--txt:#1A1A1A;--txt2:#555;--txt3:#999;--accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;--blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;--purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;--radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+.app{display:flex;min-height:100vh}.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px}.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all}.nav-item:hover{background:var(--surface-alt);color:var(--txt)}.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px}
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){.sidebar{transform:translateX(-100%);transition:transform .3s}.sidebar.open{transform:translateX(0)}.content{margin-left:0;padding:18px 14px 60px}.mobile-tog{display:flex!important}}
+.pg-hd{margin-bottom:28px}.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+.blk{margin-bottom:22px}.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}.blk p+p{margin-top:10px}.blk ul{padding-left:20px;margin:8px 0}.blk ul li{margin-bottom:4px}
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}.callout.blue{background:var(--blue-lt);border-color:var(--blue)}.callout.green{background:var(--green-lt);border-color:var(--green)}.callout.purple{background:var(--purple-lt);border-color:var(--purple)}.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+.obj-list{list-style:none;padding:0}.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.input-group{margin-bottom:14px}.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}.step:last-child{border-bottom:none}.step:hover{background:var(--surface-alt)}.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}.tab-btn:hover{color:var(--txt)}.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}.tab-panel.active{display:block}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}.flip-card{height:130px;perspective:1000px;cursor:pointer}.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}.flip-card.flipped .flip-inner{transform:rotateY(180deg)}.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}.quiz-q .qn{color:var(--accent);font-weight:800}.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}.quiz-fb.show{display:block}.quiz-fb.ok{background:var(--green-lt);color:var(--green)}.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}.pred-row label{font-size:13px;font-weight:600;min-width:100px}.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}.assess-item:last-child{border-bottom:none}.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}.r-btn:hover{color:var(--txt)}.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}.link-card .l-info{flex:1;min-width:0}.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}.pg-nav .btn{min-width:130px;justify-content:center}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 수학</h1>
+    <div class="topic">평균을 넘어 변화율로<br>데이터로 기후의 미래를 읽다</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+<main class="content" id="main"></main>
+</div>
+<script>
+const D={title:"데이터로 기후의 미래를 읽다",pages:[
+// ===== 도입 - 학습목표 =====
+{id:"p1",cat:"도입",icon:"🎯",title:"학습목표",blocks:[
+{t:"html",v:`<div class="blk" style="text-align:center;padding:20px 0"><div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">수학(또는 과학) × 정보 융합 · 강수량 변동성 분석</div><h2 style="font-size:28px;font-weight:900;margin-bottom:8px">평균을 넘어 변화율로,<br>데이터로 기후의 미래를 읽다</h2><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px"><span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">수학(미분계수)</span><span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">정보(Python)</span><span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">데이터 시각화</span></div></div>`},
+{t:"objectives",items:["기후 데이터 분석에서 '평균변화율'의 수학적 의미와 '빅데이터 분석'의 필요성을 이해한다.","빅데이터 분석 도구를 활용하여 실제 강수량 데이터와 '평균변화율'을 시각화하고, '평균'이 '변동성'을 설명하지 못하는 한계를 해석한다.","변동성을 계산하고 시각화하는 프로그램을 작성하고, 이 '순간적 변화'의 의미를 미분계수의 개념과 연결하여 이해한다.","데이터 분석 결과를 바탕으로 미래 농업 전략이라는 실생활 문제 해결 방안을 협력적으로 설계하여 제안한다."]}
+]},
+// ===== 도입 - 생각해요 =====
+{id:"p2",cat:"도입",icon:"💭",title:"생각해요",blocks:[
+{t:"html",v:`<div class="blk"><h3>미래 농업, 평균만 믿어도 될까?</h3><p>'연평균 기온'이나 '연평균 강수량' 같은 평균값은 작물을 선택하는 좋은 기준이 된다. 그런데 만약 어느 해에는 극심한 가뭄이 들고, 바로 다음 해에는 기록적인 폭우가 쏟아진다면 어떨까? 두 해의 '평균' 강수량은 평범해 보일지 몰라도, 농작물은 가뭄과 홍수로 모두 피해를 볼 것이다.</p><p>이처럼 기후 변화의 시대에는 '평균'만큼이나 그 '변덕스러움', 즉 변화의 정도를 파악하는 것이 중요하다.</p></div>`},
+{t:"input",label:"이처럼 '평균'이 보여주지 못하는 기후의 '변덕스러움'을 제대로 파악하려면, 우리는 어떤 새로운 정보를 어떻게 살펴보아야 할까?",ph:"예: 단순 평균이 아니라 매년의 변화량(전년 대비 증감)을 살펴봐야 한다.",rows:3}
+]},
+// ===== 알아봐요 1 =====
+{id:"p3",cat:"알아봐요",icon:"📖",title:"1. 빅데이터 개념과 기후 분석",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 빅데이터란?</h3><p>기상청과 같은 국가 데이터 포털에서 얻을 수 있는 연도별 총 강수량, 일 최다 강수량 등은 시간의 흐름에 따라 연속적으로 측정된 '시계열 데이터'이다. 이처럼 대량으로 수집, 저장, 분석되는 데이터를 빅데이터라고 한다. 빅데이터 분석 도구(Excel, Python 등)를 활용하여 이러한 데이터를 시각화하면 변화의 흐름을 직관적으로 파악할 수 있다.</p></div>`},
+{t:"link",url:"https://data.kma.go.kr/climate/RankState/selectRankStatisticsDivisionList.do",icon:"🌦️",title:"기상청 기상자료 개방 포털",desc:"연도별 강수량 등 기후 빅데이터를 조회할 수 있습니다"},
+{t:"cards",items:[
+{front:"Google Colab",back:"Python 코드를 실행하여 실제 강수량 데이터(점)와 평균변화율(직선)을 시각화하고 평균의 한계를 토의"},
+{front:"ChatGPT",back:"변동성 데이터 분석 결과를 바탕으로 미래 농업 전략에 대해 질문하고 아이디어를 탐색"},
+{front:"Canva",back:"데이터 분석 결과(평균의 한계, 변동성 그래프)를 바탕으로 미래 농업 전략 제안서를 시각 콘텐츠로 제작"},
+{front:"Padlet",back:"모둠별로 완성한 미래 농업 전략 제안서 결과물을 업로드하여 전체 학급과 공유, 동료 피드백"}
+]}
+]},
+// ===== 알아봐요 2 =====
+{id:"p4",cat:"알아봐요",icon:"📖",title:"2. 변화를 측정하는 언어: 평균변화율과 미분계수",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 평균변화율</h3><p>특정 기간 동안 어떤 값(y)이 다른 값(x)의 변화에 따라 평균적으로 얼마나 변했는지를 나타내는 비율이다. 함수 y=f(x)에서 x의 값이 x₁에서 x₂까지 변할 때, 평균변화율은 두 점을 잇는 직선의 기울기와 같다.</p><p style="text-align:center;font-size:16px;font-weight:700;margin:12px 0">평균변화율 = Δy/Δx = (f(x₂) - f(x₁)) / (x₂ - x₁)</p><p>예를 들어 '1990년부터 2020년까지의 강수량 평균변화율'은 30년 동안 강수량이 연평균 얼마큼 증가했거나 감소했는지를 보여준다. 하지만 극심한 변동성을 파악하기에는 한계가 있다.</p></div>`},
+{t:"html",v:`<div class="blk"><h3>▶ 미분계수(순간변화율)</h3><p>'평균변화율'의 한계를 보완하는 개념으로, '특정 한 순간'의 변화 경향을 나타낸다. x₂를 x₁에 한없이 가까이 보낼 때(즉, Δx→0), 평균변화율의 극한값이다.</p><p style="text-align:center;font-size:16px;font-weight:700;margin:12px 0">f'(x₁) = lim<sub>Δx→0</sub> Δy/Δx</p><p>이 수업에서는 '전년 대비 변화량' 그래프를 통해 매년의 '순간적인 변화 경향'을 분석하며, '평균'에 가려진 '변동성'을 파악한다.</p></div>`},
+{t:"callout",variant:"blue",title:"💡 변화율 분석을 위한 데이터",body:"변화율을 계산하기 위해서는 시간의 흐름에 따라 연속적으로 측정된 시계열 데이터가 필요하다.<br>• <strong>연도별 총 강수량</strong>: 장기적인 가뭄이나 강수량 증가 추세를 파악<br>• <strong>연도별 월별 강수량</strong> (예: 4월, 7월): 특정 시기(건조기, 우기)의 변화를 집중 분석하여 농업 계획에 직접 활용"}
+]},
+// ===== 알아봐요 - 참고자료 =====
+{id:"p5",cat:"알아봐요",icon:"📖",title:"3. 2024년 여름철 기후특성",blocks:[
+{t:"callout",variant:"purple",title:"🌧️ 2024년 여름철 기후특성 (농촌진흥청 보도자료 재구성)",body:"2024년 여름철 전국 평균 강수량은 602.7mm로 평년(727.3mm)보다 적었다. 단순히 평균만 보면 '올해는 비가 적게 왔다'고 결론내릴 수 있다. 하지만 이 '평균'이 숨기고 있는 이야기가 있다.<br><br>여름철 강수량의 78.8%(474.8mm)가 장마철에만 집중되었다. 이는 1973년 이래 가장 높은 집중도였다. 즉, 짧은 기간에 엄청난 양의 비가 쏟아진 후, 나머지 기간에는 거의 비가 내리지 않았다.<br><br>이러한 현상은 '연평균 강수량'이라는 단순한 수치로는 파악할 수 없는 '변동성'의 문제를 드러낸다."},
+{t:"input",label:"총량은 평년과 비슷할지라도, '언제, 얼마나 집중적으로' 내리는지의 패턴이 농업에 미치는 영향은 완전히 다르다. 이에 대해 모둠원들과 토의해 보자.",ph:"예: 장마철에 비가 집중되면 농작물이 침수되고, 나머지 기간에는 가뭄으로 고통받는다.",rows:3}
+]},
+// ===== 활동해요 1 =====
+{id:"p6",cat:"활동해요",icon:"✏️",title:"1. 평균변화율 계산 및 그 한계의 시각화",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ [활동1] 평균의 함정</h3><p>다음 두 지역의 연평균 강수량을 계산해보자.</p></div>`},
+{t:"html",v:`<div class="blk blk-card"><p><strong>A지역</strong>: 1월~6월 각 50mm, 7월~12월 각 150mm</p><p><strong>B지역</strong>: 1월~11월 각 10mm, 12월 1090mm</p></div>`},
+{t:"prediction",items:[{label:"A지역 연평균",ph:"mm"},{label:"B지역 연평균",ph:"mm"}]},
+{t:"input",label:"두 지역의 연평균 강수량이 같다면, 농업에 미치는 영향도 같을까? 모둠별로 토의해보자.",ph:"예: A지역은 비교적 고르게 분포하지만, B지역은 12월에만 집중되어 나머지 11개월은 극심한 가뭄이다.",rows:3},
+{t:"html",v:`<div class="blk"><h3>▶ [활동2] 공주시 강수량의 평균변화율 계산 및 시각화</h3><p>다음 표는 공주시의 2014년부터 2023년까지 7월 강수량을 나타낸 데이터이다.</p></div>`},
+{t:"html",v:`<div class="blk blk-card"><table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center"><tr style="background:var(--surface-alt)"><th style="padding:8px;border:1px solid var(--border)">연도</th><td style="padding:8px;border:1px solid var(--border)">2014</td><td style="padding:8px;border:1px solid var(--border)">2015</td><td style="padding:8px;border:1px solid var(--border)">2016</td><td style="padding:8px;border:1px solid var(--border)">2017</td><td style="padding:8px;border:1px solid var(--border)">2018</td><td style="padding:8px;border:1px solid var(--border)">2019</td><td style="padding:8px;border:1px solid var(--border)">2020</td><td style="padding:8px;border:1px solid var(--border)">2021</td><td style="padding:8px;border:1px solid var(--border)">2022</td><td style="padding:8px;border:1px solid var(--border)">2023</td></tr><tr><th style="padding:8px;border:1px solid var(--border)">7월 강수량(mm)</th><td style="padding:8px;border:1px solid var(--border)">154</td><td style="padding:8px;border:1px solid var(--border)">189.5</td><td style="padding:8px;border:1px solid var(--border)">311.4</td><td style="padding:8px;border:1px solid var(--border)">350</td><td style="padding:8px;border:1px solid var(--border)">253</td><td style="padding:8px;border:1px solid var(--border)">189</td><td style="padding:8px;border:1px solid var(--border)">440.4</td><td style="padding:8px;border:1px solid var(--border)">174.1</td><td style="padding:8px;border:1px solid var(--border)">186.1</td><td style="padding:8px;border:1px solid var(--border)">859</td></tr></table></div>`},
+{t:"prediction",items:[{label:"2014년 7월 강수량",ph:"mm"},{label:"2023년 7월 강수량",ph:"mm"},{label:"평균변화율",ph:"mm/년"}]},
+{t:"html",v:`<div class="blk"><p>Google Colab에 접속하여 다음 코드를 실행해보자. 이 코드는 실제 데이터(점)와 계산한 '평균변화율'(붉은 직선)을 함께 보여준다.</p></div>`},
+{t:"code",lang:"Python",code:`import matplotlib.pyplot as plt
+
+# 10개년 실제 데이터를 입력
+years = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023]
+july_rain = [154.0, 189.5, 311.4, 350.0, 253.0, 189.0, 440.4, 174.1, 186.1, 859.0]
+
+# 평균변화율 값
+avg_rate_change = 78.33
+
+# 1. 실제 10년간의 강수량 데이터를 파란색 '점'으로 표시
+plt.figure(figsize=(10, 6))
+plt.scatter(years, july_rain, label='Actual Rainfall (실제 강수량)', color='blue', s=50)
+
+# 2. '평균변화율'을 붉은 '직선'으로 표시
+plt.plot([years[0], years[-1]], [july_rain[0], july_rain[-1]],
+         color='red', linestyle='--',
+         label=f'Average Rate of Change (평균변화율, 약 {avg_rate_change:.2f}mm/년)')
+
+plt.title('공주시 7월 강수량(2014-2023)과 평균변화율의 한계')
+plt.xlabel('연도')
+plt.ylabel('7월 강수량 (mm)')
+plt.legend()
+plt.grid(True)
+plt.show()`},
+{t:"input",label:"질문 3: 붉은색 점선은 파란색 점들의 '변동성'을 잘 설명하고 있는가?",ph:"예: 아니다. 실제 데이터는 큰 폭으로 오르내리지만, 평균변화율 직선은 이를 전혀 반영하지 못한다.",rows:3}
+]},
+// ===== 활동해요 2 =====
+{id:"p7",cat:"활동해요",icon:"💻",title:"2. 변동성 계산하고 시각화하기",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ [활동1] '평균'이 숨긴 '변동성' 계산하기</h3><p>앞서 '평균변화율' 직선은 10년간의 극심한 변화를 숨겼다. 이번 활동에서는 매년 강수량이 얼마나 불규칙하게 변했는지(전년 대비 변화량)를 Python의 diff() 함수를 사용해 직접 계산해본다.</p></div>`},
+{t:"code",lang:"Python",code:`import pandas as pd
+import matplotlib.pyplot as plt
+
+# 1단계: 데이터 불러오기
+data = pd.read_csv('gongju_rainfall.csv')
+print(data.head())
+
+# 2단계: '7월'의 전년 대비 변화량 계산
+data['7월_변화량'] = data['7월'].diff()
+
+# 3단계: 결과 확인
+print("--- 7월의 전년 대비 변화량 ---")
+print(data[['연도', '7월', '7월_변화량']].dropna().head(5))`},
+{t:"html",v:`<div class="blk"><h4>▶ [활동2] '변동성' 눈으로 확인하기</h4><p>전년 대비 변화량 데이터를 막대그래프로 시각화해보자.</p></div>`},
+{t:"code",lang:"Python",code:`# '7월_변화량' 데이터만 사용 (NaN 값 제외)
+changes_july = data[['연도', '7월_변화량']].dropna()
+plt.figure(figsize=(10, 6))
+
+# 0을 기준으로 음(-)과 양(+)을 오가는 막대그래프 생성
+plt.bar(changes_july['연도'], changes_july['7월_변화량'], color='royalblue')
+
+# 0 기준선 추가
+plt.axhline(0, color='grey', linestyle='--')
+plt.title('공주시 7월 강수량의 전년 대비 변화량 (변동성)')
+plt.xlabel('연도')
+plt.ylabel('전년 대비 강수량 변화 (mm)')
+plt.show()`},
+{t:"callout",variant:"green",title:"📊 참고",body:"0을 기준으로 막대가 위(홍수 경향)와 아래(가뭄 경향)로 크게 요동칠수록, '평균'이 무의미할 정도로 변동성이 심하다는 것을 의미한다."},
+{t:"input",label:"'평균' 그래프가 숨기고 있던 농업의 '불확실성' 혹은 '변동성'이 막대그래프에서는 어떻게 드러나는가?",ph:"예: 2023년에 +670mm 이상의 급증이 있어 홍수 위험이 있었고, 2021년에는 -174mm로 가뭄 경향이 뚜렷했다.",rows:3},
+{t:"html",v:`<div class="blk"><h4>▶ [활동3] '우기'와 '건조기'의 변동성 비교하기</h4><p>코드를 수정하여, '우기 대표 달'(7월)과 '건조기 대표 달'(4월)의 '변화량' 막대그래프를 각각 생성하고 비교해 보자.</p></div>`},
+{t:"input",label:"7월(우기)의 변동성 그래프와 4월(건조기)의 변동성 그래프 중 어느 달의 변동성이 농업에 더 치명적일지 분석하고 토의해 보자.",ph:"예: 7월은 절대 변화량이 더 크지만, 4월은 농작물 파종기이므로 소량의 변화도 치명적일 수 있다.",rows:3}
+]},
+// ===== 활동해요 3 =====
+{id:"p8",cat:"활동해요",icon:"💡",title:"3. 데이터 기반 미래 농업 전략 설계 및 제안하기",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ [활동1] 분석 결과 종합 및 수학적 개념 연결하기</h3><p>'평균변화율' 그래프(붉은 직선)와 '변동성' 그래프(막대)가 각각 수학의 어떤 개념과 연결되는지, 그리고 농업 전략을 세울 때 왜 두 가지를 모두 고려해야 하는지 토의해 보자.</p></div>`},
+{t:"input",label:"▶ 우리 모둠의 생각",ph:"예: 평균변화율은 장기 추세를, 변동성(전년 대비 변화량)은 단기 위험을 보여준다. 농업 전략에는 둘 다 필요하다.",rows:3},
+{t:"html",v:`<div class="blk"><h4>▶ [활동2] AI와 함께 '변동성 데이터' 기반 전략 탐색하기</h4><p>'변동성이 큰 기후'에 대응하는 미래 농업 전략을 AI(ChatGPT)에게 요청하는 프롬프트를 작성하고, 그 결과를 확인해 보자.</p></div>`},
+{t:"callout",variant:"blue",title:"💡 프롬프트 예시",body:`"우리는 공주시의 7월 강수량 데이터를 분석했다. '평균변화율'(2014-2023)은 +78.33mm로 '증가' 경향이지만, '전년 대비 변화량'을 보니 2021년(-174mm)의 가뭄 경향과 2023년(+670mm)의 홍수 경향 사이를 극심하게 변동하는 것을 발견했다. 이처럼 '평균은 증가하지만, 변동성이 매우 큰' 공주시의 기후 특성을 바탕으로, 미래 농업을 위한 현실적인 전략 5가지를 제안해달라."`},
+{t:"html",v:`<div class="blk"><h4>▶ [활동3] 미래 농업 전략 협력 설계 및 제안하기</h4></div>`},
+{t:"steps",title:"활동 순서",items:[
+{title:"과제1: 제안서 제작",desc:"지금까지의 분석 결과와 AI의 조언을 바탕으로, 우리 모둠의 '공주시 미래 농업 전략 제안서'를 Canva를 활용해 제작해 보자."},
+{title:"과제2: 공유 및 동료 평가",desc:"완성된 결과물은 Padlet에 공유하고, 다른 모둠의 제안서에 대해 동료 평가를 진행한다."}
+]}
+]},
+// ===== 정리 - 스스로 진단하기 =====
+{id:"p9",cat:"정리",icon:"✅",title:"스스로 진단하기",blocks:[
+{t:"assessment",title:"스스로 진단하기",ratings:["잘함","보통","미흡"],items:[
+"Python(Matplotlib)을 활용하여 '평균변화율'(직선)과 '실제 데이터'(점)를 시각적으로 비교하고, '평균'이 '변동성'을 숨기는 한계를 설명할 수 있다.",
+"Python(Pandas)의 diff() 함수를 활용하여 '전년 대비 변화량'(변동성)을 계산하고, 이를 막대그래프로 시각화하여 해석할 수 있다.",
+"그래프를 '평균변화율'과 '미분계수'의 수학적 개념과 연결하여 설명할 수 있다.",
+"데이터를 근거로 AI의 도움을 받아, Canva 등을 활용하여 구체적인 미래 농업 전략을 제안할 수 있다."
+]}
+]},
+// ===== 정리 - 활동퀴즈 =====
+{id:"p10",cat:"정리",icon:"❓",title:"활동퀴즈 1. 평균변화율과 미분계수",blocks:[
+{t:"html",v:`<div class="blk"><h3>▶ 평균변화율과 미분계수</h3></div>`},
+{t:"quiz",num:"01",q:"연도별 강수량을 나타낸 그래프에서 2010년 지점과 2020년 지점을 직선으로 연결했을 때, 이 직선의 기울기가 의미하는 것은 무엇인가?",opts:["2010년과 2020년 사이의 총 강수량","2010년부터 2020년까지의 '연평균 강수량 변화율'","2020년의 순간적인 강수량 변화 추세","해당 기간의 평균 강수량","해당 기간 중 강수량이 가장 많았던 해"],ans:1,ok:"정답입니다! 두 점을 잇는 직선의 기울기는 해당 기간의 평균변화율을 의미합니다.",no:"힌트: 두 점을 잇는 직선의 기울기는 '평균변화율'입니다."},
+{t:"quiz",num:"02",q:"어느 지역의 2015년 연간 총 강수량은 1100mm였고, 2025년에는 1250mm였습니다. 2015년부터 2025년까지 10년 동안의 연평균 강수량 변화율은?",opts:["연간 10mm 감소","연간 15mm 감소","연간 10mm 증가","연간 15mm 증가","연간 150mm 증가"],ans:3,ok:"정답입니다! (1250-1100)/10 = 15mm/년 증가입니다.",no:"힌트: (끝값 - 시작값) ÷ 기간으로 계산합니다."},
+{t:"quiz",num:"03",q:"기후 데이터를 분석할 때, 10년간의 '평균변화율'을 구하는 것 외에도 매년의 '전년 대비 변화량'을 함께 분석하는 핵심 이유로 가장 적절한 것은?",opts:["10년 후의 강수량을 정확히 예측하기 위해","계산 과정을 더 복잡하게 만들기 위해","'평균'이 숨기고 있는 매년의 '변동성'(가뭄/홍수 위험)을 파악하기 위해","10년간의 총 강수량을 구하기 위해","'우기'와 '건조기'의 강수량이 항상 같다는 것을 증명하기 위해"],ans:2,ok:"정답입니다! 평균이 숨기는 변동성을 파악하는 것이 핵심입니다.",no:"힌트: '평균의 함정'을 떠올려 봅시다."},
+{t:"quiz",num:"04",q:"기후 데이터 분석에서 '미분계수(순간변화율)'가 '평균변화율'과 가지는 가장 핵심적인 차이점은?",opts:["미분계수는 항상 양수 값을 가진다.","평균변화율은 '특정 기간'의 평균적 변화를, 미분계수는 '특정 한 순간'의 변화 경향을 나타낸다.","평균변화율은 직선의 기울기이고, 미분계수는 곡선의 길이를 의미한다.","미분계수는 계산하기 쉽지만 평균변화율은 계산하기 어렵다.","두 개념은 사실상 같은 의미이다."],ans:1,ok:"정답입니다! 평균변화율은 구간 전체의 평균, 미분계수는 한 점에서의 순간 변화율입니다.",no:"힌트: '기간' vs '순간'의 차이를 생각해 봅시다."}
+]},
+// ===== 정리 - 읽기 자료 =====
+{id:"p11",cat:"정리",icon:"📚",title:"읽기 자료",blocks:[
+{t:"html",v:`<div class="blk"><h3>★ 데이터, 강수량의 '변덕'을 말하다: 평균을 넘어 변화율로</h3><p>과거 농부들은 경험에 의존해 농사를 지었다. 하지만 예측 불가능한 폭우와 극심한 가뭄이 반복되는 오늘날, 과거의 경험은 더 이상 미래를 보장하지 않는다. 현대 농업과 기후 과학이 '평균'을 넘어 '변화율'과 '변동성'에 주목하는 이유다.</p><p>과학자들은 평균변화율의 개념을 극한으로 발전시킨 미분(differentiation)을 사용하여 강수량의 '순간적인 변화 경향'을 분석한다. 이를 통해 "특정 지역에 시간당 100mm의 폭우가 쏟아질 확률"까지 예측할 수 있다.</p></div>`},
+{t:"html",v:`<div class="blk"><h3>★ AI가 읽는 강수량의 '언어': 데이터 과학자가 되는 길</h3><p>현재 기상청과 농촌진흥청에서 개발 중인 AI 예측 시스템은 평균변화율 개념을 한층 발전시킨 딥러닝 알고리즘을 사용한다. 시간당 기압 변화율, 습도 변화율, 풍속 변화율 등 수십 가지 기상 요소의 '순간 변화율'을 동시에 계산하여 30분 후, 1시간 후의 강수 확률을 예측한다.</p><p>충청남도는 현재 '청년 스마트팜 CEO' 육성사업을 통해 데이터 기반 농업인을 양성하고 있다. 이들이 사용하는 핵심 기술이 바로 강수량, 온도, 습도 등의 변화율 분석이다.</p></div>`}
+]},
+// ===== 정리 - 진로 연계 =====
+{id:"p12",cat:"정리",icon:"🧭",title:"진로 연계",blocks:[
+{t:"html",v:`<div class="blk"><h3>📖 책 소개</h3><p><strong>『기상과 AI』</strong> (저자: 최예지) — 인공지능이 날씨를 어떻게 '학습'하고 '예측'하는지 기술적·역사적 발전 과정을 다룬다.</p><p><strong>『2030 기후적응 시대가 온다』</strong> (저자: 김기범) — 기후변화와 그 적응 전략, 데이터에 근거한 미래 대응 방안을 다루며, 농업을 포함한 여러 분야의 기후 적응 실태와 전망을 소개한다.</p></div>`},
+{t:"cards",items:[
+{front:"기후변화 대응 전문가",back:"지역별 기후변화 시나리오를 분석하고 농업, 생태계, 도시계획 등 다양한 분야의 적응 전략을 수립하는 직업"},
+{front:"스마트팜 컨설턴트",back:"농가의 재배 환경 데이터를 분석하고 IoT 센서, AI 기술을 활용하여 최적의 생육 조건을 제시하는 전문가"},
+{front:"스마트팜학과",back:"농업 기술에 IT, AI, 로봇 공학을 융합하여 미래 농업 시스템을 설계하고 운영하는 방법을 배우는 학과"},
+{front:"데이터사이언스학과",back:"대규모 데이터를 수집, 처리, 분석하고 시각화하는 전문가를 양성하는 학과"}
+]},
+{t:"html",v:`<div class="blk"><h3>🏢 기업 소개</h3><p><strong>그린랩스 (Greenlabs)</strong> — 데이터와 기술을 통해 농업을 혁신하는 국내 대표적인 애그리테크 기업이다. '팜모닝'이라는 앱을 통해 농민들에게 필요한 데이터를 제공하고, 데이터 기반의 의사결정을 도와 농가의 수익을 높이는 데 기여하고 있다.</p></div>`}
+]}
+]};
+
+// ========== RENDERER ==========
+let cur='p1',visited=new Set();
+function rBlock(b,pid){switch(b.t){case 'html':return b.v;case 'objectives':return`<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;case 'callout':return`<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;case 'input':{const id='i-'+Math.random().toString(36).substr(2,5);return`<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;}case 'steps':return`<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;case 'link':return`<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;case 'tabs':{const tid='t-'+Math.random().toString(36).substr(2,5);return`<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;}case 'cards':return`<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;case 'prediction':return`<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;case 'quiz':{const qid='q-'+Math.random().toString(36).substr(2,8);return`<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;}case 'assessment':return`<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;case 'code':{const cid='c-'+Math.random().toString(36).substr(2,8);return`<div class="blk" style="border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);margin-bottom:18px;box-shadow:0 4px 6px rgba(0,0,0,0.05);"><div style="background:#2d2d2d;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;"><span style="color:#e0e0e0;font-size:13px;font-weight:600;font-family:monospace;letter-spacing:0.5px;">${b.lang}</span><button style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#e0e0e0;border-radius:4px;padding:5px 10px;font-size:12px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent);this.textContent='복사 완료 ✔';setTimeout(()=>this.textContent='코드 복사',2000);">코드 복사</button></div><div style="background:#1e1e1e;padding:16px;overflow-x:auto;"><pre id="${cid}" style="margin:0;color:#d4d4d4;font-family:Consolas,Monaco,monospace;font-size:14px;line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></div></div>`;}default:return'';}}
+function render(pid){const pg=D.pages.find(p=>p.id===pid);if(!pg)return;visited.add(pid);cur=pid;const idx=D.pages.indexOf(pg);const m=document.getElementById('main');m.innerHTML=`<div class="pg-hd"><div class="pg-crumb">${D.title} ${pg.cat?`> ${pg.cat}`:''}</div><h2 class="pg-title">${pg.icon} ${pg.title}</h2></div>${pg.blocks.map(b=>rBlock(b,pid)).join('')}<div class="pg-nav">${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}</div>`;document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});const pct=Math.round(visited.size/D.pages.length*100);document.getElementById('pTxt').textContent=pct+'%';document.getElementById('pBar').style.width=pct+'%';window.scrollTo({top:0,behavior:'smooth'});document.querySelector('.sidebar').classList.remove('open');}
+function go(pid){render(pid)}
+function swTab(tid,idx,btn){btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));document.getElementById(`${tid}-${idx}`).classList.add('active');}
+function chkQ(qid,sel,ans){const qz=document.getElementById(qid);qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{o.classList.remove('correct','wrong');const oc=o.querySelector('.oc');if(i===sel){o.classList.add(sel===ans?'correct':'wrong');oc.textContent=sel===ans?'✓':'✗';}if(i===ans&&sel!==ans){o.classList.add('correct');oc.textContent='✓';}o.style.pointerEvents='none';});document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');}
+function selR(btn){btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+let navHTML='',curCat=null;D.pages.forEach(p=>{if(p.cat!==curCat){if(p.cat)navHTML+=`<div class="nav-cat">${p.cat}</div>`;curCat=p.cat;}navHTML+=`<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;});document.getElementById('nav').innerHTML=navHTML;
+render('p1');
+</script>
+</body>
+</html>
