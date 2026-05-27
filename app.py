@@ -14,14 +14,47 @@ st.set_page_config(page_title="교과 콘텐츠 뷰어", page_icon="📘", layou
 BASE_DIR = Path(__file__).parent
 
 # ──────────────────────────────────────────────────────────────────────────
+# 전역 스타일
+# ──────────────────────────────────────────────────────────────────────────
+st.markdown(
+    """
+    <style>
+      /* 메인 영역 상단 여백 줄이기 */
+      .block-container { padding-top: 2.2rem; padding-bottom: 2rem; max-width: 1200px; }
+      /* 콘텐츠 헤더 배너 */
+      .content-header {
+        border-radius: 14px;
+        padding: 22px 26px;
+        margin-bottom: 18px;
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+      }
+      .content-header .eyebrow {
+        font-size: 0.82rem; font-weight: 600; letter-spacing: 0.04em;
+        opacity: 0.9; margin-bottom: 4px;
+      }
+      .content-header .title {
+        font-size: 1.5rem; font-weight: 700; line-height: 1.3; margin: 0;
+      }
+      .content-header .meta {
+        margin-top: 8px; font-size: 0.85rem; opacity: 0.85;
+      }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ──────────────────────────────────────────────────────────────────────────
 # 콘텐츠 구조 정의
 #   - 교과별 폴더명, 파일 접두어
 #   - 챕터: 공통(주제 1~4), 일반고(주제 1~12)
 #   - 주제 제목은 아래 TOPIC_TITLES 에서 자유롭게 수정 가능
 # ──────────────────────────────────────────────────────────────────────────
 SUBJECTS = {
-    "수학": {"folder": "math", "prefix": "ma"},
-    "과학": {"folder": "science", "prefix": "sc"},
+    "수학": {"folder": "math", "prefix": "ma",
+             "icon": "📐", "color": "#4f6df5", "color2": "#7c94ff"},
+    "과학": {"folder": "science", "prefix": "sc",
+             "icon": "🔬", "color": "#1aa179", "color2": "#46c79d"},
 }
 
 CHAPTERS = {
@@ -55,8 +88,9 @@ def render_html_file(path: Path, height: int = 800):
     encoded = base64.b64encode(html_text.encode("utf-8")).decode("utf-8")
     iframe = (
         f'<iframe src="data:text/html;base64,{encoded}" '
-        f'style="width:100%; height:{height}px; border:1px solid #e0e0e0; '
-        f'border-radius:8px;" sandbox="allow-scripts allow-same-origin '
+        f'style="width:100%; height:{height}px; border:1px solid #e8e8ee; '
+        f'border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.05);" '
+        f'sandbox="allow-scripts allow-same-origin '
         f'allow-popups allow-forms"></iframe>'
     )
     components.html(iframe, height=height + 20, scrolling=False)
@@ -185,9 +219,17 @@ iframe_height = st.sidebar.slider("화면 높이(px)", 400, 1400, 800, step=50)
 # ──────────────────────────────────────────────────────────────────────────
 # 메인 — 콘텐츠 렌더링
 # ──────────────────────────────────────────────────────────────────────────
+sinfo = SUBJECTS[subject]
 st.markdown(
-    f"### {subject} · {chapter}. {CHAPTERS[chapter]['name']} · "
-    f"{topic_label(subject, chapter, topic)}"
+    f"""
+    <div class="content-header"
+         style="background: linear-gradient(135deg, {sinfo['color']}, {sinfo['color2']});">
+      <div class="eyebrow">{sinfo['icon']} {subject} · {chapter}. {CHAPTERS[chapter]['name']}</div>
+      <p class="title">{topic_label(subject, chapter, topic)}</p>
+      <div class="meta">전체 {n_topics}개 주제 중 {topic}번째</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
 path = build_path(subject, chapter, topic)
