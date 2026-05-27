@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 평행과 수직 동선을 활용한 공주시 네비게이션!</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 수학</h1>
+    <div class="topic">평행과 수직 동선을 활용한<br>공주시 네비게이션!</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  title: "공주시 네비게이션",
+  pages: [
+    // 도입 - 학습목표
+    {
+      id:"p1", cat:"도입", icon:"🎯", title:"학습목표",
+      blocks:[
+        {t:"html", v:`
+          <div class="blk" style="text-align:center;padding:20px 0">
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">수학 × 정보 융합 · 데이터 시각화</div>
+            <h2 style="font-size:28px;font-weight:900;margin-bottom:8px">평행과 수직 동선을 활용한<br>공주시 네비게이션!</h2>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">수학(평행·수직)</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">정보(데이터 분석)</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">AI 경로 설계</span>
+            </div>
+          </div>
+        `},
+        {t:"objectives", items:[
+          "두 직선의 기울기를 이용해 평행과 수직 조건을 판단할 수 있다.",
+          "네비게이션의 길찾기 원리를 이해하고, 평행·수직 구조가 이동 경로의 효율성에 미치는 영향을 설명할 수 있다.",
+          "출발지와 도착지가 주어진 상황에서 평행·수직 조건을 활용하여 최단 경로에 가까운 실제 이동 동선을 설계하고, 그 타당성을 수학적으로 제시할 수 있다."
+        ]}
+      ]
+    },
+    // 도입 - 생각해요
+    {
+      id:"p2", cat:"도입", icon:"💭", title:"생각해요",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 공주의 도로, 수학으로 길을 찾는다면?</h3>
+          <p>공주는 공산성, 무령왕릉, 석장리박물관 등 다양한 명소를 연결하는 도로들이 서로 평행하게 뻗거나 직각으로 교차하며, 도시 전체의 이동 동선을 만들어 가는 곳입니다. 이런 공주의 도로들을 하나의 '이동 경로'로 연결해 본다면, 수학적으로 가장 효율적인 동선, 즉 '최단 경로'는 어떤 모습일까요?</p>
+          <p style="margin-top:12px;font-weight:600;color:var(--accent)">그렇다면, 공주의 도로망을 수학적으로 탐구할 때, 어떤 과정으로 길찾기 계획을 세울 수 있을까요?</p>
+        </div>`},
+        {t:"html", v:`<div class="blk"><h4>▶ 함께 생각해 봅시다</h4>
+          <ul>
+            <li>학교에서 출발해 특정 목적지로 이어지는 여러 후보 경로를 만든다면, 각 구간의 기울기는 어떤 모습일까?</li>
+            <li>그리고 그 직선들은 서로 평행하거나 수직일까?</li>
+            <li>공주의 도로 구조를 가장 효율적으로 활용한 "AI 추천 길찾기 동선"을 만들 수 있을까?</li>
+          </ul>
+        </div>`},
+        {t:"input", label:"▶ 여러분은 공주 시내에서 한 장소에서 다른 장소로 이동할 때, 어떤 기준으로 길을 선택하나요?", ph:"예: 신호가 적고 직진 구간이 긴 큰길 위주로 선택한다.", rows:2},
+        {t:"input", label:"▶ AI가 우리가 이동할 최단 경로를 대신 계산해 준다면, 사람이 찾은 길과 어떤 점이 다를까요?", ph:"모둠 친구들과 의견을 나누고 정리해 보세요.", rows:3}
+      ]
+    },
+
+    // 알아봐요 1 - 도구 소개 통합 + 평행·수직 조건
+    {
+      id:"p3", cat:"알아봐요", icon:"📖", title:"1. 두 직선의 평행·수직 조건",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 이번 수업에서 사용할 도구</h3>
+          <p>공주시의 도로를 수학적으로 분석하기 위해 다음 세 가지 AI·디지털 도구를 사용합니다. 활동 중 막히는 부분이 있으면 도구의 역할을 다시 확인해 보세요.</p>
+        </div>`},
+        {t:"tabs", tabs:[
+          {label:"ChatGPT", content:"<p><strong>ChatGPT</strong>는 OpenAI가 개발한 대화형 인공지능입니다. 공주시 지도에서 출발지·도착지 경로를 설정하고 이동 거리를 계산하는 코드를 제공하며, 탐구 방향 설정과 보고서 작성을 보조합니다.</p>"},
+          {label:"Google Colab", content:"<p><strong>Google Colab</strong>은 클라우드 기반 Python 실행 환경입니다. 위·경도 좌표 데이터를 불러와 두 지점 간 거리 계산을 자동화하고, 직선의 평행·수직 조건 알고리즘을 실행하며 거리 데이터를 시각화합니다.</p>"},
+          {label:"구글 어스", content:"<p><strong>구글 어스(Google Earth)</strong>는 실제 지도 기반의 검증 도구입니다. 위성 이미지와 3D 건물 정보를 제공하여, 웹앱에서 구현한 경로가 실제 도로와 얼마나 일치하는지 수학적 타당성을 확인할 수 있습니다.</p>"}
+        ]},
+        {t:"html", v:`<div class="blk" style="margin-top:18px">
+          <h3>▶ 두 직선의 평행 조건과 수직 조건</h3>
+          <p>두 직선 <strong>y = mx + n</strong>, <strong>y = m′x + n′</strong> 에서</p>
+          <ul>
+            <li>두 직선이 <strong>평행</strong>하면 m = m′, n ≠ n′ 이고, m = m′, n ≠ n′ 이면 두 직선은 평행하다.</li>
+            <li>두 직선이 <strong>수직</strong>이면 mm′ = −1 이다. 또한 mm′ = −1 이면 두 직선은 수직이다.</li>
+          </ul>
+        </div>`},
+        {t:"callout", variant:"blue", title:"💡 활용 포인트", body:"① 여러 도로의 방향을 비교하여 가장 효율적인 직진 구간(평행 방향)과 진입 구간(수직 방향)을 판단하는 데 활용할 수 있다.<br>② 출발지와 도착지가 정해졌을 때, 평행·수직 구조를 이용해 불필요한 우회를 줄이고 최단 경로에 가까운 이동 동선을 설계하는 데 유용하게 적용할 수 있다."},
+        {t:"cards", items:[
+          {front:"기울기 (m)", back:"직선이 기울어진 정도. 도로의 '방향'을 수치로 나타내며, 두 도로의 방향을 비교하는 기준이 된다."},
+          {front:"평행 조건", back:"m = m′ (기울기가 같음). 목적지 쪽으로 빠르게 이동하는 '직진 구간'을 찾는 데 활용된다."},
+          {front:"수직 조건", back:"mm′ = −1 (기울기의 곱이 −1). 목적지 방향으로 정확히 꺾어 들어가는 '진입 구간'을 찾는 데 활용된다."},
+          {front:"최단 경로", back:"평행한 도로로 최대한 직진한 뒤, 수직 방향 도로에서 목적지로 꺾는 길찾기 기본 전략으로 설계한 효율적 동선."}
+        ]}
+      ]
+    },
+    // 알아봐요 2 - 평행·수직 관계와 AI 도구
+    {
+      id:"p4", cat:"알아봐요", icon:"📖", title:"2. 평행·수직 관계와 AI 도구",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 실제 도로와 AI 분석</h3>
+          <p>공주시의 실제 도로는 완벽하게 직선적인 형태가 아니기 때문에, 두 구간의 기울기가 정확히 평행하거나 수직이 되는 경우는 많지 않습니다. 이때는 AI 계산 도구와 수학적 분석 기법을 활용하여 도로 구간의 방향을 비교하고, 어떤 경로가 더 효율적인지 판단할 수 있습니다.</p>
+          <p>AI 웹앱이나 Google Colab을 통해 출발지(A)와 도착지(B)의 좌표를 입력하면, AI가 여러 후보 경유지의 좌표를 분석하여 각 구간의 기울기를 계산하고, 평행·수직 여부와 전체 이동 거리를 자동으로 산출할 수 있습니다. 이후 구글어스에서 실제 도로 모습을 확인하면, AI가 계산한 경로와 우리가 분석한 경로가 실제 지형과 얼마나 유사한지 시각적으로 비교할 수 있습니다.</p>
+        </div>`},
+        {t:"steps", title:"AI·코딩을 활용한 분석 과정", items:[
+          {title:"1. 경로 생성·비교", desc:"ChatGPT를 활용하여 공주시 지도에서 출발지와 도착지를 설정하고, 여러 경로를 생성·비교하는 코드를 제작한다."},
+          {title:"2. 기울기 계산·판정", desc:"Google Colab에서 각 경로 구간의 기울기를 계산하고 평행·수직 판정을 자동화한다."},
+          {title:"3. 실제 도로 검증", desc:"구글어스에서 실제 도로 구조를 확인하며 AI 분석 결과를 검증한다."},
+          {title:"4. 오차 탐색", desc:"AI 계산 결과와 학생이 직접 분석한 결과를 비교하며 차이가 발생한 이유를 탐색한다."}
+        ]},
+        {t:"callout", variant:"green", title:"💡 활용 포인트", body:"① AI와 코딩을 활용해 실제 도로 구간의 방향을 수학적으로 분석하며 길찾기 원리를 탐구할 수 있다.<br>② 평행·수직 판정에서 발생하는 오차와 실제 도로의 기울기 차이를 비교하며 수학적 추론력을 기를 수 있다."},
+        {t:"callout", variant:"purple", title:"📚 참고자료 — 네비게이션은 왜 평행·수직 구조를 먼저 분석할까?", body:"네비게이션은 목적지를 입력하면 먼저 도로들의 방향(기울기)을 분석하여 이동 경로를 설계합니다. 가장 먼저 하는 일은 목적지가 향하는 주된 방향과 비슷한 기울기를 가진 <strong>평행한 도로</strong>를 찾는 것입니다. 이는 목적지 쪽으로 빠르게 도달하기 위한 '직진 구간'을 확보하기 위해서입니다. 이후 목적지에 가까워질 때 방향을 바꿀 수 있는, 주 방향과 거의 직각을 이루는 <strong>수직 구간</strong>을 탐색합니다. 결국 대부분의 길찾기 알고리즘은 '평행한 도로를 따라 최대한 빠르게 직진한 후, 수직 방향 도로에서 목적지 쪽으로 꺾는다'는 구조를 기본 전략으로 사용합니다."}
+      ]
+    },
+
+    // 활동해요 1
+    {
+      id:"p5", cat:"활동해요", icon:"✏️", title:"1. 도로의 방향을 활용한 경로 구하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 평행·수직 구조 분석으로 최적 이동 경로 설계하기</h3>
+          <p>출발지–도착지를 연결하여, <strong>평행 도로는 이동의 '주 방향', 수직 도로는 목적지로 꺾어 들어가는 '진입 방향'</strong>으로 생각하고 이동 경로를 설정해 봅시다.</p>
+        </div>`},
+        {t:"input", label:"1. 출발지와 도착지를 정하고, 두 지점을 잇는 주 이동 방향(기울기)을 적어 봅시다.", ph:"예: 출발지 학교, 도착지 공산성 / 주 이동 방향의 기울기 ≈ 0.7", rows:2},
+        {t:"input", label:"2. 주 방향과 평행한 '직진 구간' 도로와, 수직에 가까운 '진입 구간' 도로를 각각 찾아 적어 봅시다.", ph:"예: 직진 구간 - ○○대로 / 진입 구간 - △△로", rows:3},
+        {t:"input", label:"3. 프로그래밍으로 만든 AI 기반 지도를 활용하여 평행·수직 구조를 분석하고, 설정한 이동 경로를 수정해 최단 이동 경로를 찾아 적어 봅시다.", ph:"수정 전 경로 → 수정 후 경로 / 달라진 점을 적어 보세요.", rows:3},
+        {t:"link", url:"https://earth.google.com/", icon:"🌍", title:"구글 어스 — 공주시 도로 관찰", desc:"공주시 주요 도로의 방향을 위성 지도에서 직접 관찰해 봅시다"}
+      ]
+    },
+    // 활동해요 2
+    {
+      id:"p6", cat:"활동해요", icon:"💻", title:"2. AI·코딩으로 도로 방향 분석하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ AI·코딩으로 도로 방향 분석하고 효율적 경로 설계하기</h3>
+          <p>ChatGPT로 코드를 만들고 Google Colab에서 실행하여, 각 구간의 기울기와 평행·수직 여부, 전체 이동 거리를 자동으로 계산해 봅시다. 그리고 구글 어스로 실제 거리를 확인해 결과를 검증해 봅시다.</p>
+        </div>`},
+        {t:"input", label:"1. 프로그래밍으로 만든 AI 기반 지도에서 계산한 경로 길이와 구글 어스에서 계산한 결과를 비교해 봅시다.", ph:"예: AI 계산 거리 ○○m / 구글 어스 거리 △△m / 차이 □□m", rows:2},
+        {t:"input", label:"2. AI의 추천 경로와 우리 모둠이 설정한 경로를 비교해 보고, 어떤 경로가 최단 경로일지 탐구해 봅시다.", ph:"AI 경로와 모둠 경로의 거리·방향 구조를 비교하고 차이가 생긴 이유를 적어 보세요.", rows:3},
+        {t:"input", label:"3. 모둠별로 탐구한 '최적 경로'를 선정하고 발표해 봅시다.", ph:"모둠이 선정한 최적 경로와 그 근거를 정리해 보세요.", rows:3},
+        {t:"callout", variant:"blue", title:"💡 발표 시 점검 사항", body:"• 모둠이 정한 출발지·도착지와 주 이동 방향의 기울기<br>• 평행·수직 구조를 활용해 설계한 경로<br>• AI가 제안한 경로 vs 사람이 만든 경로의 차이와 그 이유"},
+        {t:"link", url:"https://colab.google/", icon:"💻", title:"Google Colab — 거리·기울기 자동 계산", desc:"좌표 데이터를 불러와 구간별 기울기와 평행·수직 여부를 분석해 봅시다"}
+      ]
+    },
+
+    // 정리 - 스스로 진단하기
+    {
+      id:"p7", cat:"정리", icon:"✅", title:"스스로 진단하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 이번 수업에서 무엇을 배웠는지 점검해 봅시다</h3>
+          <p>아래 항목을 읽고, 자신의 이해 정도를 솔직하게 평가해 봅시다. 부족한 부분은 모둠 친구나 선생님께 도움을 요청하면 좋습니다.</p>
+        </div>`},
+        {t:"assessment", title:"학습 점검표", ratings:["잘함","보통","미흡"], items:[
+          "출발지와 도착지를 설정하고, 두 지점을 연결하는 주 이동 방향(기울기)을 계산할 수 있다.",
+          "실제 지도에서 주 방향과 평행·수직에 가까운 도로를 찾아 표시하고, 도로의 방향 구조를 해석할 수 있다.",
+          "AI가 계산한 결과와 직접 구한 기울기 및 거리 분석 결과를 비교·검증하며 오차의 원인을 설명할 수 있다.",
+          "세 경로의 이동 거리·방향 구조를 바탕으로, 가장 효율적인 이동 동선을 합리적으로 제안할 수 있다."
+        ]}
+      ]
+    },
+
+    // 정리 - 활동퀴즈 1
+    {
+      id:"p8", cat:"정리", icon:"❓", title:"활동퀴즈 1. 평행·수직 조건",
+      blocks:[
+        {t:"html", v:`<div class="blk"><h3>▶ 두 직선의 평행 조건과 수직 조건</h3></div>`},
+        {t:"quiz", num:"01", q:"두 직선 ax + y + 1 = 0, 4x + by − 1 = 0 이 서로 평행할 때, 상수 a, b에 대하여 ab의 값은?", opts:[
+          "1",
+          "2",
+          "3",
+          "4"
+        ], ans:3, ok:"정답입니다! 평행 조건(계수비 a/4 = 1/b, 상수항 비는 다름)을 적용하면 ab = 4 입니다.", no:"힌트: 두 직선이 평행하려면 x, y 계수의 비가 같아야 합니다."},
+        {t:"quiz", num:"02", q:"평행한 두 직선 x + 2y − 1 = 0, x + ay + 4 = 0 사이의 거리는? (단, a는 상수)", opts:[
+          "√5",
+          "√6",
+          "√7",
+          "2√2"
+        ], ans:0, ok:"정답입니다! 평행 조건으로 a = 2를 구한 뒤 두 평행선 사이의 거리 공식을 적용하면 √5 입니다.", no:"힌트: 먼저 평행 조건으로 a를 구하고, 평행선 사이의 거리 공식을 적용해 보세요."},
+        {t:"quiz", num:"03", q:"점 (2, −1)을 지나고 직선 9x − 3y + 2 = 0 에 평행한 직선의 방정식은?", opts:[
+          "3x + y − 7 = 0",
+          "3x − y − 7 = 0",
+          "x + 3y − 7 = 0",
+          "x − 3y − 7 = 0"
+        ], ans:1, ok:"정답입니다! 평행한 직선은 기울기(3)가 같으므로, 점 (2, −1)을 지나는 직선은 3x − y − 7 = 0 입니다.", no:"힌트: 주어진 직선의 기울기를 구하고, 같은 기울기로 점을 지나는 직선을 세워 보세요."}
+      ]
+    },
+    // 정리 - 활동퀴즈 2
+    {
+      id:"p9", cat:"정리", icon:"❓", title:"활동퀴즈 2. 수직 조건과 활용",
+      blocks:[
+        {t:"html", v:`<div class="blk"><h3>▶ 두 직선의 수직 조건과 평행 조건의 활용</h3></div>`},
+        {t:"quiz", num:"04", q:"두 직선 2x − 3y + 4 = 0, 3x + ky − 5 = 0 이 서로 수직일 때, 실수 k의 값은?", opts:[
+          "−2",
+          "−1",
+          "1",
+          "2"
+        ], ans:3, ok:"정답입니다! 두 직선이 수직이면 기울기의 곱이 −1이 되어야 하므로 k = 2 입니다.", no:"힌트: 각 직선의 기울기를 구하고, 기울기의 곱이 −1이 되도록 k를 정해 보세요."},
+        {t:"quiz", num:"05", q:"점 (−4, 3)을 지나고 직선 3x − 6y + 5 = 0 에 수직인 직선의 방정식은?", opts:[
+          "2x + y + 5 = 0",
+          "2x − y + 5 = 0",
+          "2x − y − 5 = 0",
+          "3x − y + 5 = 0"
+        ], ans:0, ok:"정답입니다! 수직인 직선의 기울기는 원래 기울기의 음의 역수이므로, 점 (−4, 3)을 지나는 직선은 2x + y + 5 = 0 입니다.", no:"힌트: 주어진 직선의 기울기를 구하고, 그 음의 역수를 기울기로 하는 직선을 세워 보세요."},
+        {t:"quiz", num:"06", q:"공주시에서 A(1, 2)에서 B(9, 8)로 이동하려 한다. 네비게이션은 먼저 점 A와 B를 잇는 주 이동 방향과 평행에 가까운 도로를 찾은 뒤, 목적지 근처에서 수직에 가까운 도로로 진입하는 전략을 사용한다. 아래는 실제 도로를 단순화한 세 직선이다.<br>도로1 : y = x + 3<br>도로2 : y = −x + 12<br>도로3 : y = 2x − 1<br>직선 AB의 기울기 방향을 기준으로 가장 먼저 선택할 가능성이 높은 도로는?", opts:[
+          "도로1",
+          "도로2",
+          "도로3",
+          "도로1과 도로2"
+        ], ans:0, ok:"정답입니다! AB의 기울기는 (8−2)/(9−1) = 0.75 로, 기울기 1인 도로1이 가장 평행에 가까워 '직진 구간'으로 먼저 선택됩니다.", no:"힌트: 먼저 직선 AB의 기울기를 구하고, 세 도로 중 그 값과 가장 비슷한(평행에 가까운) 기울기를 찾아보세요."}
+      ]
+    },
+
+    // 정리 - 읽기 자료
+    {
+      id:"p10", cat:"정리", icon:"📚", title:"읽기 자료",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>★ 도로의 방향과 평행·수직 구조의 의미</h3>
+          <p>도시의 도로망은 단순히 '길이 나 있는 곳'이 아니라, 방향(기울기)에 따라 서로 다른 기능을 갖습니다. 출발지와 도착지를 잇는 주 이동 방향을 기울기로 나타내면, 주변 도로가 그 방향과 평행한지 또는 직각(수직)에 가까운지에 따라 이동 효율이 달라집니다. 목적지 방향과 평행한 도로는 빠르게 이동하는 '직진 구간'이 되고, 주 방향과 수직에 가까운 도로는 목적지로 정확히 진입할 수 있는 '꺾임 구간'이 됩니다. 이처럼 도로의 기울기를 수학적으로 분석하면, 실제 길찾기와 이동 동선을 더 효율적으로 설계할 수 있습니다.</p>
+        </div>`},
+        {t:"tabs", tabs:[
+          {label:"★ 방향과 실제 이동", content:"<p><strong>도로 방향과 실제 이동의 차이</strong></p><p>수학적으로는 직선을 무한히 확장하여 기울기를 비교할 수 있지만, 실제 이동 경로는 시작점과 끝점이 있는 선분입니다. 따라서 어떤 구간이 기울기상 평행이더라도 실제 도로가 굽어 있거나 중간에 연결되지 않으면 이동 효율이 달라질 수 있습니다. 이처럼 직선의 이상적 방향과 선분의 실제 도로 구조를 비교하는 과정은 수학적 분석을 현실의 이동 상황에 맞게 해석하는 중요한 단계입니다.</p>"},
+          {label:"★ AI와 함께하는 분석", content:"<p><strong>AI와 함께하는 도로 방향·경로 분석 탐구</strong></p><p>현실의 지도 데이터는 도로 굴곡, 곡선, 표기 방식 등에 따라 오차가 포함될 수 있습니다. 이때 AI 도구를 활용하면 기울기 계산과 구간 분류를 자동화하여 분석을 더 정교하게 할 수 있습니다.</p><ul><li><strong>ChatGPT</strong>: 평행·수직 판정 방식, 기울기 계산 절차, 경로 분석 방법을 단계별로 안내받고 직접 사용할 코드나 분석 절차를 설계할 수 있다.</li><li><strong>Google Colab</strong>: 출발·도착 좌표와 경유지를 불러와 각 구간의 기울기, 평행·수직 여부, 총 이동 거리 등을 자동 계산하고, 경로별 차이와 우회 정도를 데이터로 분석한다.</li></ul>"},
+          {label:"★ 실제 활용", content:"<p><strong>평행·수직 구조의 실제 활용</strong></p><p>평행·수직 조건은 단순한 기울기 계산이 아니라 현실의 다양한 공간 문제 해결에 응용됩니다.</p><ul><li><strong>도시 교통 설계</strong>: 주요 간선도로(평행 구조)와 진입도로(수직 구조)를 분석해 교통 흐름을 효율적으로 유지하도록 도로망을 설계한다.</li><li><strong>네비게이션 경로 생성</strong>: 주 이동 방향과 평행한 '직진 경로'를 확보하고, 필요 지점에서 최적의 '수직 진입' 지점을 자동 탐색한다.</li></ul><p>이처럼 평행·수직 구조 분석은 간단한 경로 설계를 넘어, AI 기반 도로 분석, 교통 시스템, 물류 엔지니어링까지 이어지는 현대적 공간 이해의 핵심 수학 개념입니다.</p>"}
+        ]},
+        {t:"html", v:`<div class="blk"><h4>✓ 읽고 생각해 보기</h4></div>`},
+        {t:"input", label:"❶ 직선의 이상적 방향과 실제 도로 구조 사이에 차이가 생기는 이유는 무엇일까?", ph:"도로의 굴곡, 곡선, 연결 상태 등을 생각해 봅시다.", rows:2},
+        {t:"input", label:"❷ 평행·수직 구조 분석이 교통·물류 등 실제 분야에서 어떻게 활용될 수 있을까?", ph:"도시 교통 설계, 네비게이션, 물류 엔지니어링 등을 떠올려 봅시다.", rows:3}
+      ]
+    },
+
+    // 정리 - 진로 연계
+    {
+      id:"p11", cat:"정리", icon:"🧭", title:"진로 연계",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 프로그램 소개</h3>
+          <p><strong>공주시 AI 공간길찾기 탐험 캠프</strong> — 공주시 도로·지형·유적지 데이터를 기반으로 도로의 방향(기울기)을 분석하고 AI로 최적 이동 경로를 설계해 보는 체험형 공간데이터 탐구 프로그램입니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"공간정보공학과 (GIS·Geomatics)", back:"지도·위치·도로망 데이터를 수집·분석하여 도시 구조와 이동 경로를 설계하는 학문. 네비게이션 경로 탐색·교통 최적화·스마트시티 구축에 핵심 역할을 하는 전공"},
+          {front:"데이터사이언스학과", back:"좌표·기울기·거리·시간과 같은 실제 공간 데이터를 AI로 분석해 교통, 물류, 도시 이동 동선을 최적화하는 알고리즘을 개발·활용하는 전공"},
+          {front:"네비게이션 알고리즘 개발자", back:"도로의 방향·교차 구조 데이터를 분석해 AI가 최적 경로를 계산하도록 알고리즘을 설계하는 직업"},
+          {front:"공간데이터(GIS) 분석가", back:"지도·위치 정보를 수학적으로 해석하여 효율적인 이동 동선과 도시 공간 구조를 분석·예측하는 직업"}
+        ]},
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 책 소개 — 《도시공간분석을 위한 GIS》 (오규식 외)</h3>
+          <p>도시의 도로·건물·지형 정보를 GIS로 분석하는 방법을 종합적으로 다룬 책입니다. 네비게이션 경로 설정, 도로 네트워크 구조, 도시 공간의 수학적 해석 등 도시 분석의 원리를 실제 GIS 기법과 함께 설명합니다.</p>
+          <h3>▶ 기업 소개</h3>
+          <ul>
+            <li><strong>카카오맵·네이버지도</strong>: 좌표 데이터를 기반으로 교통·관광 정보를 시각화하고, AI를 이용해 최단거리·최적경로를 안내하는 공간정보 서비스를 제공한다.</li>
+            <li><strong>국토지리정보원(NGII)</strong>: 정확한 위치좌표 데이터를 구축하고, 지리정보시스템(GIS)을 활용하여 도시 계획, 도로망 설계, 문화유산 관리 등을 지원한다.</li>
+          </ul>
+        </div>`},
+        {t:"link", url:"https://www.career.go.kr/", icon:"🧭", title:"커리어넷 — 직업·전공 탐색", desc:"공간정보·GIS 관련 직업 정보와 학과 정보를 더 자세히 살펴볼 수 있습니다"},
+        {t:"link", url:"https://www.ngii.go.kr/", icon:"🗺️", title:"국토지리정보원", desc:"위치좌표 데이터와 지리정보시스템(GIS) 기반의 공간정보 서비스를 살펴볼 수 있습니다"}
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>
