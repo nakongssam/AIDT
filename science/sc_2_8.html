@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 공주시에서 관측되는 태양의 스펙트럼 분석하기</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 과학</h1>
+    <div class="topic">공주시에서 관측되는<br>태양의 스펙트럼 분석하기</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  "title": "태양의 스펙트럼 분석하기",
+  "pages": [
+    {
+      "id": "p1",
+      "cat": "도입",
+      "icon": "🎯",
+      "title": "학습목표",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\" style=\"text-align:center;padding:20px 0\">\n  <div style=\"font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px\">과학 × 정보 융합 · 데이터 시각화</div>\n  <h2 style=\"font-size:28px;font-weight:900;margin-bottom:8px\">공주시에서 관측되는<br>태양의 스펙트럼 분석하기</h2>\n  <div style=\"display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px\">\n    <span style=\"padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)\">스펙트럼 분석</span>\n    <span style=\"padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)\">빅데이터 시각화</span>\n    <span style=\"padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)\">과학신문 제작</span>\n  </div>\n</div>"
+        },
+        {
+          "t": "objectives",
+          "items": [
+            "천체에서 방출되는 빛의 스펙트럼을 분석하여 데이터를 수집하고 시각화할 수 있다.",
+            "우주 초기에 생성된 원소가 천체를 구성하는 주된 원소임을 이해하고 가치를 해석할 수 있다."
+          ]
+        },
+        {
+          "t": "callout",
+          "variant": "blue",
+          "title": "수업 흐름",
+          "body": "스펙트럼의 개념을 이해한 뒤, 미지의 별 A와 B의 스펙트럼을 비교하고, 구글 코랩으로 태양 스펙트럼 데이터를 시각화합니다. 마지막에는 분석 결과를 바탕으로 과학신문을 제작하고 공유합니다."
+        }
+      ]
+    },
+    {
+      "id": "p2",
+      "cat": "도입",
+      "icon": "💭",
+      "title": "생각해요",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n  <h3>▶ 제임스 웹 우주 망원경은 무엇을 알려줄까?</h3>\n  <p>2021년 발사된 제임스 웹 우주 망원경은 지구에서 약 150만 km 떨어진 곳에서 관측을 수행하는 최신 우주망원경입니다. 이 망원경은 적외선을 이용하며, 천체에서 오는 빛을 분광기로 분해하여 얻은 다양한 스펙트럼 자료를 지구로 전송합니다.</p>\n  <p>천체의 빛에는 그 천체가 어떤 물질로 이루어져 있는지, 어떤 환경에 놓여 있는지에 대한 단서가 담겨 있습니다. 스펙트럼을 분석하면 눈으로는 보이지 않는 우주의 정보를 데이터로 읽어낼 수 있습니다.</p>\n</div>"
+        },
+        {
+          "t": "input",
+          "label": "제임스 웹 우주 망원경을 통해 우리가 얻을 수 있는 정보에는 무엇이 있을까요?",
+          "ph": "예: 별이나 은하를 구성하는 원소, 천체의 온도, 먼 우주의 모습 등",
+          "rows": 3
+        },
+        {
+          "t": "input",
+          "label": "모둠 친구들과 이야기한 내용을 정리해 봅시다.",
+          "ph": "친구들의 의견 중 인상 깊었던 내용을 적어 보세요.",
+          "rows": 3
+        }
+      ]
+    },
+    {
+      "id": "p3",
+      "cat": "알아봐요",
+      "icon": "📖",
+      "title": "1. 스펙트럼이란?",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n  <h3>▶ 빛을 나누어 보면 보이는 정보</h3>\n  <p>햇빛을 프리즘에 통과시키면 무지개처럼 여러 가지 색의 띠가 나타납니다. 이를 <strong>스펙트럼</strong>이라고 합니다. 스펙트럼이 생기는 이유는 빛의 파장에 따라 굴절되는 정도가 다르기 때문입니다.</p>\n  <p>스펙트럼은 단순히 예쁜 색의 띠가 아니라, 빛을 내거나 흡수한 물질의 정보를 담고 있는 자료입니다. 따라서 스펙트럼을 분석하면 천체를 직접 가져오지 않고도 천체의 구성 물질을 추론할 수 있습니다.</p>\n</div>"
+        },
+        {
+          "t": "cards",
+          "items": [
+            {
+              "front": "스펙트럼",
+              "back": "빛을 파장이나 색에 따라 나누었을 때 나타나는 띠 또는 선의 배열"
+            },
+            {
+              "front": "파장",
+              "back": "빛의 성질을 나타내는 값으로, 파장에 따라 색과 에너지 특성이 달라진다."
+            },
+            {
+              "front": "분광기",
+              "back": "빛을 파장별로 나누어 스펙트럼을 관찰하거나 측정하는 장치"
+            },
+            {
+              "front": "빛의 지문",
+              "back": "원소마다 고유한 스펙트럼을 가지므로, 스펙트럼은 물질을 구별하는 단서가 된다."
+            }
+          ]
+        },
+        {
+          "t": "input",
+          "label": "스펙트럼이 천체 연구에 유용한 까닭을 한 문장으로 정리해 봅시다.",
+          "ph": "예: 천체에서 온 빛을 분석하면 천체를 구성하는 원소를 알 수 있기 때문이다.",
+          "rows": 2
+        }
+      ]
+    },
+    {
+      "id": "p4",
+      "cat": "알아봐요",
+      "icon": "📖",
+      "title": "2. 스펙트럼의 종류와 분석 원리",
+      "blocks": [
+        {
+          "t": "tabs",
+          "tabs": [
+            {
+              "label": "연속 스펙트럼",
+              "content": "백열전구의 빛을 분광기로 관찰하면 무지개색 띠가 끊김 없이 연속적으로 나타납니다. 이처럼 여러 색이 이어져 보이는 스펙트럼을 연속 스펙트럼이라고 합니다."
+            },
+            {
+              "label": "흡수 스펙트럼",
+              "content": "별 중심에서 나온 빛이 상대적으로 온도가 낮은 대기층을 통과하면, 대기층의 원소가 특정 파장의 빛을 흡수합니다. 그 결과 스펙트럼에 검은 선이 나타나며, 이를 흡수 스펙트럼이라고 합니다."
+            },
+            {
+              "label": "방출 스펙트럼",
+              "content": "고온의 별 주변에서 가열된 기체를 관찰하면 검은 바탕 위에 여러 색의 밝은 선이 나타납니다. 이를 방출 스펙트럼이라고 합니다."
+            }
+          ]
+        },
+        {
+          "t": "callout",
+          "variant": "green",
+          "title": "핵심 원리",
+          "body": "각 원소는 고유한 스펙트럼을 가지며, 같은 원소에서는 흡수선과 방출선의 위치가 항상 같은 곳에 나타납니다. 따라서 흡수선과 방출선의 위치를 비교하면 천체를 구성하는 원소를 추론할 수 있습니다."
+        },
+        {
+          "t": "cards",
+          "items": [
+            {
+              "front": "연속 스펙트럼",
+              "back": "무지개색 띠가 끊김 없이 이어져 나타나는 스펙트럼"
+            },
+            {
+              "front": "흡수 스펙트럼",
+              "back": "연속 스펙트럼 중 특정 파장의 빛이 흡수되어 검은 선이 나타나는 스펙트럼"
+            },
+            {
+              "front": "방출 스펙트럼",
+              "back": "가열된 기체에서 특정 파장의 밝은 선이 나타나는 스펙트럼"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p5",
+      "cat": "알아봐요",
+      "icon": "📖",
+      "title": "3. 빅데이터와 분석 도구",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n  <h3>▶ 태양 스펙트럼도 데이터다</h3>\n  <p>태양 스펙트럼은 방대한 양의 수치 데이터로 표현될 수 있습니다. 이처럼 규모가 크고 빠르게 생성되는 데이터를 <strong>빅데이터</strong>라고 합니다.</p>\n  <p>빅데이터 분석 도구를 활용하면 사람이 일일이 확인하기 어려운 수많은 데이터 포인트 속에서 특징적인 패턴, 즉 흡수선을 정량적으로 식별할 수 있습니다. 이후 표준 원소 데이터와 매칭하여 태양의 구성 원소라는 과학적 가치를 추출할 수 있습니다.</p>\n</div>"
+        },
+        {
+          "t": "cards",
+          "items": [
+            {
+              "front": "ChatGPT",
+              "back": "스펙트럼 개념 조사, 과학신문 문장 다듬기, 질문 생성에 활용"
+            },
+            {
+              "front": "구글 클래스룸",
+              "back": "미지의 별 A와 B의 스펙트럼 분석 결과 제출에 활용"
+            },
+            {
+              "front": "구글 코랩",
+              "back": "파이썬으로 태양 스펙트럼 데이터를 수집·시각화하는 데 활용"
+            },
+            {
+              "front": "Canva",
+              "back": "그림과 키워드를 포함한 과학신문 제작에 활용"
+            },
+            {
+              "front": "Padlet",
+              "back": "모둠별 과학신문 공유와 실시간 피드백 작성에 활용"
+            }
+          ]
+        },
+        {
+          "t": "callout",
+          "variant": "purple",
+          "title": "도구 사용의 목적",
+          "body": "이번 수업에서 디지털 도구는 단순히 결과물을 예쁘게 만드는 용도가 아니라, 과학 데이터를 수집·시각화·해석하고 친구들과 공유하기 위한 학습 도구로 활용됩니다."
+        }
+      ]
+    },
+    {
+      "id": "p6",
+      "cat": "활동해요",
+      "icon": "✏️",
+      "title": "1. 미지의 별 A와 B 분석하기",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n  <h3>▶ 미지의 별 A와 B는 어떤 원소로 구성되어 있을까?</h3>\n  <p>미지의 별 A와 B의 스펙트럼을 여러 원소의 스펙트럼과 비교해 봅시다. 스펙트럼의 선 위치가 일치하는 원소를 찾으면 별을 구성하는 원소를 추론할 수 있습니다.</p>\n</div>"
+        },
+        {
+          "t": "input",
+          "label": "1. 그림에 나타난 스펙트럼의 명칭과 특징을 적어 봅시다.",
+          "ph": "예: 흡수 스펙트럼 - 연속 스펙트럼 위에 검은 선이 나타난다.",
+          "rows": 3
+        },
+        {
+          "t": "input",
+          "label": "2. 별 A를 구성하는 원소를 추론해 봅시다.",
+          "ph": "선 위치가 일치하는 원소를 적고, 그렇게 판단한 근거를 함께 적어 보세요.",
+          "rows": 2
+        },
+        {
+          "t": "input",
+          "label": "3. 별 B를 구성하는 원소를 추론해 봅시다.",
+          "ph": "선 위치가 일치하는 원소를 적고, 그렇게 판단한 근거를 함께 적어 보세요.",
+          "rows": 2
+        },
+        {
+          "t": "input",
+          "label": "4. 스펙트럼 분석 후 알게 된 내용을 2가지로 정리해 봅시다.",
+          "ph": "예: 같은 원소는 흡수선과 방출선의 위치가 같다.",
+          "rows": 3
+        }
+      ]
+    },
+    {
+      "id": "p7",
+      "cat": "활동해요",
+      "icon": "💻",
+      "title": "2. 코랩 환경 설정 및 데이터 준비",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n  <h3>▶ 태양 스펙트럼 데이터 시각화 프로젝트</h3>\n  <p>공주시에서 관측되는 가상의 태양 스펙트럼 데이터를 파이썬 코드로 준비합니다. 구글 코랩에 접속하여 로그인한 뒤 새 코랩 노트를 열고 코드를 실행해 봅시다.</p>\n</div>"
+        },
+        {
+          "t": "steps",
+          "title": "실습 순서",
+          "items": [
+            {
+              "title": "1. 코랩 환경 설정",
+              "desc": "구글 코랩에 접속하여 새 노트를 만들고 한글 폰트 설정 코드를 실행합니다."
+            },
+            {
+              "title": "2. 데이터 생성",
+              "desc": "가상의 태양 스펙트럼 데이터를 만들고 데이터프레임으로 확인합니다."
+            },
+            {
+              "title": "3. 표준 원소 데이터 정의",
+              "desc": "수소, 나트륨, 칼슘의 표준 방출선 파장 데이터를 비교 기준으로 준비합니다."
+            }
+          ]
+        },
+        {
+          "t": "code",
+          "lang": "Python · Google Colab",
+          "code": "# 한글 폰트 설정 코드\n!sudo apt-get install -y fonts-nanum\n!sudo fc-cache -fv\n!rm ~/.cache/matplotlib -rf\n\nimport matplotlib.pyplot as plt\nimport matplotlib.font_manager as fm\n\nfm.fontManager.addfont('/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf')\nplt.rc('font', family='NanumBarunGothic')\nplt.rcParams['axes.unicode_minus'] = False\n\nprint(\"한글 폰트 설정 완료. 런타임 → 런타임 다시 시작 후 코드를 실행해주세요.\")"
+        },
+        {
+          "t": "code",
+          "lang": "Python · 데이터 생성",
+          "code": "# 1. 기본 환경 설정 및 데이터 생성\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\n\ndef generate_spectrum_data(start_nm=550, end_nm=680, step=0.5):\n    \"\"\"가상의 태양 스펙트럼 데이터를 생성하는 함수입니다.\"\"\"\n\n    # 파장 배열 생성(X축)\n    wavelength = np.arange(start_nm, end_nm + step, step)\n\n    # 연속 스펙트럼 기본 세기 모델링\n    base_intensity = 0.9 + 0.1 * np.cos(2 * np.pi * wavelength / 100) - (wavelength - start_nm) / (end_nm - start_nm) * 0.2\n\n    # 나트륨 D선(Na, 589.0 nm) 및 수소 H-알파선(H, 656.3 nm) 모델링\n    center_Na = 589.0; depth_Na = 0.6; width_Na = 0.5\n    absorption_Na = depth_Na * np.exp(-0.5 * ((wavelength - center_Na) / width_Na)**2)\n\n    center_H = 656.3; depth_H = 0.8; width_H = 0.8\n    absorption_H = depth_H * np.exp(-0.5 * ((wavelength - center_H) / width_H)**2)\n\n    # 최종 스펙트럼 세기(흡수선을 반영하여 세기를 감소시킴)\n    intensity = base_intensity - absorption_Na - absorption_H\n\n    df = pd.DataFrame({\n        '파장(nm)': wavelength,\n        '세기(Relative Intensity)': intensity\n    })\n    return df\n\n# 데이터프레임(df) 생성\ndf = generate_spectrum_data()\nprint(\"데이터프레임 생성 완료. 상위 5개 데이터:\")\nprint(df.head())\n\n# 표준 원소의 방출선 파장 데이터(standard_lines) 정의 - 비교 대상\nstandard_lines = {\n    'H': [656.3, 486.1, 434.0],  # 수소\n    'Na': [589.0, 589.6],        # 나트륨\n    'Ca': [422.7, 393.3]         # 칼슘\n}"
+        },
+        {
+          "t": "callout",
+          "variant": "blue",
+          "title": "표준 원소 스펙트럼의 역할",
+          "body": "태양의 흡수 스펙트럼은 별 대기를 통과하며 특정 파장의 빛이 사라져 검은 선으로 나타납니다. 같은 원소는 흡수 스펙트럼의 검은 흡수선 위치와 방출 스펙트럼의 밝은 방출선 위치가 일치하므로, 태양 스펙트럼의 흡수선 위치와 표준 원소의 방출선 파장을 비교할 수 있습니다."
+        }
+      ]
+    },
+    {
+      "id": "p8",
+      "cat": "활동해요",
+      "icon": "💻",
+      "title": "3. 빅데이터 시각화 및 흡수선 매칭",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n  <h3>▶ 그래프로 패턴을 찾아보자</h3>\n  <p>태양 스펙트럼 데이터를 그래프로 시각화하고, 표준 원소의 흡수선 위치를 표시해 봅시다. 그래프에서 세기가 급격히 낮아지는 지점과 표준선의 위치가 일치하는지 확인하는 것이 핵심입니다.</p>\n</div>"
+        },
+        {
+          "t": "code",
+          "lang": "Python · 스펙트럼 시각화",
+          "code": "# 1. 태양 스펙트럼 시각화(흡수 스펙트럼)\nplt.figure(figsize=(15, 6))\nplt.plot(df['파장(nm)'], df['세기(Relative Intensity)'], color='darkorange', linewidth=1.5, label='태양 흡수 스펙트럼')\nplt.title('태양 흡수 스펙트럼과 표준 원소 흡수선 비교', fontsize=16)\nplt.xlabel('파장(nm)')\nplt.ylabel('상대적 세기')\n\n# 2. 표준 원소 흡수선 위치 표시(빅데이터 매칭)\n# A. 수소(H) 흡수선 위치 표시\nfor line in standard_lines['H']:\n    if df['파장(nm)'].min() <= line <= df['파장(nm)'].max():\n        plt.axvline(x=line, color='red', linestyle='--', linewidth=1.5, alpha=0.7)\n\n# B. 나트륨(Na) 흡수선 위치 표시\nfor line in standard_lines['Na']:\n    if df['파장(nm)'].min() <= line <= df['파장(nm)'].max():\n        plt.axvline(x=line, color='blue', linestyle='-.', linewidth=1.5, alpha=0.7)\n\n# 3. 데이터 해석을 돕기 위한 주석 추가\nplt.text(657.0, 0.9, 'H(수소) 표준선 위치', color='red', rotation=90, fontsize=10)\nplt.text(588.0, 0.9, 'Na(나트륨) 표준선 위치', color='blue', rotation=90, fontsize=10)\n\nplt.grid(True, linestyle=':', alpha=0.5)\nplt.show()"
+        },
+        {
+          "t": "input",
+          "label": "실행 결과 그래프에서 무엇을 알 수 있나요?",
+          "ph": "예: 589.0 nm 부근과 656.3 nm 부근에서 세기가 낮아져 나트륨과 수소 흡수선이 나타난 것으로 해석할 수 있다.",
+          "rows": 3
+        },
+        {
+          "t": "prediction",
+          "items": [
+            {
+              "label": "흡수선 위치 1",
+              "ph": "예: 589.0 nm"
+            },
+            {
+              "label": "일치 원소 1",
+              "ph": "예: Na"
+            },
+            {
+              "label": "흡수선 위치 2",
+              "ph": "예: 656.3 nm"
+            },
+            {
+              "label": "일치 원소 2",
+              "ph": "예: H"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p9",
+      "cat": "활동해요",
+      "icon": "✏️",
+      "title": "4. 과학신문 제작 및 피드백",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n  <h3>▶ 분석 결과를 과학신문으로 표현하기</h3>\n  <p>구글 코랩으로 제작한 시각화 자료와 분석 결과를 바탕으로 모둠별 과학신문을 제작해 봅시다. 과학신문에는 <strong>스펙트럼, 구성 원소, 우주 초기</strong> 키워드가 자연스럽게 포함되어야 합니다.</p>\n</div>"
+        },
+        {
+          "t": "steps",
+          "title": "과학신문 제작 순서",
+          "items": [
+            {
+              "title": "1. 핵심 결과 정리",
+              "desc": "그래프에서 확인한 흡수선 위치와 매칭된 원소를 정리합니다."
+            },
+            {
+              "title": "2. 기사 구성",
+              "desc": "제목, 핵심 그림, 분석 과정, 결론이 드러나도록 과학신문을 구성합니다."
+            },
+            {
+              "title": "3. Canva 제작",
+              "desc": "그림과 키워드를 포함하여 읽기 쉬운 과학신문을 제작합니다."
+            },
+            {
+              "title": "4. Padlet 업로드",
+              "desc": "모둠별 결과물을 공유하고 다른 모둠의 작품에 피드백을 남깁니다."
+            }
+          ]
+        },
+        {
+          "t": "input",
+          "label": "과학신문 제목을 정해 봅시다.",
+          "ph": "예: 빛의 지문으로 읽는 태양의 비밀",
+          "rows": 1
+        },
+        {
+          "t": "input",
+          "label": "발표할 핵심 내용을 3문장으로 정리해 봅시다.",
+          "ph": "분석한 데이터, 확인한 원소, 우주 초기 원소와의 관련성을 포함해 보세요.",
+          "rows": 3
+        },
+        {
+          "t": "callout",
+          "variant": "green",
+          "title": "피드백 작성 시 유의사항",
+          "body": "비난이 아닌 도움이 되는 말을 사용하고, 내용을 충분히 이해한 뒤 피드백합니다. 존중하는 태도와 언어를 사용하며, 개선할 점과 잘한 점을 함께 제시합니다."
+        },
+        {
+          "t": "input",
+          "label": "다른 모둠의 과학신문에 남길 피드백을 작성해 봅시다.",
+          "ph": "예: 그래프 해석이 명확해서 좋았습니다. 구성 원소와 우주 초기 원소의 관련성을 조금 더 설명하면 더 좋겠습니다.",
+          "rows": 3
+        }
+      ]
+    },
+    {
+      "id": "p10",
+      "cat": "정리",
+      "icon": "✅",
+      "title": "스스로 진단하기",
+      "blocks": [
+        {
+          "t": "assessment",
+          "title": "나의 학습 점검",
+          "ratings": [
+            "잘함",
+            "보통",
+            "미흡"
+          ],
+          "items": [
+            "천체에서 방출되는 빛의 스펙트럼을 분석할 수 있다.",
+            "우주 초기에 생성된 원소가 천체를 구성하는 주된 원소임을 이해할 수 있다.",
+            "빅데이터 개념을 알고 태양 스펙트럼 시각화 자료를 제작하여 분석할 수 있다.",
+            "다른 모둠의 과학신문을 존중하는 태도로 살펴보고 도움이 되는 피드백을 작성할 수 있다."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p11",
+      "cat": "정리",
+      "icon": "❓",
+      "title": "활동퀴즈 1. 스펙트럼 기초",
+      "blocks": [
+        {
+          "t": "quiz",
+          "num": "01",
+          "q": "햇빛을 프리즘에 통과시키면 무지개처럼 여러 가지 색의 띠가 나타나는데, 이를 무엇이라고 할까요?",
+          "opts": [
+            "스펙트럼",
+            "중력파",
+            "자기장",
+            "궤도"
+          ],
+          "ans": 0,
+          "ok": "정답입니다. 빛을 파장이나 색에 따라 나누었을 때 나타나는 띠를 스펙트럼이라고 합니다.",
+          "no": "다시 생각해 봅시다. 프리즘으로 나누어진 빛의 띠를 부르는 말입니다."
+        },
+        {
+          "t": "quiz",
+          "num": "02",
+          "q": "스펙트럼이 생기는 이유로 가장 알맞은 것은?",
+          "opts": [
+            "빛의 파장에 따라 굴절되는 정도가 다르기 때문이다.",
+            "프리즘이 모든 빛을 같은 방향으로 반사하기 때문이다.",
+            "빛이 모두 같은 파장을 가지기 때문이다.",
+            "별빛은 색이 없기 때문이다."
+          ],
+          "ans": 0,
+          "ok": "정답입니다. 빛은 파장에 따라 굴절 정도가 달라 서로 다른 색으로 나뉩니다.",
+          "no": "프리즘을 지날 때 파장에 따라 꺾이는 정도가 달라진다는 점을 떠올려 보세요."
+        },
+        {
+          "t": "quiz",
+          "num": "03",
+          "q": "백열전구의 빛을 분광기로 관찰할 때 나타나는 스펙트럼은?",
+          "opts": [
+            "연속 스펙트럼",
+            "흡수 스펙트럼",
+            "방출 스펙트럼",
+            "선택 스펙트럼"
+          ],
+          "ans": 0,
+          "ok": "정답입니다. 백열전구의 빛은 무지개색 띠가 끊김 없이 이어지는 연속 스펙트럼으로 관찰됩니다.",
+          "no": "끊김 없이 이어지는 무지개색 띠를 무엇이라고 하는지 생각해 봅시다."
+        }
+      ]
+    },
+    {
+      "id": "p12",
+      "cat": "정리",
+      "icon": "❓",
+      "title": "활동퀴즈 2. 스펙트럼 분석",
+      "blocks": [
+        {
+          "t": "quiz",
+          "num": "04",
+          "q": "별에서 나온 빛이 상대적으로 온도가 낮은 대기층을 통과할 때 관측되는 스펙트럼은?",
+          "opts": [
+            "연속 스펙트럼",
+            "흡수 스펙트럼",
+            "방출 스펙트럼",
+            "무지개 스펙트럼"
+          ],
+          "ans": 1,
+          "ok": "정답입니다. 특정 파장의 빛이 흡수되어 검은 선이 나타나는 흡수 스펙트럼입니다.",
+          "no": "별의 대기층에 있는 원소가 특정 파장의 빛을 흡수한다는 점을 떠올려 보세요."
+        },
+        {
+          "t": "quiz",
+          "num": "05",
+          "q": "스펙트럼 분석을 통해 알 수 있는 정보로 가장 알맞은 것은?",
+          "opts": [
+            "천체를 구성하는 원소",
+            "천체의 이름표 색깔",
+            "망원경의 가격",
+            "관측자의 나이"
+          ],
+          "ans": 0,
+          "ok": "정답입니다. 스펙트럼의 흡수선과 방출선 위치를 비교하면 천체를 구성하는 원소를 추론할 수 있습니다.",
+          "no": "원소마다 고유한 스펙트럼을 가진다는 점을 떠올려 봅시다."
+        },
+        {
+          "t": "quiz",
+          "num": "06",
+          "q": "우주를 구성하는 여러 천체의 스펙트럼 분석을 통해, 우주를 구성하는 주된 원소로 알려진 것은?",
+          "opts": [
+            "철과 구리",
+            "수소와 헬륨",
+            "금과 은",
+            "질소와 염소"
+          ],
+          "ans": 1,
+          "ok": "정답입니다. 우주 초기 원소와 천체 구성 원소를 이해할 때 수소와 헬륨이 중요합니다.",
+          "no": "원자번호가 작고 우주 초기에 많이 형성된 원소를 떠올려 보세요."
+        }
+      ]
+    },
+    {
+      "id": "p13",
+      "cat": "정리",
+      "icon": "📚",
+      "title": "읽기 자료",
+      "blocks": [
+        {
+          "t": "tabs",
+          "tabs": [
+            {
+              "label": "뉴턴의 프리즘 실험",
+              "content": "1666년 뉴턴은 방 안의 창문 틈으로 들어온 햇빛을 프리즘에 통과시켰고, 벽 위에 무지개빛 띠가 나타나는 것을 관찰했습니다. 당시 사람들은 프리즘이 빛에 색을 입힌다고 생각했지만, 뉴턴은 백색광 자체가 여러 색의 빛으로 이루어져 있으며 프리즘은 그 빛을 파장에 따라 분리하는 역할을 한다는 사실을 밝혔습니다."
+            },
+            {
+              "label": "스펙트럼 연구의 발전",
+              "content": "1802년 월러스턴은 태양 스펙트럼에 어두운 줄이 있음을 발견했고, 1814년 프라운호퍼는 이를 정밀하게 측정했습니다. 이후 과학자들은 이 어두운 줄이 태양 대기의 원소가 특정 파장의 빛을 흡수한 결과임을 밝혔고, 스펙트럼은 물질의 성분을 알아내는 빛의 지문으로 이해되었습니다."
+            },
+            {
+              "label": "우주의 비밀",
+              "content": "분광학이 발전하면서 과학자들은 별빛의 스펙트럼에 별의 원소, 표면 온도, 운동 방향과 속도에 관한 단서가 담겨 있음을 알게 되었습니다. 오늘날 스펙트럼은 별의 진화, 은하의 거리, 우주의 팽창을 연구하는 데 중요한 자료가 됩니다."
+            }
+          ]
+        },
+        {
+          "t": "input",
+          "label": "읽기 자료 중 하나를 선택하여 핵심 내용을 한 문단으로 요약해 봅시다.",
+          "ph": "선택한 자료의 핵심 개념과 새롭게 알게 된 점을 적어 보세요.",
+          "rows": 4
+        }
+      ]
+    },
+    {
+      "id": "p14",
+      "cat": "정리",
+      "icon": "🧭",
+      "title": "진로 연계",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n  <h3>▶ 스펙트럼과 데이터 분석이 연결되는 진로</h3>\n  <p>스펙트럼 분석은 천문학뿐 아니라 화학, 환경, 우주탐사 데이터 분석 등 다양한 분야에서 활용됩니다. 빛을 데이터로 읽어내는 능력은 과학적 탐구 능력과 정보 처리 능력을 함께 요구합니다.</p>\n</div>"
+        },
+        {
+          "t": "cards",
+          "items": [
+            {
+              "front": "천문학자",
+              "back": "별빛의 스펙트럼을 분석하여 별의 성분과 온도, 은하의 거리와 속도, 우주의 팽창 여부 등을 연구한다."
+            },
+            {
+              "front": "분석화학자",
+              "back": "스펙트럼 분석기기를 사용해 물질의 성분과 구조를 분석한다."
+            },
+            {
+              "front": "환경과학연구원",
+              "back": "대기·수질의 스펙트럼 데이터를 분석하여 오염물질이나 온실가스 농도를 파악하고 환경 변화를 예측한다."
+            },
+            {
+              "front": "우주탐사 데이터 분석가",
+              "back": "우주망원경과 위성이 보내는 스펙트럼 데이터를 분석하여 행성 대기 성분이나 생명체 존재 가능성을 탐구한다."
+            }
+          ]
+        },
+        {
+          "t": "input",
+          "label": "나에게 가장 흥미로운 진로를 하나 고르고, 그 이유를 적어 봅시다.",
+          "ph": "예: 우주탐사 데이터 분석가가 흥미롭다. 우주 데이터를 직접 분석해 생명체 가능성을 탐구한다는 점이 인상 깊기 때문이다.",
+          "rows": 3
+        },
+        {
+          "t": "link",
+          "url": "https://www.career.go.kr/",
+          "icon": "🧭",
+          "title": "커리어넷 — 직업·전공 탐색",
+          "desc": "천문학, 화학, 환경, 데이터과학 관련 직업과 학과 정보를 더 살펴볼 수 있습니다."
+        }
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>

@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 기계학습으로 구현하는 하천 쓰레기 분류 AI 프로그램</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 과학</h1>
+    <div class="topic">기계학습으로 구현하는<br>하천 쓰레기 분류 AI</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  title: "하천 쓰레기 분류 AI",
+  pages: [
+    // 도입 - 학습목표
+    {
+      id:"p1", cat:"도입", icon:"🎯", title:"학습목표",
+      blocks:[
+        {t:"html", v:`
+          <div class="blk" style="text-align:center;padding:20px 0">
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">과학 × 정보 융합</div>
+            <h2 style="font-size:28px;font-weight:900;margin-bottom:8px">기계학습으로 구현하는<br>하천 쓰레기 분류 AI 프로그램</h2>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">생태계</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">기계학습(CNN)</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">환경문제 해결</span>
+            </div>
+          </div>
+        `},
+        {t:"objectives", items:[
+          "생태계의 구성요소(생물적·비생물적 요인)와 상호작용을 설명할 수 있다.",
+          "기계학습(지도학습)을 적용하여 데이터의 분류 과정을 이해할 수 있다.",
+          "하천 쓰레기 분류 AI 프로그램을 구현하고, 결과를 평가하여 환경 문제 해결에 적용할 수 있다."
+        ]}
+      ]
+    },
+    // 도입 - 생각해요
+    {
+      id:"p2", cat:"도입", icon:"💭", title:"생각해요",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 하천이 보내는 SOS</h3>
+          <p>비가 많이 내린 다음 날, 하천을 따라 걷다 보면 어떤 풍경이 보일까요? 페트병, 비닐봉지, 스티로폼, 음식물 용기 등 온갖 쓰레기가 강가에 쌓여 있는 모습을 본 적이 있을 것입니다. 2023년 환경부 발표에 따르면, 집중호우 한 번으로 발생한 하천 쓰레기의 양이 무려 <strong>88,564톤</strong>에 달했습니다.</p>
+          <p>이렇게 모인 쓰레기는 분류하고 처리하는 데 많은 인력과 시간이 필요합니다. 사람의 눈으로 종류별로 일일이 나누기에는 너무 많고, 작은 미세플라스틱은 수거조차 어렵습니다. 그렇다면 <strong>인공지능(AI)</strong>이 쓰레기를 종류별로 자동 분류해줄 수 있다면 어떨까요?</p>
+          <p style="margin-top:12px;font-weight:600;color:var(--accent)">하천 생태계를 지키기 위해 우리는 어떤 AI를 만들 수 있을까요?</p>
+        </div>`},
+        {t:"html", v:`<div class="blk"><h4>▶ 우리 동네 하천, 어떤 모습일까?</h4><p>우리 동네 가까이 흐르는 하천(예: 공주 금강)의 모습과 그곳에 쌓인 쓰레기에 대해 떠올려 보고, 친구들과 의견을 나누어 봅시다.</p></div>`},
+        {t:"input", label:"▶ 나의 생각", ph:"예: 비 온 다음 날 금강 둔치에 페트병과 비닐이 떠다니는 것을 본 적이 있다.", rows:2},
+        {t:"input", label:"▶ 우리 모둠의 생각", ph:"모둠원들과 나눈 의견을 정리해 보세요.", rows:3}
+      ]
+    },
+
+    // 알아봐요 1 - 생태계
+    {
+      id:"p3", cat:"알아봐요", icon:"📖", title:"1. 생태계의 구성요소",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 생태계란 무엇인가?</h3>
+          <p><strong>생태계(ecosystem)</strong>는 일정한 공간에서 생물과 비생물 환경이 서로 영향을 주고받으며 살아가는 하나의 시스템입니다. 하천, 숲, 바다, 도시 등 모든 공간이 하나의 생태계가 될 수 있으며, 그 안에서 생물들은 다양한 관계를 맺고 살아갑니다.</p>
+          <p>생태계의 생물 집단은 다음과 같이 구분합니다.</p>
+          <ul>
+            <li><strong>개체(個體)</strong>: 살아 있는 하나의 생물체. (예: 한 마리의 잉어)</li>
+            <li><strong>개체군(個體群)</strong>: 같은 종의 개체들이 일정 지역에 모여 사는 무리. (예: 금강의 잉어 무리)</li>
+            <li><strong>군집(群集)</strong>: 일정 지역에 사는 여러 개체군이 함께 모인 집단. (예: 금강에 사는 잉어·붕어·수초 등 모든 생물)</li>
+          </ul>
+        </div>`},
+        {t:"cards", items:[
+          {front:"생산자", back:"광합성을 통해 스스로 양분을 만드는 생물 (예: 식물, 식물성 플랑크톤). 생태계의 에너지 출발점"},
+          {front:"소비자", back:"다른 생물을 먹어 에너지를 얻는 생물. 1차 소비자(초식)·2차 소비자(육식)로 구분"},
+          {front:"분해자", back:"죽은 생물이나 배설물을 분해해 무기물로 되돌리는 생물 (예: 세균, 곰팡이)"},
+          {front:"비생물적 요인", back:"빛, 온도, 물, 공기, 토양 등 생물에 영향을 미치는 환경 요소"}
+        ]},
+        {t:"callout", variant:"blue", title:"💡 하천 생태계와 쓰레기 문제", body:"하천 생태계는 생물(어류·수초·미생물)과 비생물(물·빛·온도·토양) 요인이 균형을 이루며 유지됩니다. 그러나 인간이 버린 쓰레기, 특히 <strong>플라스틱과 미세플라스틱</strong>은 이 균형을 깨뜨립니다. 물고기가 미세플라스틱을 먹이로 착각해 섭취하고, 이 물고기가 다시 우리 식탁에 오르며 결국 인간 건강에도 영향을 미칩니다."}
+      ]
+    },
+
+    // 알아봐요 2 - 기계학습
+    {
+      id:"p4", cat:"알아봐요", icon:"📖", title:"2. 기계학습과 데이터 분류",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 기계학습이란?</h3>
+          <p><strong>기계학습(Machine Learning)</strong>은 인공지능의 한 분야로, 컴퓨터가 데이터를 보고 스스로 규칙을 찾아내 새로운 입력에 대해 판단하도록 만드는 기술입니다. 명시적으로 "if-then" 규칙을 코딩하지 않고도, 많은 예시를 보여주는 것만으로 컴퓨터가 패턴을 학습합니다.</p>
+        </div>`},
+        {t:"tabs", tabs:[
+          {label:"지도학습", content:"<p><strong>지도학습(Supervised Learning)</strong>은 정답(라벨)이 표시된 데이터를 학습 자료로 사용해, 컴퓨터가 입력과 정답의 관계를 학습하는 방법입니다. 새로운 입력이 들어왔을 때 라벨을 예측합니다.<br>(예) 페트병/캔/스티로폼 사진에 라벨을 붙여 학습 → 새 사진의 종류 예측</p>"},
+          {label:"비지도학습", content:"<p><strong>비지도학습(Unsupervised Learning)</strong>은 정답이 없는 데이터를 보고 컴퓨터가 스스로 패턴이나 군집을 찾아내는 방법입니다.<br>(예) 비슷한 모양의 쓰레기끼리 자동으로 묶기(Clustering)</p>"},
+          {label:"강화학습", content:"<p><strong>강화학습(Reinforcement Learning)</strong>은 보상과 벌점을 통해 시행착오를 거치며 최적의 행동을 학습하는 방법입니다.<br>(예) 로봇팔이 쓰레기 분류 작업을 반복하며 정확도가 높아질수록 보상을 받아 더 잘 분류하도록 학습</p>"}
+        ]},
+        {t:"steps", title:"과학적 탐구의 6단계 — AI 개발에도 적용하기", items:[
+          {title:"1. 문제 인식", desc:"하천 쓰레기를 사람이 일일이 분류하기 어렵다는 문제를 인식한다."},
+          {title:"2. 가설 설정", desc:"\"AI가 사진을 보고 쓰레기 종류를 자동 분류할 수 있을 것이다\"라는 가설을 세운다."},
+          {title:"3. 탐구 설계 및 수행", desc:"데이터(사진)를 모으고, 모델을 설계해 학습시킨다."},
+          {title:"4. 자료 해석", desc:"테스트 결과(정확도·손실)를 분석한다."},
+          {title:"5. 결론 도출", desc:"이 AI가 실제 환경에서 사용할 만한 성능인지 판단한다."},
+          {title:"6. 일반화", desc:"다른 쓰레기 종류나 다른 하천에도 적용할 수 있도록 모델을 발전시킨다."}
+        ]},
+        {t:"callout", variant:"purple", title:"💡 CNN — 이미지 분류의 핵심 알고리즘", body:"<strong>CNN(Convolutional Neural Network, 합성곱 신경망)</strong>은 이미지에 특화된 인공신경망입니다.<br>• <strong>합성곱층(Convolution)</strong>: 작은 필터를 이미지 위에서 움직이며 모서리·색·질감 등 특징을 추출<br>• <strong>풀링층(Pooling)</strong>: 중요한 정보만 남기고 데이터 크기를 줄여 계산을 효율화<br>• <strong>완전연결층(Fully Connected)</strong>: 추출된 특징들을 종합해 최종 분류 결과를 출력"}
+      ]
+    },
+
+    // 활동해요 1 - 문제 정의 + 티처블 머신
+    {
+      id:"p5", cat:"활동해요", icon:"✏️", title:"1. 데이터 수집과 노코드 분류기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 문제 정의</h3>
+          <p>우리가 만들려는 AI는 무엇을 분류해야 할까요? 어떤 종류의 쓰레기를 우선 다룰지 정해 봅시다.</p>
+        </div>`},
+        {t:"input", label:"1. 우리 모둠이 분류할 쓰레기 카테고리는?", ph:"예: 페트병 / 캔 / 스티로폼 / 비닐봉지 / 일반 쓰레기", rows:2},
+        {t:"input", label:"2. 데이터는 어떻게 모을까?", ph:"예: 직접 촬영, 인터넷 이미지 검색, 공공 데이터셋(AI Hub 등)", rows:2},
+        {t:"html", v:`<div class="blk" style="margin-top:18px">
+          <h3>▶ 티처블 머신으로 빠르게 만들어 보기</h3>
+          <p>본격적인 Python 코딩에 들어가기 전에, 코딩 없이 AI 분류기를 만들 수 있는 <strong>티처블 머신(Teachable Machine)</strong>을 사용해 봅시다. 구글이 제공하는 무료 도구로, 웹브라우저에서 사진·소리·자세를 학습시킬 수 있습니다.</p>
+        </div>`},
+        {t:"link", url:"https://teachablemachine.withgoogle.com/", icon:"🎓", title:"Teachable Machine — 코딩 없이 AI 만들기", desc:"새 프로젝트(이미지 프로젝트) → 클래스 추가 → 웹캠 또는 이미지 업로드 → 모델 학습 → 미리보기 순서로 진행"},
+        {t:"steps", title:"티처블 머신 활용 순서", items:[
+          {title:"1. 새 이미지 프로젝트 생성", desc:"'시작하기' → '이미지 프로젝트' → '표준 이미지 모델' 선택"},
+          {title:"2. 클래스 추가", desc:"페트병, 캔, 스티로폼 등 클래스 이름을 정한 뒤 각 클래스당 30장 이상의 이미지 업로드"},
+          {title:"3. 모델 학습", desc:"'모델 학습' 버튼을 누르고 학습이 끝날 때까지 기다리기 (페이지를 닫지 말 것)"},
+          {title:"4. 미리보기·내보내기", desc:"실시간 미리보기로 정확도 확인 → '모델 내보내기'에서 TensorFlow.js/Keras 모델로 다운로드"}
+        ]},
+        {t:"input", label:"우리 모둠이 만든 티처블 머신 모델의 정확도와 한계는?", ph:"예: 페트병은 95% 정확하지만, 스티로폼은 흰색 일반쓰레기와 헷갈린다.", rows:2}
+      ]
+    },
+
+    // 활동해요 2 - Python CNN 코드
+    {
+      id:"p6", cat:"활동해요", icon:"💻", title:"2. Python으로 CNN 모델 만들기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ Google Colab에서 본격 CNN 학습</h3>
+          <p>이번에는 Python과 TensorFlow/Keras를 이용해 직접 CNN 모델을 구축하고 학습시켜 봅시다. <strong>Google Colab</strong>은 무료 GPU까지 제공하므로 별도 설치 없이 바로 실행할 수 있습니다.</p>
+        </div>`},
+        {t:"link", url:"https://colab.research.google.com/", icon:"🐍", title:"Google Colab — 무료 Python 노트북", desc:"새 노트북 생성 → 런타임 → 런타임 유형 변경 → GPU 선택 → 아래 코드 셀에 붙여넣어 실행"},
+        {t:"html", v:`<div class="blk"><h4 style="color:var(--accent-dk)">[코드 1] 데이터셋 불러오기 및 전처리</h4><p>구글 드라이브에 폴더별로 정리한 이미지를 불러오고, 학습/검증 데이터로 분리합니다.</p></div>`},
+        {t:"code", lang:"Python (TensorFlow/Keras)", code:`import tensorflow as tf
+from tensorflow.keras import layers, models
+
+# 1) 데이터셋 경로 (구글 드라이브를 마운트해 사용)
+DATA_DIR = "/content/drive/MyDrive/river_trash"
+IMG_SIZE = (160, 160)
+BATCH    = 32
+
+# 2) 학습/검증 데이터셋 만들기 (자동 8:2 분할)
+train_ds = tf.keras.preprocessing.image_dataset_from_directory(
+    DATA_DIR, validation_split=0.2, subset="training",
+    seed=42, image_size=IMG_SIZE, batch_size=BATCH)
+val_ds = tf.keras.preprocessing.image_dataset_from_directory(
+    DATA_DIR, validation_split=0.2, subset="validation",
+    seed=42, image_size=IMG_SIZE, batch_size=BATCH)
+
+class_names = train_ds.class_names
+print("클래스:", class_names)
+
+# 3) 성능 개선용 prefetch
+AUTOTUNE = tf.data.AUTOTUNE
+train_ds = train_ds.cache().shuffle(1000).prefetch(AUTOTUNE)
+val_ds   = val_ds.cache().prefetch(AUTOTUNE)`},
+        {t:"html", v:`<div class="blk"><h4 style="color:var(--blue)">[코드 2] CNN 모델 설계와 학습</h4><p>합성곱층·풀링층·완전연결층으로 구성된 CNN을 만들고, 데이터 증강(회전·확대·반전)을 적용해 학습합니다.</p></div>`},
+        {t:"code", lang:"Python (TensorFlow/Keras)", code:`from tensorflow.keras.callbacks import EarlyStopping
+
+# 데이터 증강 (작은 데이터셋에서 과적합 방지)
+data_aug = tf.keras.Sequential([
+    layers.RandomFlip("horizontal"),
+    layers.RandomRotation(0.1),
+    layers.RandomZoom(0.1),
+])
+
+num_classes = len(class_names)
+
+# CNN 모델 정의
+model = models.Sequential([
+    data_aug,
+    layers.Rescaling(1./255, input_shape=IMG_SIZE+(3,)),
+    layers.Conv2D(32, 3, activation='relu'),  # 합성곱층 1
+    layers.MaxPooling2D(),                     # 풀링층 1
+    layers.Conv2D(64, 3, activation='relu'),  # 합성곱층 2
+    layers.MaxPooling2D(),                     # 풀링층 2
+    layers.Conv2D(128, 3, activation='relu'), # 합성곱층 3
+    layers.MaxPooling2D(),
+    layers.Flatten(),
+    layers.Dense(128, activation='relu'),     # 완전연결층
+    layers.Dropout(0.3),
+    layers.Dense(num_classes, activation='softmax')  # 분류 출력
+])
+
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+model.summary()
+
+# 조기 종료 콜백 (검증 손실이 더 줄지 않으면 학습 중단)
+es = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+
+history = model.fit(train_ds, validation_data=val_ds, epochs=20,
+                    callbacks=[es])`},
+        {t:"html", v:`<div class="blk"><h4 style="color:var(--purple)">[코드 3] 학습 결과 시각화와 예측</h4><p>정확도와 손실 그래프를 그려 학습 곡선을 확인하고, 새 이미지를 분류해 봅시다.</p></div>`},
+        {t:"code", lang:"Python (TensorFlow/Keras)", code:`import matplotlib.pyplot as plt
+import numpy as np
+from tensorflow.keras.preprocessing import image
+
+# 1) 학습 곡선 (정확도/손실)
+acc      = history.history['accuracy']
+val_acc  = history.history['val_accuracy']
+loss     = history.history['loss']
+val_loss = history.history['val_loss']
+
+plt.figure(figsize=(10,4))
+plt.subplot(1,2,1)
+plt.plot(acc, label='train acc'); plt.plot(val_acc, label='val acc')
+plt.legend(); plt.title('Accuracy')
+plt.subplot(1,2,2)
+plt.plot(loss, label='train loss'); plt.plot(val_loss, label='val loss')
+plt.legend(); plt.title('Loss')
+plt.tight_layout(); plt.show()
+
+# 2) 새 이미지로 예측
+img_path = "/content/test.jpg"   # 예측해 보고 싶은 이미지 경로
+img = image.load_img(img_path, target_size=IMG_SIZE)
+arr = image.img_to_array(img)
+arr = np.expand_dims(arr, axis=0)
+
+pred = model.predict(arr)[0]
+idx  = np.argmax(pred)
+print(f"예측 결과: {class_names[idx]} (확률 {pred[idx]*100:.1f}%)")`}
+      ]
+    },
+
+    // 활동해요 3 - 평가 및 개선
+    {
+      id:"p7", cat:"활동해요", icon:"💡", title:"3. 모델 평가와 개선",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 정확도와 손실, 무엇을 봐야 할까?</h3>
+          <p>모델을 학습시키고 나면 두 가지 지표를 확인합니다. <strong>정확도(accuracy)</strong>는 전체 중 맞춘 비율, <strong>손실(loss)</strong>은 예측과 정답 사이의 오차를 나타냅니다.</p>
+          <ul>
+            <li>학습 정확도와 검증 정확도가 모두 높으면 → 잘 학습된 모델</li>
+            <li>학습 정확도는 높지만 검증 정확도가 낮으면 → <strong>과적합(Overfitting)</strong>: 학습 데이터에만 잘 맞춘 상태</li>
+            <li>학습 정확도조차 낮으면 → <strong>과소적합(Underfitting)</strong>: 모델이 너무 단순하거나 학습이 부족함</li>
+          </ul>
+        </div>`},
+        {t:"input", label:"1. 우리 모델의 학습/검증 정확도는 각각 얼마였나요?", ph:"예: 학습 92%, 검증 78%", rows:1},
+        {t:"input", label:"2. 어떤 클래스의 예측이 가장 어려웠나요? 왜 그럴까?", ph:"예: 비닐과 스티로폼이 흰색이라 헷갈렸다.", rows:2},
+        {t:"html", v:`<div class="blk" style="margin-top:18px"><h3>▶ 모델을 개선하는 4가지 방법</h3></div>`},
+        {t:"prediction", items:[
+          {label:"개선 1 — 데이터 증강", ph:"예: 회전·확대·좌우반전을 더 다양하게 적용한다"},
+          {label:"개선 2 — 데이터 추가 수집", ph:"예: 헷갈리는 클래스에 사진을 더 보강한다"},
+          {label:"개선 3 — 모델 구조 변경", ph:"예: 합성곱층을 늘리거나 Dropout 비율을 조정한다"},
+          {label:"개선 4 — 학습 설정 조정", ph:"예: 에포크 수를 늘리거나 학습률을 낮춘다"}
+        ]},
+        {t:"html", v:`<div class="blk" style="margin-top:18px">
+          <h3>▶ 실생활 활용 아이디어</h3>
+          <p>우리가 만든 분류 AI를 어떻게 실생활에 활용할 수 있을까요? 모둠별로 자유롭게 아이디어를 내고 PowerPoint나 Padlet을 이용해 발표해 봅시다.</p>
+        </div>`},
+        {t:"input", label:"우리 모둠의 활용 아이디어", ph:"예: 하천 청소 로봇에 탑재해 자동 분류 / 환경 캠페인 앱으로 만들어 시민 참여 유도", rows:3}
+      ]
+    },
+
+    // 정리 - 스스로 진단하기
+    {
+      id:"p8", cat:"정리", icon:"✅", title:"스스로 진단하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 이번 수업에서 무엇을 배웠는지 점검해 봅시다</h3>
+          <p>아래 항목을 읽고, 자신의 이해 정도를 솔직하게 평가해 봅시다. 부족한 부분은 모둠 친구나 선생님께 도움을 요청하면 좋습니다.</p>
+        </div>`},
+        {t:"assessment", title:"학습 점검표", ratings:["잘함","보통","미흡"], items:[
+          "생태계의 구성요소(생물적·비생물적 요인)와 상호작용을 설명할 수 있다.",
+          "기계학습의 종류(지도·비지도·강화학습)를 구분하고, 지도학습의 분류 과정을 설명할 수 있다.",
+          "티처블 머신 또는 Python(CNN)으로 이미지 분류 AI를 직접 만들어 볼 수 있다.",
+          "모델의 정확도·손실을 해석하고, 환경 문제 해결을 위한 활용 방안을 제안할 수 있다."
+        ]}
+      ]
+    },
+
+    // 정리 - 활동퀴즈 1
+    {
+      id:"p9", cat:"정리", icon:"❓", title:"활동퀴즈 1. 개념 이해",
+      blocks:[
+        {t:"html", v:`<div class="blk"><h3>▶ 생태계와 기계학습</h3></div>`},
+        {t:"quiz", num:"01", q:"생태계의 구성요소 중 <strong>비생물적 요인</strong>에 해당하는 것은?", opts:[
+          "빛, 온도, 물, 공기, 토양",
+          "광합성을 하는 식물",
+          "사체와 배설물을 분해하는 곰팡이",
+          "초식 동물과 육식 동물"
+        ], ans:0, ok:"정답입니다! 비생물적 요인은 생물에 영향을 주는 환경 요소입니다.", no:"힌트: '살아 있지 않은' 요인을 찾아야 합니다."},
+        {t:"quiz", num:"02", q:"같은 종의 개체들이 일정 지역에 모여 사는 무리를 가리키는 말은?", opts:[
+          "개체",
+          "개체군",
+          "군집",
+          "생태계"
+        ], ans:1, ok:"정답입니다! 같은 종의 모임은 개체군, 여러 개체군의 모임은 군집입니다.", no:"힌트: '같은 종'이라는 점이 핵심입니다."},
+        {t:"quiz", num:"03", q:"정답(라벨)이 표시된 데이터를 학습하여 새로운 입력의 라벨을 예측하는 기계학습 방법은?", opts:[
+          "비지도학습",
+          "강화학습",
+          "지도학습",
+          "전이학습"
+        ], ans:2, ok:"정답입니다! 사진과 라벨을 짝지어 학습시키는 방식이 지도학습입니다.", no:"힌트: 선생님이 정답을 알려주듯이 학습한다는 의미입니다."}
+      ]
+    },
+
+    // 정리 - 활동퀴즈 2
+    {
+      id:"p10", cat:"정리", icon:"❓", title:"활동퀴즈 2. 적용·분석",
+      blocks:[
+        {t:"html", v:`<div class="blk"><h3>▶ CNN과 환경 문제 해결</h3></div>`},
+        {t:"quiz", num:"04", q:"CNN(합성곱 신경망)에서 이미지로부터 모서리·색·질감 등의 특징을 추출하는 층은?", opts:[
+          "완전연결층(Fully Connected Layer)",
+          "풀링층(Pooling Layer)",
+          "합성곱층(Convolutional Layer)",
+          "활성화 함수(Activation Function)"
+        ], ans:2, ok:"정답입니다! 합성곱층은 필터를 슬라이딩하며 이미지의 특징을 추출합니다.", no:"힌트: 이름에서 알 수 있듯, '합성곱'을 수행하는 층입니다."},
+        {t:"quiz", num:"05", q:"학습 정확도는 95%로 매우 높은데 검증 정확도가 60%에 머무는 모델의 상태를 무엇이라 합니까?", opts:[
+          "과소적합(Underfitting)",
+          "과적합(Overfitting)",
+          "수렴(Convergence)",
+          "정규화(Regularization)"
+        ], ans:1, ok:"정답입니다! 학습 데이터에만 지나치게 맞춰져 새 데이터에는 일반화하지 못하는 상태입니다.", no:"힌트: 학습 데이터에 '너무 잘' 맞춰진 상태를 가리키는 말입니다."},
+        {t:"quiz", num:"06", q:"하천 쓰레기 분류 AI를 실생활에 활용하는 방안으로 적절하지 <strong>않은</strong> 것은?", opts:[
+          "하천 청소 로봇에 탑재해 종류별 자동 분류를 돕는다.",
+          "시민이 사진을 찍어 올리면 자동 분류해주는 캠페인 앱을 만든다.",
+          "AI 예측 결과를 환경 데이터로 축적해 정책 수립에 활용한다.",
+          "분류 결과가 100% 정확하다고 가정하고, 검증 없이 그대로 정책에 반영한다."
+        ], ans:3, ok:"정답입니다! AI는 완벽하지 않으며, 결과는 반드시 사람의 검증을 거쳐야 합니다.", no:"힌트: AI 결과를 '검증 없이' 사용하는 것이 적절한지 생각해 봅시다."}
+      ]
+    },
+
+    // 정리 - 읽기 자료
+    {
+      id:"p11", cat:"정리", icon:"📚", title:"읽기 자료",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>★ 미세플라스틱 — 보이지 않는 침입자</h3>
+          <p>하천 쓰레기 가운데 가장 문제가 되는 것은 사실 우리 눈에 잘 띄지 않는 <strong>미세플라스틱(microplastic)</strong>입니다. 크기가 5mm 이하로 작아 수거하기 어렵고, 물고기·새·결국 사람의 몸속까지 들어옵니다.</p>
+        </div>`},
+        {t:"tabs", tabs:[
+          {label:"❶ 1차 미세플라스틱", content:`<p><strong>처음부터 작게 만들어진 플라스틱</strong></p><p>치약·세안제·각질제거제 같은 제품에 들어가는 '마이크로비드(microbead)'가 대표적입니다. 또한 옷의 합성섬유(폴리에스터·나일론)에서 떨어져 나오는 미세 섬유도 1차 미세플라스틱에 해당합니다. 우리가 매일 입고 쓰는 제품에서 이미 미세플라스틱이 만들어지고 있는 셈입니다.</p>`},
+          {label:"❷ 2차 미세플라스틱", content:`<p><strong>큰 플라스틱이 잘게 부서져 만들어진 것</strong></p><p>강과 바다에 버려진 비닐봉지·페트병·스티로폼이 자외선과 파도에 의해 분해되며 점점 잘게 쪼개진 결과입니다. 일반 플라스틱이 자연에서 완전히 분해되는 데에는 수백 년이 걸리며, 그 사이 미세플라스틱이 끊임없이 만들어집니다.</p>`},
+          {label:"❸ 우리의 대응", content:`<p><strong>줄이는 것이 가장 빠른 해결책</strong></p><p>한번 환경에 풀려난 미세플라스틱을 회수하기는 거의 불가능합니다. 따라서 가장 효과적인 대응은 '<strong>처음부터 만들지 않기</strong>'입니다.</p><ul><li>일회용품 줄이기, 다회용기 사용</li><li>합성섬유 옷 세탁 시 미세 섬유 필터 사용</li><li>마이크로비드 미함유 제품 선택</li><li>하천 쓰레기를 줍는 시민과학(Plogging) 참여</li><li>AI를 이용한 자동 분류·수거 시스템 활용</li></ul>`}
+        ]},
+        {t:"html", v:`<div class="blk"><h4>✓ 읽고 생각해 보기</h4></div>`},
+        {t:"input", label:"❶ 미세플라스틱이 먹이사슬을 따라 어떻게 우리 식탁까지 올까?", ph:"플랑크톤 → 작은 물고기 → 큰 물고기 → 사람 등 단계별로 정리해 봅시다.", rows:2},
+        {t:"input", label:"❷ AI 분류 기술을 활용해 미세플라스틱 문제를 해결할 수 있는 아이디어는?", ph:"예: 드론으로 하천을 촬영해 AI가 쓰레기를 식별하고 위치를 지도화한다.", rows:3},
+        {t:"link", url:"https://www.me.go.kr/", icon:"🌊", title:"환경부 — 하천·해양 쓰레기 정책", desc:"하천 쓰레기와 미세플라스틱 관련 통계·정책·캠페인 정보를 종합적으로 확인할 수 있어요"}
+      ]
+    },
+
+    // 정리 - 진로 연계
+    {
+      id:"p12", cat:"정리", icon:"🧭", title:"진로 연계",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ AI로 공주를 지키는 미래 환경 전문가</h3>
+          <p>인공지능을 활용해 환경 문제를 해결하는 분야는 빠르게 성장하고 있습니다. 공주시의 금강과 같은 지역 하천을 지키기 위해서도 다양한 직업이 협력합니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"환경 AI 엔지니어", back:"이미지·음향·센서 데이터를 활용해 환경 분류·예측 모델을 개발하는 전문가. AI와 환경공학을 융합한 분야"},
+          {front:"수질환경 연구원", back:"하천·호수·해양의 수질을 모니터링·분석하고, 오염 원인을 규명하여 정책을 제안"},
+          {front:"생태조사 전문가", back:"하천 생태계의 어류·수서곤충·식생을 조사해 생물다양성과 환경 건강도를 평가"},
+          {front:"환경 데이터 분석가", back:"공공·민간의 환경 데이터를 분석해 시각화하고, 정책·기업 의사결정을 지원하는 분야"}
+        ]},
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 관련 학과·기관</h3>
+          <ul>
+            <li><strong>학과</strong>: 환경공학과, 환경생명공학과, 인공지능학과, 컴퓨터공학과, 생명과학과</li>
+            <li><strong>기관</strong>: 환경부, 국립환경과학원, 한국환경공단, 금강유역환경청, 공주시 환경과</li>
+            <li><strong>지역 자원</strong>: 공주시 행복누림 진로교육센터 친환경관</li>
+          </ul>
+        </div>`},
+        {t:"link", url:"https://www.aihub.or.kr/", icon:"🤖", title:"AI Hub — 환경·생활 데이터셋", desc:"한국지능정보사회진흥원이 제공하는 무료 AI 학습용 데이터셋. 환경 분야 이미지·텍스트 데이터를 다운로드할 수 있어요"},
+        {t:"link", url:"https://www.career.go.kr/", icon:"🧭", title:"커리어넷 — 직업·전공 탐색", desc:"환경·AI 관련 직업과 학과 정보를 더 자세히 살펴볼 수 있습니다"}
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>

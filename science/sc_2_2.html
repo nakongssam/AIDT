@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 빅데이터 수집과 귀납적 탐구 방법의 유사점</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 과학</h1>
+    <div class="topic">빅데이터 수집과<br>귀납적 탐구 방법의 유사점</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  title: "빅데이터 수집과 귀납적 탐구 방법의 유사점",
+  pages: [
+    // 도입 - 학습목표
+    {
+      id:"p1", cat:"도입", icon:"🎯", title:"학습목표",
+      blocks:[
+        {t:"html", v:`
+          <div class="blk" style="text-align:center;padding:20px 0">
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">과학 × 정보 융합 (5차시)</div>
+            <h2 style="font-size:28px;font-weight:900;margin-bottom:8px">빅데이터 수집과<br>귀납적 탐구 방법의 유사점은?</h2>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">귀납적 탐구</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">빅데이터 분석</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">생성형 AI 활용</span>
+            </div>
+          </div>
+        `},
+        {t:"objectives", items:[
+          "빅데이터 분석과 과학 탐구 과정의 공통점을 이해하고, 두 과정의 연관성을 설명할 수 있다.",
+          "문제 해결에 필요한 데이터를 수집·분석하고, 데이터의 경향성과 패턴을 드러내는 그래프로 시각화할 수 있다.",
+          "시각화된 자료에 담긴 의미와 가치를 해석하여 탐구 문제에 대한 잠정적 결론을 도출할 수 있다."
+        ]},
+        {t:"callout", variant:"blue", title:"💡 핵심 키워드", body:"귀납적 탐구 · 빅데이터(Volume·Velocity·Variety) · 머신러닝 · 데이터 수집·정제·시각화 · 생성형 AI 프롬프트"}
+      ]
+    },
+
+    // 도입 - 생각해요
+    {
+      id:"p2", cat:"도입", icon:"💭", title:"생각해요",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 흩어진 단서에서 큰 그림으로</h3>
+          <p>셜록 홈즈와 같이 여러 문학 작품이나 미디어물에 나오는 탐정은 특유의 날카로운 직감과 관찰력으로 해결하기 어려운 사건을 풀어 나갑니다. 탐정이 어떤 사건 현장에서 <strong>볼펜·발자국·메시지</strong> 등의 단서를 발견한 상황을 떠올려 봅시다.</p>
+          <p>탐정은 흩어진 단서를 하나씩 모아 사건의 '큰 그림'을 그려 내는데, 이는 과학자가 여러 관찰 결과로부터 일반적인 결론을 이끌어내는 <strong>귀납적 탐구 방법</strong>과 매우 닮아 있습니다. 또한 수많은 데이터로부터 숨겨진 패턴을 찾아내는 <strong>빅데이터 분석</strong>도 같은 사고 과정을 따릅니다.</p>
+        </div>`},
+        {t:"input", label:"▶ 탐정은 이 흩어져 있는 단서들을 가지고 무엇을 할까? 그렇게 생각하는 이유는?", ph:"예: 단서 사이의 공통점이나 시간 순서를 찾아 사건의 전말을 추론한다.", rows:2},
+        {t:"input", label:"▶ 몇 개의 작은 단서만으로 사건의 '큰 그림'을 그려 내는 것처럼, 우리 주변의 문제도 같은 방식으로 해결할 수 있을까?", ph:"일상에서 작은 관찰·기록을 모아 결론을 끌어낸 경험이 있다면 함께 적어 봅시다.", rows:3}
+      ]
+    },
+
+    // 알아봐요 1 - 귀납적 탐구
+    {
+      id:"p3", cat:"알아봐요", icon:"📖", title:"1. 귀납적 탐구 방법",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 귀납적 탐구 방법이란?</h3>
+          <p><strong>귀납적 탐구 과정</strong>은 개별적인 사실이나 현상을 관찰하고, 그 관찰 결과에서 공통적인 규칙이나 원리를 찾아내어 일반적인 결론을 이끌어 내는 과학적 탐구 방법입니다. 즉, 구체적인 사례들로부터 보편적인 법칙을 만들어 가는 과정입니다.</p>
+          <p>예를 들어 "모든 새는 날 수 있다"라는 결론을 귀납적으로 도출하려면, 참새·비둘기·까치 등 다양한 새를 관찰해 모두 날개를 가지고 하늘을 나는 것을 확인하고 일반적인 결론을 내립니다.</p>
+        </div>`},
+        {t:"steps", title:"귀납적 탐구의 4단계 (갈라파고스 핀치 사례)", items:[
+          {title:"① 자연 현상 관찰과 문제 제기", desc:"갈라파고스 군도의 여러 섬에 서식하는 핀치의 부리 모양·크기가 다른 것을 관찰하고 '왜 다를까?'라는 의문을 가진다."},
+          {title:"② 관찰과 실험 수행", desc:"핀치를 채집하여 부리 모양을 스케치하고 부리의 길이를 측정하는 등 관찰 방법·실험 방법을 고안하여 수행한다."},
+          {title:"③ 관찰 결과와 자료 해석", desc:"관찰 결과를 분석하여 먹이에 따라 핀치의 부리 모양이 다르다는 것을 알게 된다."},
+          {title:"④ 규칙성 발견과 결론 도출", desc:"서식 지역과 먹이에 따라 핀치의 부리 모양이 달라졌다는 보편타당한 결론을 도출한다."}
+        ]},
+        {t:"callout", variant:"green", title:"✓ 귀납적 탐구의 특징", body:"첫째, 구체적인 관찰에서 시작하여 일반적인 원리를 이끌어낸다. 둘째, 새로운 사실과 법칙을 발견하는 데 유용하며 창의적인 탐구가 가능하다. 셋째, 과학적 법칙이나 이론을 형성하는 초기 단계에서 중요한 역할을 한다."}
+      ]
+    },
+
+    // 알아봐요 2 - 빅데이터 분석
+    {
+      id:"p4", cat:"알아봐요", icon:"📊", title:"2. 빅데이터 분석",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 빅데이터 분석이란?</h3>
+          <p><strong>빅데이터(big data)</strong>란 방대한 양(<strong>Volume</strong>)의 데이터가 매우 빠른 속도(<strong>Velocity</strong>)로 생성되고, 그 형태 또한 매우 다양한(<strong>Variety</strong>) 데이터를 의미합니다.</p>
+          <p>빅데이터 분석은 이러한 대규모 데이터를 수집·저장·가공하여 그 안에서 유의미한 패턴이나 상관관계 등을 찾아내는 과정으로, 방대한 양의 개별 정보를 종합적으로 분석하여 새로운 가치와 통찰을 발견하는 데 초점을 둡니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"Volume\n(규모)", back:"기존 데이터베이스로는 다루기 어려울 만큼 방대한 양의 데이터"},
+          {front:"Velocity\n(속도)", back:"실시간 또는 매우 빠른 속도로 생성·전송·처리되는 데이터"},
+          {front:"Variety\n(다양성)", back:"숫자·텍스트·이미지·영상·로그 등 형태가 매우 다양한 데이터"},
+          {front:"Veracity\n(신뢰성)", back:"데이터의 정확성·신뢰성을 의미하며, 결측·오류·편향을 줄여야 한다 (확장 V)"},
+          {front:"Value\n(가치)", back:"분석을 통해 새로운 통찰과 의사결정 가치를 만들어 내는 것 (확장 V)"}
+        ]},
+        {t:"html", v:`<div class="blk">
+          <h4>▶ 빅데이터로 무엇을 할 수 있나?</h4>
+          <p>빅데이터를 분석하는 과정을 통해 사회 현상이나 행동의 변화를 예측하고, 질병 확산이나 환경 문제의 원인을 분석하며, 교통·환경·교육 등 다양한 영역에서 더 나은 의사결정을 내릴 수 있습니다.</p>
+          <p>즉, 빅데이터 분석은 단순히 많은 데이터를 다루는 기술이 아니라 <strong>데이터 속에서 의미를 찾아내고 미래를 예측하는 탐구적 과정</strong>입니다. 수많은 개별 데이터를 종합하여 일반적인 경향을 도출한다는 점에서 귀납적 탐구 방법과 유사한 사고 과정을 따릅니다.</p>
+        </div>`},
+        {t:"callout", variant:"purple", title:"🔗 귀납적 탐구 ↔ 빅데이터 분석의 유사점", body:"두 과정 모두 '개별적 자료에서 출발해 일반적인 결론으로 나아가는 과정'이라는 공통점을 지닙니다. 귀납적 탐구가 관찰·실험 결과로 법칙을 만든다면, 빅데이터 분석은 수많은 데이터로부터 숨겨진 패턴과 규칙을 찾아내 예측과 의사결정에 활용합니다."}
+      ]
+    },
+
+    // 알아봐요 3 - 머신러닝
+    {
+      id:"p5", cat:"알아봐요", icon:"🤖", title:"3. 머신러닝 — 빅데이터와 AI의 교두보",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 머신러닝(Machine Learning)</h3>
+          <p><strong>머신러닝(Machine Learning, ML)</strong>은 컴퓨터가 데이터를 통해 스스로 학습하고, 경험을 통해 성능을 향상시키며, 명확한 지침 없이도 특정 작업을 수행하게 하는 인공지능(AI)의 한 분야입니다. 이는 방대한 데이터를 분석해 패턴을 찾고, 이를 기반으로 미래를 예측하거나 의사결정을 내리는 기술이며, 자연어 처리·컴퓨터 비전·음성 인식 등 다양한 분야에서 활용할 수 있습니다.</p>
+        </div>`},
+        {t:"tabs", tabs:[
+          {label:"❶ 지도학습", content:`<p><strong>지도학습 (Supervised Learning)</strong></p><p>입력 데이터와 정답(레이블)을 함께 제공해 컴퓨터가 입력→정답의 관계를 학습하도록 하는 방법입니다.</p><ul><li>예: 사진과 '고양이/개' 레이블로 학습 → 새로운 사진의 동물 종류 예측</li><li>예: 과거 인구·연도 데이터로 학습 → 미래 인구 예측 (선형회귀)</li></ul>`},
+          {label:"❷ 비지도학습", content:`<p><strong>비지도학습 (Unsupervised Learning)</strong></p><p>정답 없이 데이터만 제공해 컴퓨터가 스스로 데이터의 구조·패턴·군집을 찾아내도록 하는 방법입니다.</p><ul><li>예: 고객 구매 데이터를 군집화(Clustering)해 비슷한 성향의 그룹 찾기</li><li>예: 차원 축소로 복잡한 데이터를 요약</li></ul>`},
+          {label:"❸ 강화학습", content:`<p><strong>강화학습 (Reinforcement Learning)</strong></p><p>행동에 대한 보상·벌점 신호를 통해 시행착오로 최적의 전략을 학습하는 방법입니다.</p><ul><li>예: 알파고(AlphaGo)가 자가 대국을 통해 바둑 실력을 향상</li><li>예: 로봇 청소기가 경로를 최적화</li></ul>`}
+        ]},
+        {t:"callout", variant:"green", title:"🌱 빅데이터와 AI를 이어주는 교두보", body:"빅데이터는 머신러닝의 '연료'이고, 머신러닝은 빅데이터에서 '의미'를 캐내는 도구입니다. 데이터가 많을수록 모델은 더 똑똑해지지만, 데이터의 신뢰성(Veracity)이 떨어지면 잘못된 결론에 이를 수 있으므로 데이터 정제와 검증이 매우 중요합니다."}
+      ]
+    },
+
+    // 활동해요 1 - 귀납적 탐구 체험 (DNA)
+    {
+      id:"p6", cat:"활동해요", icon:"🧬", title:"활동 1. 귀납적 탐구 체험 (1/5차시)",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 100명의 유전 정보로 규칙 찾기</h3>
+          <p>아래는 100명의 유전 정보가 담긴 데이터의 일부입니다. 12자리의 DNA 서열이 어떤 형질(눈동자색·병질환·코 모양)을 결정하는지 분석합니다. 이 활동을 통해 <strong>귀납적 탐구 과정의 특징과 문제점</strong>을 파악해 보고, 나아가 빅데이터의 특징과도 연관 지어 생각해 봅시다.</p>
+        </div>`},
+        {t:"html", v:`<div class="blk-card" style="overflow-x:auto;">
+          <h4 style="margin-top:0">📋 유전 정보 데이터 (샘플 12행 / 총 100행)</h4>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead style="background:var(--surface-alt);">
+              <tr>
+                <th style="padding:8px;border:1px solid var(--border);text-align:left;width:40px;">#</th>
+                <th style="padding:8px;border:1px solid var(--border);text-align:left;">12자리 유전 정보(DNA)</th>
+                <th style="padding:8px;border:1px solid var(--border);text-align:left;">눈동자색</th>
+                <th style="padding:8px;border:1px solid var(--border);text-align:left;">병질환</th>
+                <th style="padding:8px;border:1px solid var(--border);text-align:left;">코 모양</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="padding:6px 8px;border:1px solid var(--border);">1</td><td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;">AGTTCAAGGCTA</td><td style="padding:6px 8px;border:1px solid var(--border);">파란색</td><td style="padding:6px 8px;border:1px solid var(--border);">불면증</td><td style="padding:6px 8px;border:1px solid var(--border);">메부리코</td></tr>
+              <tr><td style="padding:6px 8px;border:1px solid var(--border);">2</td><td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;">GATCTATGCTCG</td><td style="padding:6px 8px;border:1px solid var(--border);">빨간색</td><td style="padding:6px 8px;border:1px solid var(--border);">신경과민</td><td style="padding:6px 8px;border:1px solid var(--border);">들창코</td></tr>
+              <tr><td style="padding:6px 8px;border:1px solid var(--border);">3</td><td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;">TCAGCAGGGTAC</td><td style="padding:6px 8px;border:1px solid var(--border);">검은색</td><td style="padding:6px 8px;border:1px solid var(--border);">소화불량</td><td style="padding:6px 8px;border:1px solid var(--border);">화살코</td></tr>
+              <tr style="background:#fff7ed;"><td style="padding:6px 8px;border:1px solid var(--border);">4</td><td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;">CCC GGG ATA AAA</td><td style="padding:6px 8px;border:1px solid var(--border);"><strong>희귀 하얀색</strong></td><td style="padding:6px 8px;border:1px solid var(--border);"><strong>희귀 혈우병</strong></td><td style="padding:6px 8px;border:1px solid var(--border);"><strong>희귀 돼지코</strong></td></tr>
+              <tr><td style="padding:6px 8px;border:1px solid var(--border);">5</td><td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;">CGAAGCTGCATG</td><td style="padding:6px 8px;border:1px solid var(--border);">갈색</td><td style="padding:6px 8px;border:1px solid var(--border);">소화불량</td><td style="padding:6px 8px;border:1px solid var(--border);">주먹코</td></tr>
+              <tr><td style="padding:6px 8px;border:1px solid var(--border);">6</td><td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;">TTAGGACCTAAT</td><td style="padding:6px 8px;border:1px solid var(--border);">검은색</td><td style="padding:6px 8px;border:1px solid var(--border);">면역결핍</td><td style="padding:6px 8px;border:1px solid var(--border);">메부리코</td></tr>
+              <tr><td style="padding:6px 8px;border:1px solid var(--border);">7</td><td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;">ACGTGACTAGAC</td><td style="padding:6px 8px;border:1px solid var(--border);">파란색</td><td style="padding:6px 8px;border:1px solid var(--border);">불면증</td><td style="padding:6px 8px;border:1px solid var(--border);">주먹코</td></tr>
+              <tr><td style="padding:6px 8px;border:1px solid var(--border);">8</td><td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;">GCCCTAGAGTCG</td><td style="padding:6px 8px;border:1px solid var(--border);">갈색</td><td style="padding:6px 8px;border:1px solid var(--border);">신경과민</td><td style="padding:6px 8px;border:1px solid var(--border);">들창코</td></tr>
+              <tr><td style="padding:6px 8px;border:1px solid var(--border);">9</td><td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;">GGGAGATACTTA</td><td style="padding:6px 8px;border:1px solid var(--border);">빨간색</td><td style="padding:6px 8px;border:1px solid var(--border);">소화불량</td><td style="padding:6px 8px;border:1px solid var(--border);">들창코</td></tr>
+              <tr style="background:#fff7ed;"><td style="padding:6px 8px;border:1px solid var(--border);">10</td><td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;">AAT GGG TTT GGG</td><td style="padding:6px 8px;border:1px solid var(--border);">파란색</td><td style="padding:6px 8px;border:1px solid var(--border);"><strong>희귀 혈우병</strong></td><td style="padding:6px 8px;border:1px solid var(--border);">주먹코</td></tr>
+              <tr><td style="padding:6px 8px;border:1px solid var(--border);">11</td><td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;">CATTCAGGGCTA</td><td style="padding:6px 8px;border:1px solid var(--border);">갈색</td><td style="padding:6px 8px;border:1px solid var(--border);">불면증</td><td style="padding:6px 8px;border:1px solid var(--border);">메부리코</td></tr>
+              <tr style="background:#fff7ed;"><td style="padding:6px 8px;border:1px solid var(--border);">12</td><td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;">TGCCTATGC AAA</td><td style="padding:6px 8px;border:1px solid var(--border);">검은색</td><td style="padding:6px 8px;border:1px solid var(--border);">신경과민</td><td style="padding:6px 8px;border:1px solid var(--border);"><strong>희귀 돼지코</strong></td></tr>
+            </tbody>
+          </table>
+          <p style="font-size:12px;color:var(--txt3);margin-top:8px;">※ 굵게 표시된 행이 '희귀' 형질입니다. (총 100행 — 교재 참고)</p>
+        </div>`},
+        {t:"input", label:"1) 희귀 돼지코를 나타내는 유전 코드는?", ph:"여러 행을 비교해 공통으로 나타나는 패턴을 찾아 적어 보세요.", rows:2},
+        {t:"input", label:"2) 12자리 중에서 필요 없는 코드 번호(더미 데이터)는?", ph:"형질과 무관하게 보이는 자리(위치)를 찾아 봅시다.", rows:2},
+        {t:"input", label:"3) AAGGGGTCACTA 는 어떤 형질인가?", ph:"앞에서 찾은 규칙으로 추론해 봅시다.", rows:2},
+        {t:"input", label:"4) 1번부터 순서대로 분석하여 규칙을 발견해 보자.", ph:"눈동자색·병질환·코 모양 각 형질별로 공통점을 정리해 보세요.", rows:4},
+        {t:"input", label:"5) 4)를 하면서 규칙을 찾다가 이상한 점을 발견하였는가?", ph:"예외 사례나 '희귀' 표시 행에서 어떤 점이 다른지 살펴봅시다.", rows:2},
+        {t:"input", label:"6) 5)에서 발견한 이상점으로 볼 때, 다수의 사례에서 규칙성을 분석하는 것의 한계점은 무엇인가?", ph:"귀납적 탐구의 한계(예외 사례, 표본 수, 시간 소요 등)를 생각해 봅시다.", rows:3},
+        {t:"input", label:"7) 만약, 이를 AI에게 전달하여 빅데이터 분석을 한다면 AI는 어떻게 답할까?", ph:"AI는 어떤 점에서 사람보다 빠르고, 어떤 점에서 한계가 있을지 적어 봅시다.", rows:3}
+      ]
+    },
+
+    // 활동해요 2 - AI 조수와 친해지기
+    {
+      id:"p7", cat:"활동해요", icon:"💬", title:"활동 2. AI 조수와 친해지기 (2/5차시)",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 생성형 인공지능 활용법 알아보기</h3>
+          <p>생성형 AI 도구는 탐구 주제에 대해 관련된 변수·요인·키워드·통계 출처 등을 신속하게 제안해 주는 조력자입니다. 즉 탐구의 출발점을 잡아 주는 <strong>탐구 조수(Assistant)</strong> 역할을 합니다. 지금부터 생성형 AI 조수를 활용하여 '빅데이터 활용 탐구'를 위한 기초 정보를 탐색해 봅시다.</p>
+        </div>`},
+        {t:"callout", variant:"blue", title:"🤔 다음 두 가지 질문 중, 객관적이고 구체적인 데이터를 얻을 가능성이 높은 것은?", body:"① 라면이 왜 맛있을까?<br>② 현재 기준으로, 지난 5년간 라면 판매량의 브랜드별 순위와 추정 판매량은 어느 정도인가?<br><br>✓ 탐구에서 활용 가능한 질문은 ②처럼 <strong>객관적이고 측정 가능한 형태</strong>여야 합니다."},
+        {t:"steps", title:"활동 과정", items:[
+          {title:"① AI 조수 접속하기", desc:"Google의 생성형 인공지능 Gemini (gemini.google.com)에 접속한다."},
+          {title:"② 프롬프트 구성하기 — 4가지 요소", desc:"(1) 역할 부여: '너는 ○○○이다.'  (2) 상황 설명: '우리는 ○○○에 대하여 탐구 중이야.'  (3) 임무 부여: '○○○을 해 줘.'  (4) 형식 지정: '○○○의 형태로 정리해 줘.'"},
+          {title:"③ 조별 질문 만들기", desc:"조별로 탐구하고 싶은 주제(예: '칼국수의 가격에 영향을 미치는 요인')에 대해 프롬프트를 작성하고 Gemini에게 질문한다."},
+          {title:"④ 탐구 주제로 확장하기", desc:"이번 수업의 탐구 주제와 관련하여 더 구체적인 후속 프롬프트를 작성한다."},
+          {title:"⑤ AI의 답변 분석하기", desc:"AI의 답변을 읽고 탐구에 활용할 만한 변수·요인·아이디어를 찾아 정리한다."},
+          {title:"⑥ 조별 결과 공유하기", desc:"조별 프롬프트 문장, 조별 탐구 질문, AI의 주요 답변 요약을 정리하여 패들렛에 업로드한다."}
+        ]},
+        {t:"input", label:"📝 우리 조의 프롬프트 (탐구 주제: 칼국수의 가격에 영향을 미치는 요인)", ph:"역할/상황/임무/형식의 4가지 요소를 모두 포함해 작성해 보세요.\n예) 너는 식품 산업 분석가야. 우리는 칼국수 가격 변동에 대해 탐구 중이야. 최근 5년간 가격에 영향을 미친 주요 요인 5가지를 알려 줘. 표 형식으로 정리해 줘.", rows:5},
+        {t:"input", label:"📌 Gemini 답변에서 정리한 핵심 변수·요인·아이디어", ph:"탐구에 활용할 만한 키워드와 그 이유를 정리해 보세요.", rows:4},
+        {t:"link", url:"https://gemini.google.com/", icon:"✨", title:"Google Gemini", desc:"실시간 데이터와 검색을 연동하는 생성형 AI 조수"},
+        {t:"link", url:"https://chatgpt.com/", icon:"💡", title:"ChatGPT", desc:"OpenAI의 대화형 인공지능 서비스 (사실 교차 점검 필요)"}
+      ]
+    },
+
+    // 활동해요 3 - 데이터 수집·정제
+    {
+      id:"p8", cat:"활동해요", icon:"📥", title:"활동 3. 데이터의 바다에서 보물 찾기 (3/5차시)",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 데이터 탐색 후 정제하기</h3>
+          <p>AI 조수의 도움으로 탐구 주제와 관련된 정보를 얻었다면, 이제 실제 데이터를 탐색하고 필요한 부분만 정제하는 과정을 수행할 차례입니다. AI가 제시한 키워드를 바탕으로 <strong>국가통계포털(KOSIS)</strong> 등에서 관련 자료를 찾아보고, 그중 탐구에 필요한 데이터만 선별·정제하여 분석에 활용할 수 있는 형태로 정리해 봅시다.</p>
+        </div>`},
+        {t:"steps", title:"〈데이터 수집〉 KOSIS 활용", items:[
+          {title:"① 국가통계포털 접속", desc:"국가통계포털(kosis.kr)에 접속한다."},
+          {title:"② 핵심어 검색", desc:"상단 검색창에 '외식비', '식품 가격' 등 탐구에 필요한 핵심어를 입력하여 검색한다."},
+          {title:"③ 통계표 선택", desc:"검색 결과 중, 탐구 주제와 관련된 통계표를 선택한다."},
+          {title:"④ 조건 필터링", desc:"통계표 화면의 설정 메뉴에서 조회 기간, 품목(예: 칼국수) 등 원하는 조건을 선택하여 데이터를 필터링한다."},
+          {title:"⑤ CSV 다운로드", desc:"우측 상단의 [다운로드] 버튼을 클릭하고, 파일 형식은 CSV로 지정하여 컴퓨터에 저장한다."}
+        ]},
+        {t:"steps", title:"〈데이터 정제〉 Google Sheets 활용", items:[
+          {title:"① CSV 업로드", desc:"구글 스프레드시트를 열고, [파일] > [가져오기]를 선택하여 다운로드한 CSV 파일을 업로드한다."},
+          {title:"② 불필요 행·열 삭제", desc:"탐구에 불필요한 정보가 포함된 행이나 열을 선택하여 삭제한다. (열 알파벳 클릭 → 우클릭 → [열 삭제])"},
+          {title:"③ 열 이름 변경", desc:"'ITEM_NAME'과 같이 이해하기 어려운 열 이름을 '품목', '가격' 등 알기 쉬운 이름으로 변경한다."},
+          {title:"④ '우리 모둠 데이터' 저장", desc:"정제가 완료된 파일의 제목을 '우리 모둠 데이터'로 지정하고 다음 활동(데이터 시각화)을 위해 저장한다."}
+        ]},
+        {t:"callout", variant:"purple", title:"📊 데이터 정제(Data Cleaning)란?", body:"수집한 원자료에서 ① 결측값(빈 칸) 보완, ② 중복·이상값 제거, ③ 열 이름·단위 통일, ④ 형식 변환(숫자/날짜)을 수행하는 과정입니다. 정제 품질이 분석 결과의 정확도를 좌우합니다."},
+        {t:"link", url:"https://kosis.kr/", icon:"📈", title:"KOSIS 국가통계포털", desc:"통계청이 제공하는 공식 통계 데이터베이스 (CSV 다운로드 가능)"},
+        {t:"link", url:"https://docs.google.com/spreadsheets/", icon:"📑", title:"Google Sheets", desc:"웹 기반 스프레드시트 — 실시간 협업과 CSV 가져오기·정제에 적합"}
+      ]
+    },
+
+    // 활동해요 4 - 데이터 시각화
+    {
+      id:"p9", cat:"활동해요", icon:"📈", title:"활동 4. 데이터, 그림으로 이야기하기 (4/5차시)",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 데이터를 시각화하기</h3>
+          <p>조별 스프레드시트 데이터를 활용하여 <strong>두 가지 도구</strong>로 시각화해 보고, 각각의 그래프가 주는 표현 방식의 차이를 알아봅시다.</p>
+        </div>`},
+        {t:"tabs", tabs:[
+          {label:"가. Google Sheets — 기본 그래프", content:`<p><strong>구글 시트로 기본 그래프 만들기</strong></p><p>구글 시트는 데이터를 관리·시각화·분석할 수 있는 도구로, 간단한 그래프나 기본적인 데이터 비교를 빠르게 시각화하기에 적합합니다. 특히 데이터의 시간적 변화나 항목 간 비교를 손쉽게 파악할 수 있습니다.</p><ol style="padding-left:20px;margin-top:8px;"><li>지난 차시의 '우리 모둠 데이터' 구글 시트 파일을 연다.</li><li>시각화할 데이터가 있는 열(예: '연도', '가격')을 마우스로 드래그하여 전체 선택한다.</li><li>상단 메뉴에서 [삽입] > [차트]를 클릭하면 기본 차트가 자동으로 생성된다.</li><li>화면 우측 '차트 편집기'를 이용해 차트를 편집한다.</li><li>[설정] 탭에서 '차트 유형'을 데이터의 시간적 변화를 잘 보여주는 <strong>'꺾은선 차트'</strong>로 변경한다.</li><li>[맞춤 설정] 탭에서 '차트 및 축 제목' 항목을 선택하고, 그래프의 전체 제목과 가로축·세로축의 제목을 입력한다.</li></ol>`},
+          {label:"나. Flourish — 움직이는 그래프", content:`<p><strong>플러리시(Flourish)로 움직이는 그래프 만들기</strong></p><p>플러리시는 복잡한 코딩 없이, 다양한 템플릿을 활용하여 데이터를 시각화할 수 있는 도구로, 추세와 패턴을 손쉽게 파악할 수 있습니다.</p><ol style="padding-left:20px;margin-top:8px;"><li>플러리시 홈페이지(flourish.studio)에 접속하여 로그인한다.</li><li>[New visualization]을 클릭하고, 여러 템플릿 중 <strong>'Line chart race'</strong>를 선택한다.</li><li>화면 상단의 [Data] 탭으로 이동하여 샘플 데이터를 모두 삭제한다.</li><li>구글 시트에 있는 우리 모둠의 데이터를 복사하여 붙여넣는다.</li><li>화면 우측 설정 창에서 데이터의 역할을 지정한다.<br>· <strong>Labels</strong>(이름표): 시간의 기준이 되는 '연도' 열 지정<br>· <strong>Values</strong>(값): 그래프에 표시할 수치 데이터 열(예: '가격' 등) 지정</li><li>화면 상단의 [Preview] 탭을 클릭하여 결과를 확인한다.</li></ol>`}
+        ]},
+        {t:"input", label:"🔍 생각해보기 — 같은 데이터를 두 가지 도구로 시각화했을 때, 각각의 방식이 가진 장점이나 표현상의 특징을 비교해 보자.", ph:"예) Google Sheets는 정적인 비교에 좋고, Flourish는 시간 흐름에 따른 변화를 직관적으로 보여 준다…", rows:5},
+        {t:"link", url:"https://flourish.studio/", icon:"🌸", title:"Flourish", desc:"코딩 없이 인터랙티브 데이터 시각화를 만들 수 있는 영국 Kiln의 도구"},
+        {t:"link", url:"https://www.canva.com/", icon:"🎨", title:"Canva (5차시 발표 자료)", desc:"조별 결과 발표·공유를 위한 콘텐츠 제작 도구"}
+      ]
+    },
+
+    // 정리 - 스스로 진단하기
+    {
+      id:"p10", cat:"정리", icon:"✅", title:"스스로 진단하기",
+      blocks:[
+        {t:"html", v:`<div class="blk"><h3>▶ 학습 점검</h3><p>이번 수업에서 학습한 내용을 스스로 점검해 봅시다. 각 항목에 대해 <strong>잘함 / 보통 / 미흡</strong> 중 하나를 선택해 주세요.</p></div>`},
+        {t:"assessment", title:"자기 평가", ratings:["잘함","보통","미흡"], items:[
+          "귀납적 탐구 방법과 빅데이터 분석 과정을 비교하여 설명할 수 있다.",
+          "데이터를 수집하고 정제하여 탐구에 필요한 형태로 만들 수 있다.",
+          "다양한 디지털 도구(Google Sheets·Flourish 등)를 활용하여 데이터를 시각화할 수 있다.",
+          "생성형 AI에 효과적인 프롬프트를 작성하여 탐구에 필요한 정보를 얻을 수 있다.",
+          "시각화된 자료에 담긴 의미를 해석하여 탐구 문제에 대한 잠정적 결론을 도출할 수 있다."
+        ]},
+        {t:"input", label:"💭 가장 어려웠던 부분과 그 이유, 그리고 보완 계획을 적어 봅시다.", ph:"예: Flourish 데이터 형식 맞추기가 어려웠다. 다음에는 열 이름을 미리 영어로 정제해 둬야겠다…", rows:3}
+      ]
+    },
+
+    // 정리 - 활동퀴즈
+    {
+      id:"p11", cat:"정리", icon:"❓", title:"활동퀴즈",
+      blocks:[
+        {t:"html", v:`<div class="blk"><h3>▶ 핵심 개념 확인</h3><p>귀납적 탐구 방법과 빅데이터에 대한 이해를 점검해 봅시다.</p></div>`},
+        {t:"quiz", num:"01", q:"다음에서 설명하는 과학적 탐구 방법은?<br>· 구체적인 관찰에서 시작하여 일반적인 원리를 이끌어낸다.<br>· 새로운 사실과 법칙을 발견하는 데 유용하며, 창의적인 탐구가 가능하다.", opts:[
+          "연역적 탐구 방법",
+          "귀납적 탐구 방법",
+          "가설 검증 방법",
+          "실험 통제 방법"
+        ], ans:1, ok:"정답입니다! 개별 관찰에서 일반적 결론을 이끌어 내는 것이 귀납적 탐구입니다.", no:"힌트: '특수 → 일반'의 방향으로 진행되는 탐구 방법을 찾아봅시다."},
+        {t:"quiz", num:"02", q:"빈칸에 공통으로 들어갈 알맞은 말은?<br>· (　　　)은/는 기존의 데이터 관리 능력을 넘어서는 매우 많은 양의 데이터이다.<br>· 일기 예보에 날씨에 대한 (　　　)이/가 활용된다.", opts:[
+          "통계",
+          "표본",
+          "빅데이터",
+          "스몰데이터"
+        ], ans:2, ok:"정답입니다! Volume·Velocity·Variety의 3V를 갖는 대규모 데이터가 빅데이터입니다.", no:"힌트: 양·속도·다양성 면에서 기존 데이터를 뛰어넘는 자료를 가리킵니다."},
+        {t:"quiz", num:"03", q:"빅데이터에 대한 설명으로 <strong>옳지 않은</strong> 것은?", opts:[
+          "빅데이터는 다양한 예측을 가능하게 해 준다.",
+          "빅데이터는 항상 정확한 정보로만 이루어진다.",
+          "대량의 데이터를 수집할 때 개인 정보가 유출될 수 있다.",
+          "빅데이터를 저장하고 분석하는 데 슈퍼컴퓨터가 이용된다.",
+          "현대에는 빅데이터가 전문 분야와 일상생활에서 모두 폭넓게 활용된다."
+        ], ans:1, ok:"정답입니다! 빅데이터에는 결측·오류·편향이 섞일 수 있으므로 정제(Veracity)가 매우 중요합니다.", no:"힌트: 빅데이터의 5V 중 Veracity(신뢰성)를 떠올려 봅시다."},
+        {t:"quiz", num:"04", q:"다음은 빅데이터와 관련된 문제점입니다.<br>(가) 개인 정보의 유출<br>(나) 정확하지 않은 정보의 수집<br>이에 대한 설명으로 <strong>옳지 않은</strong> 것은?", opts:[
+          "환자의 의료 기록 유출은 (가)에 해당한다.",
+          "(가)의 해결을 위해 정보 보안 기술이 이용된다.",
+          "(가)는 빅데이터의 활용 과정에서 나타날 수 있다.",
+          "(나)와 상관없이 빅데이터를 활용한 예측은 항상 정확하다.",
+          "빅데이터의 올바른 활용을 위해 (가)와 (나)를 모두 해결해야 한다."
+        ], ans:3, ok:"정답입니다! 데이터 신뢰성이 떨어지면 예측 결과도 부정확해지므로, 정확한 데이터 확보가 필수입니다.", no:"힌트: '항상 정확하다'는 표현이 적절한지 다시 생각해 봅시다."},
+        {t:"quiz", num:"05", q:"DNA 100명 활동에서 '희귀 돼지코'와 같은 예외 사례가 등장합니다. 이로부터 알 수 있는 <strong>귀납적 탐구 방법의 한계</strong>로 가장 적절한 것은?", opts:[
+          "수학적 증명만으로는 결론을 내릴 수 없다.",
+          "관찰 사례가 많을수록 결론이 무조건 참이 된다.",
+          "다수 사례에서 도출한 규칙도 예외에 의해 깨질 수 있다.",
+          "관찰자의 도구가 항상 완벽하기 때문에 오류가 없다."
+        ], ans:2, ok:"정답입니다! 귀납적 결론은 '잠정적'이며, 새로운 반례가 나타나면 수정될 수 있습니다.", no:"힌트: 핀치 사례에서도 '모든 새는 난다'에 펭귄·타조 같은 반례가 있습니다."},
+        {t:"quiz", num:"06", q:"생성형 AI를 탐구의 '조수'로 활용할 때, 가장 적절한 질문(프롬프트)은?", opts:[
+          "라면이 왜 맛있을까?",
+          "오늘 점심 메뉴 추천해 줘.",
+          "현재 기준으로, 지난 5년간 라면 판매량의 브랜드별 순위와 추정 판매량은 어느 정도인가?",
+          "내가 좋아할 만한 영화 알려 줘."
+        ], ans:2, ok:"정답입니다! 탐구에 활용 가능한 질문은 객관적·구체적이며 측정 가능한 형태여야 합니다.", no:"힌트: 주관적 취향이 아닌 측정 가능한 데이터로 답변 가능한 질문을 골라 보세요."}
+      ]
+    },
+
+    // 정리 - 읽기자료 + 진로
+    {
+      id:"p12", cat:"정리", icon:"📚", title:"읽기 자료 & 진로 연계",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>★ 딥 러닝(심층학습)</h3>
+          <p><strong>딥러닝(Deep Learning)</strong>은 인공지능(AI)의 핵심 분야 중 하나이며, 기계 학습(Machine Learning)의 한 종류입니다. 이는 사람의 뇌 신경망 구조를 모방한 인공신경망을 기반으로 하며, 컴퓨터가 방대한 데이터로부터 스스로 학습하고 판단하게 만드는 기술입니다.</p>
+          <p>딥러닝의 학습 방식은 아기가 사물을 인식하는 과정과 매우 유사합니다. 컴퓨터는 데이터를 여러 계층(layer)에 걸쳐 단계적으로 분석하며, 단순한 특징에서 복잡하고 추상적인 개념 순으로 학습을 심화시킵니다.</p>
+        </div>`},
+        {t:"steps", title:"딥러닝의 3단계 학습 과정", items:[
+          {title:"1단계 — 저수준 특징 인식", desc:"이미지 데이터에서 선·모서리·색깔 등 가장 기본적인 시각적 요소를 추출한다."},
+          {title:"2단계 — 중간 수준 특징 조합", desc:"1단계에서 추출한 기본 특징들을 조합하여 눈·코·귀와 같이 더 복잡한 형태를 파악한다."},
+          {title:"3단계 — 고수준 추상화", desc:"2단계의 형태들을 종합하여 '고양이' 또는 '자동차'와 같은 최종 개념을 완성한다. 이를 통해 새로운 이미지에서도 해당 사물을 식별할 수 있게 된다."}
+        ]},
+        {t:"tabs", tabs:[
+          {label:"❶ 이미지 인식", content:`<ul><li>스마트폰의 얼굴 인식 잠금 해제</li><li>사진첩 인물 및 사물 자동 분류</li><li>자율주행차의 장애물 감지</li></ul>`},
+          {label:"❷ 자연어 처리", content:`<ul><li>파파고·구글 번역 등 기계 번역 서비스</li><li>'시리'·'빅스비'와 같은 AI 음성 비서</li></ul>`},
+          {label:"❸ 추천 시스템", content:`<ul><li>유튜브·넷플릭스 등 사용자의 과거 시청 기록을 분석하여 취향에 맞는 콘텐츠를 추천하는 알고리즘</li></ul>`}
+        ]},
+        {t:"html", v:`<div class="blk">
+          <h3>🧭 진로 연계 — 빅데이터 전문가</h3>
+          <p>대량의 빅데이터로 사람들의 행동이나 시장의 변화 등을 분석하는 데 도움이 되는 정보를 제공합니다. 데이터 수집, 데이터 저장 및 분석, 데이터 시각화 등을 통한 정보 제공을 담당하며, 실시간으로 데이터를 수집·저장·분석·시각화하여 의미 있는 분석 결과를 도출하기도 합니다.</p>
+          <h4>적성 및 흥미</h4>
+          <ul>
+            <li><strong>적성</strong>: 통계적인 이론과 복잡한 프로그램에 대한 이해력뿐만 아니라 다양한 관점에서 문제를 의식하는 수리·논리력이 필요하며, 데이터 구조 이해와 시각화를 위한 공간지각력이 필요하다.</li>
+            <li><strong>흥미</strong>: 세계 각국의 최신 경향과 정보에 대한 호기심이 많은 사람, 방대한 데이터를 꼼꼼하게 탐구하는 것을 즐기는 사람에게 적합하다.</li>
+          </ul>
+          <h4>정규 교육과정</h4>
+          <ul>
+            <li>대학에서 통계학·컴퓨터공학·산업공학 등을 전공하면 기술적인 기초를 갖추는 데 도움이 된다.</li>
+            <li>경영학이나 홍보·판매 분야의 지식과 경험을 쌓아 두면 기술적인 기초와 결합해 더 유리할 수 있다.</li>
+          </ul>
+          <h4>관련 학과</h4>
+          <p style="font-size:13px;color:var(--txt2);">IT융합학과, 교양공학부, 소프트웨어공학과, 정보통신공학과, 컴퓨터공학과, 컴퓨터과학과, 컴퓨터소프트웨어과, 통계학과</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"빅데이터 전문가", back:"대규모 데이터를 수집·저장·분석·시각화하여 비즈니스 의사결정을 지원하는 직업"},
+          {front:"데이터 사이언티스트", back:"통계·머신러닝·도메인 지식을 결합해 데이터에서 새로운 가치를 발굴하는 융합 직업"},
+          {front:"데이터 엔지니어", back:"빅데이터 파이프라인·저장소·실시간 처리 시스템을 설계·구축하는 인프라 전문가"},
+          {front:"AI 연구원", back:"머신러닝·딥러닝 알고리즘을 연구·개발하며 새로운 AI 모델을 설계하는 연구자"}
+        ]},
+        {t:"link", url:"https://www.career.go.kr/", icon:"🧭", title:"커리어넷 — 빅데이터 전문가", desc:"빅데이터 전문가의 직무·전공·관련 학과 정보를 자세히 살펴볼 수 있습니다"},
+        {t:"link", url:"https://kosis.kr/", icon:"📊", title:"KOSIS 국가통계포털", desc:"탐구 활동의 출발점이 되는 공공 통계 데이터 허브"}
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>

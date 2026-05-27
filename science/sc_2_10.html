@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 공산성, 과학으로 다시 보다</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 과학</h1>
+    <div class="topic">공산성<br>과학으로 다시 보다</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  title: "공산성, 과학으로 다시 보다",
+  pages: [
+    {
+      id:"p1", cat:"도입", icon:"🎯", title:"학습목표",
+      blocks:[
+        {t:"html", v:`
+          <div class="blk" style="text-align:center;padding:20px 0">
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">과학 × 정보 융합 · 데이터 시각화</div>
+            <h2 style="font-size:28px;font-weight:900;margin-bottom:8px">공산성,<br>과학으로 다시 보다</h2>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">과학(역학)</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">정보(빅데이터)</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">데이터 시각화</span>
+            </div>
+          </div>
+        `},
+        {t:"objectives", items:[
+          "중력에 의한 낙하 운동의 원리를 설명할 수 있다.",
+          "공산성의 기존 재료와 대체재의 특성을 비교하고, 운동량과 충격량 측면에서 타당성을 분석할 수 있다.",
+          "빅데이터 분석 도구를 활용하여 데이터를 시각화하고, 공공 구조물의 안정성과 지속가능성을 고려한 과학적 대안을 제시할 수 있다."
+        ]},
+        {t:"callout", variant:"blue", title:"수업에서 활용하는 AI·디지털 도구", body:"ChatGPT, Thinglink, Canva, 엑셀, Google Earth, PhET 시뮬레이션을 활용하여 공산성의 지형, 낙하 운동, 성벽 재료, 충격 흡수 성능을 탐구합니다."}
+      ]
+    },
+    {
+      id:"p2", cat:"도입", icon:"💭", title:"생각해요",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 역사 속 성벽에도 과학이 숨어 있을까?</h3>
+          <p>공을 던지거나 받는 상황에서 우리는 ‘충격’과 ‘운동’이라는 말을 자주 사용합니다. 과학에서는 이것을 <strong>운동량</strong>과 <strong>충격량</strong>이라는 개념으로 설명할 수 있습니다. 운동량은 물체가 가진 운동의 양이며, 충격량은 물체가 힘을 받아 운동 상태가 변할 때 관련되는 양입니다.</p>
+          <p>공산성과 같은 산성은 높은 지형에 지어진 방어 요새입니다. 과거 공성전에서 성 위에서 굴러 내려오는 돌은 중력에 의해 빠르게 움직이며 큰 운동량을 가지게 되었고, 짧은 시간에 큰 힘을 가해 적의 무기나 공격을 막는 데 활용되었습니다.</p>
+          <p style="margin-top:12px;font-weight:600;color:var(--accent)">그렇다면 공산성의 지형과 성벽 재료를 과학적으로 분석하면, 오늘날 더 안전하고 지속가능한 성벽 구조를 설계할 수 있을까요?</p>
+        </div>`},
+        {t:"input", label:"1. 성 위에서 굴러 내려온 돌이 큰 충격을 줄 수 있었던 까닭은 무엇일까?", ph:"예: 높은 곳에서 내려오며 속도가 빨라져 운동량이 커졌기 때문이다.", rows:2},
+        {t:"input", label:"2. 오늘날 공산성의 재료를 새롭게 바꾼다면 어떤 조건을 고려해야 할까?", ph:"예: 충격을 잘 흡수하는지, 오래 버틸 수 있는지, 환경에 미치는 영향이 적은지 등을 고려한다.", rows:3}
+      ]
+    },
+    {
+      id:"p3", cat:"알아봐요", icon:"📖", title:"1. 운동량과 충격량",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 운동량이란?</h3>
+          <p>승용차와 트럭이 같은 속도로 움직일 때 질량이 큰 트럭은 승용차보다 멈추기 어렵습니다. 또 같은 승용차라도 속도가 빠를수록 멈추기 어렵습니다. 이처럼 물체의 운동 상태를 이해하려면 <strong>질량</strong>과 <strong>속도</strong>를 함께 고려해야 합니다.</p>
+          <p><strong>운동량</strong>은 운동하는 물체의 질량과 속도를 곱한 물리량입니다. 운동량의 방향은 속도의 방향과 같고, 단위는 kg·m/s를 사용합니다.</p>
+        </div>`},
+        {t:"callout", variant:"green", title:"운동량 관계", body:"운동량 = 질량 × 속도<br>질량이 클수록, 속도가 빠를수록 운동량은 커집니다."},
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 충격량이란?</h3>
+          <p>물체가 충돌하면 물체에 힘이 작용하여 운동량이 변합니다. 이때 물체가 받는 충격의 정도를 <strong>충격량</strong>이라고 합니다. 충격량은 물체에 작용한 힘과 그 힘이 작용한 시간의 곱으로 나타냅니다.</p>
+          <p>힘과 시간의 관계를 그래프로 나타내면, 그래프 아래의 넓이는 충격량을 의미합니다. 물체가 일정한 시간 동안 힘을 받으면 속도가 변하고, 그 결과 운동량도 변합니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"운동량", back:"운동하는 물체가 가진 운동의 양. 질량과 속도를 곱해 나타낸다."},
+          {front:"충격량", back:"물체에 작용한 힘과 힘이 작용한 시간의 곱. 운동량 변화를 일으킨다."},
+          {front:"충격력", back:"충돌할 때 물체에 작용하는 힘. 같은 충격량이라도 시간이 길어지면 충격력은 작아진다."},
+          {front:"에어백·범퍼", back:"충돌 시간을 늘려 충격력을 줄이는 대표적인 안전장치이다."}
+        ]}
+      ]
+    },
+    {
+      id:"p4", cat:"알아봐요", icon:"📖", title:"2. 빅데이터와 분석 도구",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 빅데이터의 3가지 특징</h3>
+          <p>빅데이터는 단순히 양이 많은 데이터만을 뜻하지 않습니다. 규모가 크고, 형식이 다양하며, 빠르게 생성되고 변화하는 데이터를 의미합니다. 공산성 재료를 분석할 때도 재료별 질량, 밀도, 탄성도, 충격 흡수율, 비용 등 여러 데이터를 함께 살펴볼 수 있습니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"Volume 규모", back:"수많은 실험, 측정, 시뮬레이션 결과가 축적된 데이터의 양"},
+          {front:"Variety 다양성", back:"숫자 데이터뿐 아니라 역사 기록, 이미지, 위치 정보 등 다양한 형식의 데이터"},
+          {front:"Velocity 속도", back:"시뮬레이션이나 센서 활동처럼 데이터가 빠르게 생성되고 변화하는 특성"}
+        ]},
+        {t:"tabs", tabs:[
+          {label:"Google Earth", content:"공주시 지역의 지형지물 위치와 거리, 높낮이를 살펴보며 공산성 지형을 탐구합니다."},
+          {label:"PhET", content:"자유낙하, 포물선 운동, 충돌 등 물리 현상을 조작하며 속도·시간·운동량 변화를 관찰합니다."},
+          {label:"엑셀", content:"재료별 질량, 탄성도, 운동량 변화량 등을 표로 정리하고 산점도와 추세선을 만들어 패턴을 찾습니다."},
+          {label:"ChatGPT·Canva·Thinglink", content:"조사 질문 정리, 설명문 다듬기, 설계도 제작, 이미지 기반 정보 태그 삽입 등 결과 공유에 활용합니다."}
+        ]},
+        {t:"callout", variant:"purple", title:"데이터 시각화의 역할", body:"숫자만 나열하면 보이지 않던 경향을 그래프로 표현하면 쉽게 발견할 수 있습니다. 재료의 탄성도와 운동량 변화량 사이의 관계를 시각화하면, 어떤 재료가 충격을 더 잘 흡수하는지 판단할 수 있습니다."}
+      ]
+    },
+    {
+      id:"p5", cat:"활동해요", icon:"✏️", title:"1. 공산성에서 굴린 공의 속도 예측하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 어디서 공을 굴려야 빠를까?</h3>
+          <p>Google Earth나 지도 자료를 활용하여 공산성 주변 세 곳의 높낮이를 찾아봅시다. 높이가 높은 곳에서 공을 굴릴수록 중력에 의해 더 큰 속력을 얻을 수 있을지 예측해 봅니다.</p>
+        </div>`},
+        {t:"steps", title:"활동 순서", items:[
+          {title:"장소 정하기", desc:"공산성 지도에서 비교할 세 지점을 고른다."},
+          {title:"높낮이 조사하기", desc:"Google Earth 또는 지도 자료를 활용하여 각 지점의 높이를 조사한다."},
+          {title:"속력 예측하기", desc:"공의 질량이 같고 중력의 영향을 받는다고 가정하여 어느 지점의 공이 가장 빠를지 순서를 정한다."},
+          {title:"이유 설명하기", desc:"높이 차이와 낙하 운동의 원리를 연결하여 예측 근거를 설명한다."}
+        ]},
+        {t:"prediction", items:[
+          {label:"장소 1", ph:"예: 공산성 북쪽 성벽"},
+          {label:"높낮이 1", ph:"예: 85m"},
+          {label:"장소 2", ph:"예: 금서루 주변"},
+          {label:"높낮이 2", ph:"예: 72m"},
+          {label:"장소 3", ph:"예: 진남루 주변"},
+          {label:"높낮이 3", ph:"예: 60m"}
+        ]},
+        {t:"input", label:"높낮이에 따라 공의 속력이 빠를 것으로 예상되는 순서를 쓰고, 그 이유를 설명해 보자.", ph:"예: 장소 3 < 장소 2 < 장소 1. 높이가 높을수록 중력에 의해 더 긴 시간 가속될 수 있기 때문이다.", rows:3},
+        {t:"link", url:"https://earth.google.com/", icon:"🌍", title:"Google Earth 열기", desc:"공산성의 지형과 거리, 높낮이를 직접 탐색해 봅니다."}
+      ]
+    },
+    {
+      id:"p6", cat:"활동해요", icon:"✏️", title:"2. 성벽 재료와 가상 충돌 실험",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 현대의 성을 만들기 위한 재료는?</h3>
+          <p>흙과 돌을 제외하고 성벽 재료가 될 수 있는 재료 세 가지를 찾아봅시다. 각 재료의 질량, 탄성도, 강도, 비용, 지속가능성 등을 고려하여 충돌 실험에 사용할 가상 조건을 정합니다.</p>
+        </div>`},
+        {t:"prediction", items:[
+          {label:"재료 1", ph:"예: 목재"},
+          {label:"탄성도 1", ph:"예: 35%"},
+          {label:"질량 1", ph:"예: 5kg"},
+          {label:"재료 2", ph:"예: 철"},
+          {label:"탄성도 2", ph:"예: 70%"},
+          {label:"질량 2", ph:"예: 12kg"},
+          {label:"재료 3", ph:"예: 플라스틱"},
+          {label:"탄성도 3", ph:"예: 55%"},
+          {label:"질량 3", ph:"예: 3kg"}
+        ]},
+        {t:"steps", title:"PhET 시뮬레이션과 ChatGPT 활용 흐름", items:[
+          {title:"충돌 조건 설정", desc:"재료별 질량과 탄성도를 설정하고 실험용 공의 조건을 동일하게 맞춘다."},
+          {title:"운동량 변화 측정", desc:"충돌 전 운동량, 충돌 후 운동량, 운동량 변화량을 기록한다."},
+          {title:"AI로 자료 정리", desc:"ChatGPT를 활용해 재료별 특성과 실험 결과를 표와 설명으로 정리한다."},
+          {title:"가장 적절한 재료 판단", desc:"충격량이 작고 구조 설계에 적합한 재료를 근거와 함께 선택한다."}
+        ]},
+        {t:"input", label:"가상 충돌 실험 결과를 바탕으로 가장 충격량이 적었던 재료와 그 이유를 쓰시오.", ph:"예: 목재는 탄성도가 낮고 운동량 변화량이 작게 나타나 충격 전달이 적었다.", rows:3},
+        {t:"link", url:"https://phet.colorado.edu/ko/", icon:"🧪", title:"PhET 시뮬레이션 열기", desc:"충돌, 운동, 에너지와 관련된 과학 시뮬레이션을 탐구합니다."}
+      ]
+    },
+    {
+      id:"p7", cat:"활동해요", icon:"💻", title:"3. 데이터 시각화 및 패턴 발견하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 재료 특성이 성능에 미치는 영향 분석</h3>
+          <p>엑셀을 활용하여 재료별 특성과 운동량 변화량을 그래프로 표현합니다. X축에는 재료의 탄성 계수 또는 설정된 질량을, Y축에는 측정된 운동량 변화량을 놓고 산점도를 만들어 봅니다.</p>
+          <p>점들이 오른쪽 위로 향하는 경향을 보이면 탄성 계수가 커질수록 운동량 변화량도 커진다고 해석할 수 있습니다. 반대로 특정 재료가 예상과 다른 위치에 나타나면 이상치로 보고 그 이유를 탐구할 수 있습니다.</p>
+        </div>`},
+        {t:"steps", title:"엑셀 시각화 활동", items:[
+          {title:"데이터 입력", desc:"재료명, 탄성도, 질량, 충돌 전 운동량, 충돌 후 운동량, 운동량 변화량을 표로 정리한다."},
+          {title:"산점도 만들기", desc:"탄성도 또는 질량을 X축, 운동량 변화량을 Y축으로 설정한다."},
+          {title:"추세선 추가", desc:"추세선을 추가하여 재료 특성과 충격 흡수 성능 사이의 경향을 확인한다."},
+          {title:"의미 해석", desc:"그래프에서 발견한 패턴을 바탕으로 어떤 재료가 성벽 구조에 적합한지 설명한다."}
+        ]},
+        {t:"input", label:"그래프에서 발견한 경향을 한 문장으로 정리해 보자.", ph:"예: 탄성 계수가 높을수록 운동량 변화량이 커지는 경향이 나타났다.", rows:2},
+        {t:"input", label:"성벽 재료를 선택할 때 데이터 시각화 결과를 어떻게 활용할 수 있을까?", ph:"예: 충격량이 작게 나타난 재료를 우선 후보로 정하고, 비용과 지속가능성을 함께 비교한다.", rows:3}
+      ]
+    },
+    {
+      id:"p8", cat:"활동해요", icon:"💡", title:"4. 충격을 견디는 성벽 구조 설계하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 오늘날의 공산성 만들기</h3>
+          <p>실험과 데이터 분석 결과를 바탕으로 충격을 견디는 성벽 구조를 설계합니다. 단순히 튼튼한 재료를 고르는 데서 끝나지 않고, 성벽의 기울기, 단면 구조, 내부 완충 재료, 지속가능성까지 함께 고려합니다.</p>
+        </div>`},
+        {t:"input", label:"1. 공산성 재료를 대체할 재료 중 가장 충격량이 적었던 재료는 무엇인가?", ph:"예: 목재와 복합 완충재를 함께 활용한 구조", rows:1},
+        {t:"input", label:"2. 그 재료를 활용하여 공성전에 대비할 수 있는 성벽 구조를 제시하시오.", ph:"예: 아래쪽을 넓게 만들고, 내부에 완충층을 넣어 충격을 분산시키는 경사형 성벽을 설계한다.", rows:4},
+        {t:"steps", title:"Canva·Thinglink 결과물 제작", items:[
+          {title:"설계도 제작", desc:"Canva를 활용하여 성벽 구조, 재료, 충격 분산 원리를 시각적으로 표현한다."},
+          {title:"정보 태그 삽입", desc:"Thinglink를 활용해 설계도 이미지에 재료, 근거, 데이터 시각화 결과를 태그로 연결한다."},
+          {title:"발표 준비", desc:"운동량과 충격량 개념이 설계에 어떻게 반영되었는지 설명한다."},
+          {title:"동료 피드백", desc:"친구들의 설계도에서 과학적 근거와 창의적 개선점을 찾아 의견을 나눈다."}
+        ]},
+        {t:"link", url:"https://www.canva.com/", icon:"🎨", title:"Canva 열기", desc:"성벽 구조 설계도와 발표 자료를 제작합니다."},
+        {t:"link", url:"https://www.thinglink.com/", icon:"📍", title:"Thinglink 열기", desc:"이미지 위에 조사 결과와 데이터 해석 정보를 태그로 삽입합니다."}
+      ]
+    },
+    {
+      id:"p9", cat:"정리", icon:"✅", title:"스스로 진단하기",
+      blocks:[
+        {t:"assessment", title:"나의 학습 점검", ratings:["잘함","보통","미흡"], items:[
+          "중력에 의한 낙하 운동과 운동량의 관계를 설명할 수 있다.",
+          "충격량과 운동량의 개념을 성벽 재료 실험과 연결하여 해석할 수 있다.",
+          "엑셀 등 빅데이터 분석 도구를 활용하여 실험 데이터를 시각화할 수 있다.",
+          "데이터 분석 결과를 바탕으로 공공 구조물의 안정성과 지속가능성을 고려한 대안을 제시할 수 있다."
+        ]},
+        {t:"assessment", title:"설계 활동 평가", ratings:["잘함","보통","미흡"], items:[
+          "충격 실험 결과를 설계에 잘 반영하였다.",
+          "충격량 개념을 구조 설계에 적절히 적용하였다.",
+          "기존 성벽을 대체할 창의적인 재료와 구조를 제안하였다."
+        ]}
+      ]
+    },
+    {
+      id:"p10", cat:"정리", icon:"❓", title:"활동퀴즈 1. 운동량과 충격량",
+      blocks:[
+        {t:"quiz", num:"01", q:"운동량의 정의를 가장 올바르게 설명한 것은?", opts:["물체의 속도에만 비례하는 양이다.","물체의 질량에만 비례하는 양이다.","물체의 질량과 속도의 곱으로 나타낼 수 있다.","물체가 얼마나 빠르게 회전하는지를 나타낸다.","물체의 위치에 따라 달라지는 값이다."], ans:2, ok:"정답입니다. 운동량은 질량과 속도의 곱으로 나타낼 수 있습니다.", no:"다시 생각해 보세요. 운동량은 질량과 속도를 함께 고려합니다."},
+        {t:"quiz", num:"02", q:"다음 중 충격량과 가장 밀접한 개념은?", opts:["물체의 온도 변화","물체의 위치 변화","힘과 속도 변화의 곱","힘과 작용 시간의 곱","물체의 부피 변화"], ans:3, ok:"정답입니다. 충격량은 힘과 작용 시간의 곱입니다.", no:"충격량은 충돌할 때 작용하는 힘과 시간이 관련됩니다."},
+        {t:"quiz", num:"03", q:"질량 2kg인 물체가 3m/s의 속도로 운동하고 있다. 이 물체의 운동량은 얼마인가?", opts:["1.5 kg·m/s","6 kg·m/s","12 kg·m/s","15 kg·m/s","18 kg·m/s"], ans:1, ok:"정답입니다. 2kg × 3m/s = 6kg·m/s입니다.", no:"운동량은 질량 × 속도입니다. 2와 3을 곱해 보세요."}
+      ]
+    },
+    {
+      id:"p11", cat:"정리", icon:"❓", title:"활동퀴즈 2. 충격력과 안전장치",
+      blocks:[
+        {t:"quiz", num:"04", q:"충격력에 대한 설명으로 옳은 것은?", opts:["충격력과 충격량은 항상 같다.","충격력은 물체의 부피에 비례한다.","충격력은 작용 시간에 따라 달라질 수 있다.","충격력은 마찰력과 같다.","충격력은 항상 운동량보다 크다."], ans:2, ok:"정답입니다. 같은 충격량이라도 작용 시간이 달라지면 충격력도 달라질 수 있습니다.", no:"충격력은 힘이 얼마나 짧은 시간에 작용하는지와 관련됩니다."},
+        {t:"quiz", num:"05", q:"자동차의 에어백이 충격을 줄이는 이유로 가장 알맞은 것은?", opts:["충격을 피할 수 있게 해 준다.","충격 에너지를 없앤다.","자동차의 운동량을 줄인다.","질량을 증가시켜 충격을 분산시킨다.","같은 충격량을 더 오랜 시간에 걸쳐 작용하게 하여 충격력을 줄인다."], ans:4, ok:"정답입니다. 에어백은 충돌 시간을 늘려 충격력을 줄입니다.", no:"에어백은 충격을 없애는 것이 아니라 충돌 시간을 늘려 충격력을 줄입니다."},
+        {t:"quiz", num:"06", q:"다음 중 충격량은 일정하지만 충격력을 줄이기 위해 사용되는 장치로 적절한 것은?", opts:["자동차 범퍼","고속도로 속도 단속기","자동차 연료탱크","와이퍼","차량 후방 카메라"], ans:0, ok:"정답입니다. 자동차 범퍼는 충돌 시간을 늘리고 충격을 분산해 충격력을 줄입니다.", no:"충격력을 줄이는 장치는 충돌 시간을 늘리거나 충격을 흡수하는 역할을 합니다."}
+      ]
+    },
+    {
+      id:"p12", cat:"정리", icon:"📚", title:"읽기 자료",
+      blocks:[
+        {t:"tabs", tabs:[
+          {label:"한국 고대 성곽 축조의 과학", content:"고대 성곽의 재료로는 주로 화강암과 흙이 사용되었습니다. 화강암은 높은 압축 강도로 외부 충돌에 견고하게 저항하고, 토성은 충격 에너지를 분산시키고 흡수하는 경향이 있습니다. 성벽의 단면은 아래가 넓고 위로 갈수록 좁아지는 구조를 가지며, 외부 힘을 성벽 전체와 땅속으로 분산시키는 역할을 합니다. 따라서 고대 축조자들은 재료의 질량, 강도, 탄성도를 경험적으로 이해하고 활용했다고 볼 수 있습니다."},
+          {label:"문화재 보존에서의 빅데이터와 AI", content:"공산성과 같은 역사적 유산 보존에는 드론 촬영, 3D 레이저 스캐닝, 온도·습도·풍속·강수량 센서 데이터가 활용됩니다. 방대한 데이터는 문화재의 현재 상태와 환경적 스트레스를 파악하는 데 쓰이고, 인공지능은 재료의 풍화 속도나 손상 위험 구역을 예측하는 데 도움을 줍니다. 이를 통해 보존 전문가는 보수 작업의 시기와 위치를 데이터에 기반하여 결정할 수 있습니다."}
+        ]},
+        {t:"input", label:"읽기 자료를 읽고 가장 인상 깊었던 과학적 원리 또는 데이터 활용 사례를 정리해 보자.", ph:"예: 성벽 아래쪽을 넓게 만들어 충격을 분산시키는 구조가 현대 공학과 연결된다는 점이 인상 깊었다.", rows:3},
+        {t:"input", label:"문화재 보존에 AI와 빅데이터를 활용할 때 주의해야 할 점은 무엇일까?", ph:"예: 데이터의 정확성을 확인하고, 문화재의 역사적 가치와 지역 사회의 의견도 함께 고려해야 한다.", rows:3}
+      ]
+    },
+    {
+      id:"p13", cat:"정리", icon:"🧭", title:"진로 연계",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 진로 및 학과 소개</h3>
+          <p>이번 수업은 과학적 문제 해결 능력과 데이터 해석 능력을 바탕으로 미래 사회의 다양한 직업을 탐색하는 기회를 제공합니다. 성벽 재료의 충격 흡수 성능을 분석하는 과정은 데이터를 통해 합리적인 의사결정을 내리는 훈련이며, 현대 공학, IT, 문화재 보존 분야에서 중요한 역량입니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"구조/토목 공학자", back:"건축물, 교량, 댐, 도로 등 대형 구조물의 안전성과 내구성을 설계하고 분석하는 전문가"},
+          {front:"데이터 분석가", back:"대규모 데이터를 분석해 의미 있는 정보로 바꾸고, 기관의 의사결정을 지원하는 전문가"},
+          {front:"문화재 보존 과학자", back:"문화재 재료와 환경 요인을 과학적으로 분석해 손상을 예방하고 복원 전략을 세우는 전문가"},
+          {front:"건축 신소재 개발자", back:"초경량, 고강도, 충격 흡수 등 특정 성능을 높인 새로운 건축 재료를 연구·개발하는 전문가"}
+        ]},
+        {t:"tabs", tabs:[
+          {label:"구조/토목 공학", content:"물리학적 지식, 수학적 모델링, 재료 공학 지식, 건축 법규 이해가 필요합니다."},
+          {label:"데이터 과학", content:"데이터 처리와 시각화, 통계학, 프로그래밍 능력, 복잡한 문제를 데이터로 해결하는 능력이 중요합니다."},
+          {label:"문화재 보존", content:"화학, 재료 과학, 미생물학, 역사학적 관심과 정밀 분석 장비 운용 능력이 요구됩니다."},
+          {label:"신소재 개발", content:"재료 공학, 물리화학 지식과 창의적인 실험 설계 및 문제 해결 능력이 필요합니다."}
+        ]},
+        {t:"link", url:"https://www.career.go.kr/", icon:"🧭", title:"커리어넷 — 직업·전공 탐색", desc:"공학, 데이터, 문화재 보존 관련 직업과 학과 정보를 더 자세히 살펴볼 수 있습니다."}
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>

@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 낙하하는 알밤을 온전하게 받아내려면?</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고 과학</h1>
+    <div class="topic">낙하하는 알밤을<br>온전하게 받아내려면?</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  "title": "낙하하는 알밤을 온전하게 받아내려면?",
+  "pages": [
+    {
+      "id": "p1",
+      "cat": "도입",
+      "icon": "🎯",
+      "title": "학습목표",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "\n        <div class=\"blk\" style=\"text-align:center;padding:20px 0\">\n          <div style=\"font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px\">과학 × 정보 융합 · 물리 시뮬레이션</div>\n          <h2 style=\"font-size:28px;font-weight:900;margin-bottom:8px\">낙하하는 알밤을<br>온전하게 받아내려면?</h2>\n          <div style=\"display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px\">\n            <span style=\"padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)\">관성의 법칙</span>\n            <span style=\"padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)\">충격량과 운동량</span>\n            <span style=\"padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)\">물리 엔진 설계</span>\n          </div>\n        </div>\n      "
+        },
+        {
+          "t": "objectives",
+          "items": [
+            "물체에 작용하는 힘이 없을 때 운동 상태가 일정하게 유지되는 현상(관성의 법칙)을 설명할 수 있다.",
+            "충격량과 운동량의 관계를 이해하고, 충돌 관련 안전장치 설계에 적용할 수 있다.",
+            "물리 엔진을 활용하여 자유 낙하하는 물체의 충격 완화 장치를 설계하고 제안할 수 있다."
+          ]
+        },
+        {
+          "t": "callout",
+          "variant": "blue",
+          "title": "이번 활동의 핵심 질문",
+          "body": "낙하하는 알밤이 땅에 부딪힐 때 손상되지 않게 하려면, 어떤 물리 원리를 이용해 충격을 줄일 수 있을까요?"
+        }
+      ]
+    },
+    {
+      "id": "p2",
+      "cat": "도입",
+      "icon": "💭",
+      "title": "생각해요",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n        <h3>▶ 떨어지는 알밤을 어떻게 보호할 수 있을까?</h3>\n        <p>가을은 밤을 수확하는 시기입니다. 잘 익은 밤은 밤나무에서 떨어져 땅에 낙하하고, 떨어진 밤을 수확하여 판매합니다. 그런데 밤나무 주변의 지형이나 지표면 상태에 따라 떨어진 밤송이가 충격을 받아 손상될 수 있습니다.</p>\n        <p>밤송이가 높은 곳에서 떨어질수록, 또는 단단한 바닥에 짧은 시간 동안 부딪힐수록 받는 힘은 커질 수 있습니다. 이번 활동에서는 낙하하는 알밤을 온전하게 받아내기 위해 <strong>관성, 운동량, 충격량</strong>의 원리를 탐구합니다.</p>\n      </div>"
+        },
+        {
+          "t": "input",
+          "label": "낙하하는 밤송이에 작용하는 충격에 영향을 주는 요인은 무엇일까?",
+          "ph": "예: 낙하 높이, 밤송이의 질량, 바닥의 단단함, 충돌 시간 등",
+          "rows": 2
+        },
+        {
+          "t": "input",
+          "label": "밤송이가 땅으로부터 받는 충격을 완화할 수 있는 방법을 한 가지 써 보자.",
+          "ph": "예: 푹신한 재료를 깔아 충돌 시간을 늘린다.",
+          "rows": 2
+        },
+        {
+          "t": "callout",
+          "variant": "green",
+          "title": "생각 확장",
+          "body": "헬멧, 자동차 에어백, 운동장 매트처럼 충격을 줄이는 장치들은 대부분 ‘충돌 시간을 늘려 평균 힘을 줄이는 원리’를 이용합니다."
+        }
+      ]
+    },
+    {
+      "id": "p3",
+      "cat": "알아봐요",
+      "icon": "📖",
+      "title": "1. 관성과 힘",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n        <h3>▶ 관성이란?</h3>\n        <p>버스나 지하철이 출발할 때 몸이 뒤로 쏠리거나, 급정거할 때 몸이 앞으로 쏠리는 경험을 해 본 적이 있을 것입니다. 이처럼 물체에 외부에서 힘이 작용하지 않을 때, 정지해 있는 물체는 계속 정지하려 하고 운동하는 물체는 계속 운동하려는 성질을 <strong>관성</strong>이라고 합니다.</p>\n        <p>물체가 외부와 상호작용하지 않을 때 운동 상태는 일정하게 유지됩니다. 질량이 큰 물체일수록 운동 상태를 바꾸기 어렵기 때문에 관성이 더 크다고 볼 수 있습니다.</p>\n      </div>"
+        },
+        {
+          "t": "cards",
+          "items": [
+            {
+              "front": "관성",
+              "back": "물체가 현재의 운동 상태를 그대로 유지하려는 성질"
+            },
+            {
+              "front": "정지 관성",
+              "back": "정지해 있는 물체가 계속 정지해 있으려는 성질"
+            },
+            {
+              "front": "운동 관성",
+              "back": "운동하는 물체가 같은 속도와 방향으로 계속 움직이려는 성질"
+            },
+            {
+              "front": "힘",
+              "back": "물체의 운동 상태를 변화시키는 원인. 작용점, 크기, 방향의 요소를 가진다."
+            }
+          ]
+        },
+        {
+          "t": "tabs",
+          "tabs": [
+            {
+              "label": "버스 출발",
+              "content": "정지해 있던 몸은 계속 정지해 있으려 하기 때문에, 버스가 앞으로 출발하면 몸은 상대적으로 뒤로 쏠리는 것처럼 느껴집니다."
+            },
+            {
+              "label": "버스 급정거",
+              "content": "달리던 몸은 계속 앞으로 움직이려 하기 때문에, 버스가 갑자기 멈추면 몸은 앞으로 쏠립니다."
+            },
+            {
+              "label": "알밤 낙하",
+              "content": "낙하하던 알밤은 바닥에 닿는 순간 운동 상태가 급격히 변합니다. 이때 큰 힘이 짧은 시간 동안 작용하면 손상이 생길 수 있습니다."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p4",
+      "cat": "알아봐요",
+      "icon": "📖",
+      "title": "2. 운동량과 충격량",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n        <h3>▶ 운동량의 정의</h3>\n        <p>물체가 운동하고 있을 때, 그 물체는 운동 상태를 나타내는 물리량을 가집니다. 질량이 큰 물체가 빠른 속도로 움직이면 멈추거나 방향을 바꾸기 어렵습니다. 이를 설명하기 위해 사용하는 양이 <strong>운동량</strong>입니다.</p>\n        <div style=\"background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;text-align:center;margin:14px 0;font-weight:700\">운동량(p) = 질량(m) × 속도(v) &nbsp; (단위: kg·m/s)</div>\n        <p>같은 속도로 움직이더라도 질량이 클수록 운동량이 커지고, 질량이 같더라도 속도가 빠를수록 운동량이 커집니다.</p>\n      </div>"
+        },
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n        <h3>▶ 충격량과 안전</h3>\n        <p>물체에 힘이 짧은 시간 동안 작용하여 속도가 순간적으로 바뀌는 현상을 설명할 때 <strong>충격량</strong>을 사용합니다. 충격량은 힘의 크기와 힘이 작용한 시간을 함께 고려한 물리량입니다.</p>\n        <div style=\"background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;text-align:center;margin:14px 0;font-weight:700\">충격량(I) = 힘(F) × 시간(t) &nbsp; (단위: N·s)</div>\n        <p>같은 충격량이라도 힘이 작용하는 시간이 길어지면 평균 힘의 크기는 작아질 수 있습니다. 헬멧의 완충재와 자동차 에어백은 충돌 시간을 늘려 한순간에 받는 힘을 줄이는 대표적인 안전 장치입니다.</p>\n      </div>"
+        },
+        {
+          "t": "callout",
+          "variant": "purple",
+          "title": "알밤 보호 장치 설계의 핵심",
+          "body": "낙하하는 알밤을 온전하게 받기 위해서는 충돌 시간을 길게 만들고, 충격이 한 지점에 집중되지 않도록 힘을 분산시키는 구조를 생각해야 합니다."
+        }
+      ]
+    },
+    {
+      "id": "p5",
+      "cat": "알아봐요",
+      "icon": "📖",
+      "title": "3. 가상 실험 도구 살펴보기",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n        <h3>▶ 이번 활동에서 사용할 디지털 도구</h3>\n        <p>실제 낙하 실험은 위험하거나 조건을 반복해서 맞추기 어려울 수 있습니다. 그래서 이번 활동에서는 가상 실험과 물리 엔진을 활용하여 힘, 운동량, 충격량의 관계를 탐구합니다.</p>\n      </div>"
+        },
+        {
+          "t": "cards",
+          "items": [
+            {
+              "front": "PhET",
+              "back": "힘과 운동의 관계를 가상 실험으로 관찰하는 시뮬레이션 도구"
+            },
+            {
+              "front": "Algodoo",
+              "back": "2D 물리 엔진을 활용해 물체의 낙하, 충돌, 힘 그래프를 실험할 수 있는 도구"
+            },
+            {
+              "front": "캔바(Canva)",
+              "back": "모둠별 충격 완화 장치의 구조와 원리를 발표 자료로 제작하는 도구"
+            },
+            {
+              "front": "구글 클래스룸",
+              "back": "팀별 결과물 업로드, 공유, 피드백을 진행하는 협업 플랫폼"
+            }
+          ]
+        },
+        {
+          "t": "link",
+          "url": "https://phet.colorado.edu/ko/",
+          "icon": "🧪",
+          "title": "PhET Interactive Simulations",
+          "desc": "힘과 운동 관련 가상 실험을 실행할 수 있습니다."
+        },
+        {
+          "t": "link",
+          "url": "https://www.algodoo.com/",
+          "icon": "⚙️",
+          "title": "Algodoo",
+          "desc": "물리 엔진 기반 시뮬레이션으로 낙하와 충돌 상황을 설계할 수 있습니다."
+        }
+      ]
+    },
+    {
+      "id": "p6",
+      "cat": "활동해요",
+      "icon": "✏️",
+      "title": "1. 힘에 따른 운동 상태 변화 관찰",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n        <h3>▶ 물체에 작용하는 힘에 따라 운동 상태는 어떻게 변화할까?</h3>\n        <p>물체는 저마다 고유한 관성을 가지고 있으며, 작용하는 힘에 따라 운동 상태가 달라집니다. PhET 가상 실험을 통해 힘이 작용할 때와 작용하지 않을 때 물체의 속도 변화를 관찰해 봅시다.</p>\n      </div>"
+        },
+        {
+          "t": "steps",
+          "title": "PhET 활동 과정",
+          "items": [
+            {
+              "title": "1. 시뮬레이션 실행",
+              "desc": "PhET에서 물리학 > ‘힘과 운동: 기초’로 들어간 뒤, ‘가속’ 화면을 실행한다."
+            },
+            {
+              "title": "2. 조건 설정",
+              "desc": "힘의 합, 값, 질량, 속도, 가속도를 체크하고 마찰을 ‘없음’으로 설정한다."
+            },
+            {
+              "title": "3. 힘 작용 관찰",
+              "desc": "적용된 힘을 50N으로 설정하고 5초 동안 실행하여 속도 변화를 관찰한다."
+            },
+            {
+              "title": "4. 힘 제거 관찰",
+              "desc": "5초 뒤 힘을 0N으로 바꾸고, 물체가 어떤 운동 상태를 유지하는지 관찰한다."
+            },
+            {
+              "title": "5. 물체 변경",
+              "desc": "되돌아가기 후 상자 이외의 물체로 바꾸어 같은 과정을 반복한다."
+            }
+          ]
+        },
+        {
+          "t": "input",
+          "label": "상자에 50N의 힘이 작용하는 5초 동안 물체의 속도는 어떻게 변할까?",
+          "ph": "관찰한 속도 변화를 적어 보세요.",
+          "rows": 2
+        },
+        {
+          "t": "input",
+          "label": "힘의 값을 0으로 하였을 때의 속도 변화는 어떻게 될까?",
+          "ph": "힘이 사라진 뒤에도 운동 상태가 어떻게 유지되는지 적어 보세요.",
+          "rows": 2
+        },
+        {
+          "t": "input",
+          "label": "동일한 크기의 힘을 5초 동안 작용하였을 때, 질량이 클수록 속도 변화는 어떠할까?",
+          "ph": "질량과 관성의 관계를 활용해 설명해 보세요.",
+          "rows": 2
+        }
+      ]
+    },
+    {
+      "id": "p7",
+      "cat": "활동해요",
+      "icon": "💻",
+      "title": "2. 자유 낙하 물체의 운동량 탐구",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n        <h3>▶ 자유 낙하하는 물체의 운동량은 어떻게 변할까?</h3>\n        <p>자유 낙하 운동을 하는 물체는 중력에 의해 속도가 증가합니다. 속도가 증가하면 운동량도 함께 변합니다. Algodoo를 활용하여 낙하 높이에 따른 운동량 변화를 비교해 봅시다.</p>\n      </div>"
+        },
+        {
+          "t": "steps",
+          "title": "Algodoo 초기 상황 설정",
+          "items": [
+            {
+              "title": "1. 새 장면 만들기",
+              "desc": "Algodoo를 실행한 뒤 New Scene을 눌러 새로운 장면을 만든다."
+            },
+            {
+              "title": "2. 중력 설정",
+              "desc": "중력가속도를 9.8m/s², 방향을 -90도로 설정한다."
+            },
+            {
+              "title": "3. 공기 저항 제거",
+              "desc": "공기 저항이 없는 상황으로 설정하고 격자 무늬를 표시한다."
+            },
+            {
+              "title": "4. 원형 물체 만들기",
+              "desc": "원을 그리고 지표면에서 수직으로 눈금 4칸 위에 둔다."
+            },
+            {
+              "title": "5. 물체 속성 설정",
+              "desc": "질량 0.10kg, 마찰 계수 0, 반발 계수 0으로 설정한다."
+            },
+            {
+              "title": "6. 운동량 그래프 관찰",
+              "desc": "Y축을 Momentum(y)로 바꾸고 낙하하는 동안의 운동량 그래프를 관찰한다."
+            }
+          ]
+        },
+        {
+          "t": "prediction",
+          "items": [
+            {
+              "label": "눈금 4칸 높이",
+              "ph": "착지 직전 운동량"
+            },
+            {
+              "label": "눈금 8칸 높이",
+              "ph": "착지 직전 운동량"
+            }
+          ]
+        },
+        {
+          "t": "input",
+          "label": "높이가 달라질 때 착지 직전 운동량은 어떻게 달라졌는가?",
+          "ph": "낙하 높이, 속도, 운동량의 관계를 연결하여 설명해 보세요.",
+          "rows": 3
+        }
+      ]
+    },
+    {
+      "id": "p8",
+      "cat": "활동해요",
+      "icon": "💻",
+      "title": "3. 충격량과 평균 힘 비교",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n        <h3>▶ 충격량이 같을 때 평균 힘을 줄이는 방법은?</h3>\n        <p>자유 낙하하는 물체가 바닥에 부딪히면 힘이 짧은 시간 동안 작용합니다. 같은 물체가 같은 높이에서 떨어지더라도 바닥의 재질이나 충돌 조건에 따라 힘-시간 그래프의 모양이 달라질 수 있습니다.</p>\n      </div>"
+        },
+        {
+          "t": "steps",
+          "title": "동일한 두 물체의 충격량 비교",
+          "items": [
+            {
+              "title": "1. 바닥 만들기",
+              "desc": "바닥 역할을 할 사각형 2개를 만들고 하나는 고무, 다른 하나는 나무로 설정한다."
+            },
+            {
+              "title": "2. 동일한 공 만들기",
+              "desc": "질량 0.10kg, 마찰 계수 0, 반발 계수 0인 같은 공 2개를 만든다."
+            },
+            {
+              "title": "3. 힘 그래프 설정",
+              "desc": "공의 그래프 보이기에서 Y축을 힘(y)으로 변경한다."
+            },
+            {
+              "title": "4. 그래프 비교",
+              "desc": "두 공을 같은 높이에 두고 낙하시켜 힘-시간 그래프를 비교한다."
+            },
+            {
+              "title": "5. 마찰·반발 조건 변경",
+              "desc": "바닥의 마찰계수와 반발계수를 바꾸며 그래프 변화를 반복 관찰한다."
+            }
+          ]
+        },
+        {
+          "t": "input",
+          "label": "고무 바닥과 나무 바닥에 떨어진 공의 힘-시간 그래프는 어떤 차이가 있었는가?",
+          "ph": "힘의 최댓값, 그래프의 폭, 충돌 시간 등을 비교해 보세요.",
+          "rows": 3
+        },
+        {
+          "t": "input",
+          "label": "자유 낙하하는 물체가 받는 평균 힘의 크기를 줄이려면 지면의 조건을 어떻게 설정해야 할까?",
+          "ph": "충돌 시간과 힘의 크기 관계를 활용해 설명해 보세요.",
+          "rows": 3
+        }
+      ]
+    },
+    {
+      "id": "p9",
+      "cat": "활동해요",
+      "icon": "💡",
+      "title": "4. 알밤 충격 완화 장치 설계",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n        <h3>▶ 자유낙하하는 알밤을 온전하게 받기 위한 장치 설계하기</h3>\n        <p>지금까지 학습한 관성, 운동량, 충격량의 개념과 Algodoo 물리 엔진 실험 결과를 활용하여 낙하하는 알밤을 손상 없이 받을 수 있는 충격 완화 장치를 제안해 봅시다.</p>\n      </div>"
+        },
+        {
+          "t": "input",
+          "label": "1. 조원들이 제작한 장치의 구조와 작동 원리를 간단히 설명해 보자.",
+          "ph": "예: 경사진 완충판, 탄성 재료, 여러 층의 완충 구조 등을 활용한다.",
+          "rows": 3
+        },
+        {
+          "t": "input",
+          "label": "2. 낙하하는 밤송이가 장치에 닿았을 때 충격이 줄어드는 원리를 설명해 보자.",
+          "ph": "충돌 시간 증가, 힘 분산, 반발 감소 등의 개념을 활용하세요.",
+          "rows": 3
+        },
+        {
+          "t": "input",
+          "label": "3. 일상생활 속에서 비슷한 원리를 이용한 안전장치나 제품의 예를 찾아보자.",
+          "ph": "예: 헬멧, 에어백, 운동장 매트, 포장 완충재 등",
+          "rows": 2
+        },
+        {
+          "t": "input",
+          "label": "4. 발표 자료에 꼭 포함할 핵심 내용을 정리해 보자.",
+          "ph": "장치 이름, 문제 상황, 설계 원리, 시뮬레이션 결과, 개선점 등",
+          "rows": 3
+        },
+        {
+          "t": "callout",
+          "variant": "blue",
+          "title": "발표 자료 제작 안내",
+          "body": "캔바 또는 PPT를 활용해 장치의 구조와 과학적 원리를 시각적으로 표현하고, 완성된 자료는 구글 클래스룸에 업로드합니다."
+        }
+      ]
+    },
+    {
+      "id": "p10",
+      "cat": "정리",
+      "icon": "✅",
+      "title": "스스로 진단하기",
+      "blocks": [
+        {
+          "t": "assessment",
+          "title": "나의 학습 성찰",
+          "ratings": [
+            "잘함",
+            "보통",
+            "미흡"
+          ],
+          "items": [
+            "물체에 외부 힘이 작용하지 않을 때, 물체의 운동상태를 관성을 활용하여 설명할 수 있다.",
+            "자유 낙하하는 물체의 운동량과 충격량의 관계를 설명할 수 있다.",
+            "물리 엔진을 활용하여 간단한 충격 완화 장치를 설계할 수 있다.",
+            "일상생활 속의 문제에 학습한 내용을 적용하여 도입부에서 제시했던 과제를 해결하고 발표할 수 있다."
+          ]
+        },
+        {
+          "t": "input",
+          "label": "오늘 활동에서 가장 잘한 점은 무엇인가?",
+          "ph": "나의 탐구 과정, 모둠 협력, 설계 아이디어 등을 돌아보세요.",
+          "rows": 2
+        },
+        {
+          "t": "input",
+          "label": "다음에 장치를 개선한다면 어떤 부분을 바꾸고 싶은가?",
+          "ph": "재료, 구조, 실험 조건, 발표 방식 등을 생각해 보세요.",
+          "rows": 2
+        }
+      ]
+    },
+    {
+      "id": "p11",
+      "cat": "정리",
+      "icon": "❓",
+      "title": "활동퀴즈 1. 관성과 운동량",
+      "blocks": [
+        {
+          "t": "quiz",
+          "num": "01",
+          "q": "관성에 대한 설명으로 옳은 것은?",
+          "opts": [
+            "질량이 클수록 관성은 크다.",
+            "외부 힘이 0일 때 운동하는 물체는 반드시 감속해 정지한다.",
+            "버스가 급정지할 때 사람의 몸은 뒤쪽으로 쏠린다.",
+            "관성은 힘이 작용할 때만 나타나는 성질이다."
+          ],
+          "ans": 0,
+          "ok": "맞아요. 질량이 큰 물체일수록 운동 상태를 바꾸기 어렵습니다.",
+          "no": "다시 생각해 봅시다. 관성은 물체가 자신의 운동 상태를 유지하려는 성질입니다."
+        },
+        {
+          "t": "quiz",
+          "num": "02",
+          "q": "다음 중 관성의 예로 보기 어려운 것은?",
+          "opts": [
+            "지하철이 출발할 때 몸이 뒤로 젖혀지는 현상",
+            "달리는 자전거에서 발을 멈춰도 일정 거리 앞으로 나아가는 현상",
+            "달리던 공이 벽에 부딪혀 튀어 오르는 현상",
+            "멈춰 있는 책이 외부 힘이 없으면 그대로 있는 현상"
+          ],
+          "ans": 2,
+          "ok": "정답입니다. 벽에 부딪혀 튀는 현상은 충돌과 반발의 영향이 더 큽니다.",
+          "no": "관성은 운동 상태를 유지하려는 성질과 관련된 예인지 확인해 보세요."
+        },
+        {
+          "t": "quiz",
+          "num": "03",
+          "q": "운동하는 물체의 질량과 속도의 곱으로 정의되는 물리량은 무엇인가?",
+          "opts": [
+            "힘",
+            "운동량",
+            "충격량",
+            "가속도"
+          ],
+          "ans": 1,
+          "ok": "맞아요. 운동량은 질량 × 속도입니다.",
+          "no": "질량과 속도를 곱해 구하는 물리량을 떠올려 보세요."
+        },
+        {
+          "t": "quiz",
+          "num": "04",
+          "q": "질량이 2kg인 물체가 서쪽으로 10m/s의 속도로 운동할 때 운동량의 크기는?",
+          "opts": [
+            "5 kg·m/s",
+            "10 kg·m/s",
+            "20 kg·m/s",
+            "50 kg·m/s"
+          ],
+          "ans": 2,
+          "ok": "정답입니다. 2 × 10 = 20 kg·m/s입니다.",
+          "no": "운동량 = 질량 × 속도 공식을 이용해 계산해 보세요."
+        }
+      ]
+    },
+    {
+      "id": "p12",
+      "cat": "정리",
+      "icon": "❓",
+      "title": "활동퀴즈 2. 충격량과 안전",
+      "blocks": [
+        {
+          "t": "quiz",
+          "num": "05",
+          "q": "물체가 힘을 받을 때 받는 충격량은 물체에 작용하는 힘과 힘이 작용한 무엇을 곱하여 구하는가?",
+          "opts": [
+            "질량",
+            "속도",
+            "시간",
+            "높이"
+          ],
+          "ans": 2,
+          "ok": "정답입니다. 충격량은 힘 × 시간입니다.",
+          "no": "충격량 공식 I = F × t를 떠올려 보세요."
+        },
+        {
+          "t": "quiz",
+          "num": "06",
+          "q": "질량 5kg인 물체가 중력에 의해 3초 동안 자유 낙하했다. 중력가속도를 9.8m/s²로 할 때, 3초 후 운동량의 크기에 가장 가까운 값은?",
+          "opts": [
+            "49 kg·m/s",
+            "98 kg·m/s",
+            "147 kg·m/s",
+            "294 kg·m/s"
+          ],
+          "ans": 2,
+          "ok": "맞아요. 3초 후 속도는 약 29.4m/s이고, 운동량은 5 × 29.4 = 147 kg·m/s입니다.",
+          "no": "먼저 v = 9.8 × 3으로 속도를 구한 뒤, p = m × v를 계산해 보세요."
+        },
+        {
+          "t": "quiz",
+          "num": "07",
+          "q": "다음 상황 중 충격량의 원리를 잘 활용한 예는?",
+          "opts": [
+            "탁구공을 단단한 바닥에 세게 떨어뜨린다.",
+            "자동차의 에어백이 터져 운전자의 몸이 서서히 멈춘다.",
+            "높은 곳에서 달걀을 콘크리트 바닥에 떨어뜨린다.",
+            "공을 벽에 빠르게 던져 반사시킨다."
+          ],
+          "ans": 1,
+          "ok": "정답입니다. 에어백은 충돌 시간을 늘려 순간적으로 받는 힘을 줄입니다.",
+          "no": "충돌 시간을 늘려 평균 힘을 줄이는 사례를 찾아보세요."
+        },
+        {
+          "t": "input",
+          "label": "실생활에서 충격을 줄이기 위해 사용되는 안전장치의 예를 한 가지 제시하고, 그 원리를 설명해 보자.",
+          "ph": "예: 헬멧은 완충재가 눌리며 충돌 시간을 늘려 머리에 전달되는 힘을 줄인다.",
+          "rows": 3
+        }
+      ]
+    },
+    {
+      "id": "p13",
+      "cat": "정리",
+      "icon": "📚",
+      "title": "읽기 자료",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n        <h3>★ 밤(栗, Chestnut)의 도시, 공주</h3>\n        <p>우리 지역 공주는 알밤이 유명한 곳입니다. 정안면 일대는 차령산맥의 맑은 공기와 깨끗한 물, 비옥한 흙 덕분에 밤나무가 건강하게 자라기 좋은 환경을 갖추고 있습니다. 공주의 가을에는 산마다 밤송이가 떨어지는 소리가 들릴 정도로 밤이 많이 열립니다.</p>\n        <p>공주는 오랜 밤 재배 역사를 가진 지역으로 알려져 있습니다. 백제 시대의 왕궁터로 추정되는 공산성에서는 실제로 백제 시대의 밤이 출토되었으며, 이를 통해 오래전부터 사람들이 알밤을 즐겨 먹었음을 알 수 있습니다.</p>\n        <p>오늘의 활동에서 다룬 낙하와 충격 완화 원리는 지역 특산물인 알밤을 안전하게 수확하고 보관하는 문제와도 연결됩니다. 과학 개념은 교실 안의 공식에 머무르지 않고, 지역의 산업과 생활 속 문제 해결로 확장될 수 있습니다.</p>\n      </div>"
+        },
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n        <h3>★ 계란을 지키는 과학: 계란 낙하의 비밀</h3>\n        <p>계란 낙하 실험은 충격에 약한 계란을 보호하기 위해 창의적인 충격 완화 구조물을 설계하고 원리를 검증하는 탐구 활동입니다. 계란은 중력에 의해 떨어지고, 바닥에 부딪힐 때 큰 힘을 받아 깨질 수 있습니다.</p>\n        <p>핵심 원리는 총 충격량이 비슷한 조건에서 힘을 받는 시간을 늘려 순간적인 충격력을 줄이는 것입니다. 방석, 빨대 구조물, 자동차 에어백처럼 푹신하거나 변형 가능한 구조물은 충돌 시간을 길게 만들어 물체가 받는 평균 힘을 줄입니다.</p>\n        <p>또한 충격이 한 지점에 집중되지 않고 넓은 면적으로 분산되도록 설계하는 것도 중요합니다. 알밤 보호 장치 설계에서도 이 원리를 적용할 수 있습니다.</p>\n      </div>"
+        },
+        {
+          "t": "input",
+          "label": "읽기 자료를 읽고, 오늘 배운 충격량 원리와 연결되는 부분을 정리해 보자.",
+          "ph": "밤 수확, 계란 낙하, 안전장치 중 하나를 골라 설명해 보세요.",
+          "rows": 3
+        }
+      ]
+    },
+    {
+      "id": "p14",
+      "cat": "정리",
+      "icon": "🧭",
+      "title": "진로 연계",
+      "blocks": [
+        {
+          "t": "html",
+          "v": "<div class=\"blk\">\n        <h3>대학 전공 소개 - 기계공학과</h3>\n        <p>기계공학과는 인간의 삶을 편리하게 하는 기계의 설계, 개발, 생산에 필요한 원리를 탐구하는 학문입니다. 열역학, 유체역학, 고체역학, 동역학 등 기계 시스템을 분석하고 설계하는 기초 원리를 배우며, 자동차, 로봇, 에너지 시스템 등 다양한 분야의 기술을 다룹니다.</p>\n        <p>최근에는 인공지능, 로봇 기술, 빅데이터, 클라우드 컴퓨팅 기술을 활용한 자동화 생산 설비와 자율주행 자동차·선박 개발 등 여러 산업에서 기계공학 기술이 활용되고 있습니다.</p>\n      </div>"
+        },
+        {
+          "t": "tabs",
+          "tabs": [
+            {
+              "label": "주요 교육 내용",
+              "content": "4대 역학을 바탕으로 기계의 원리를 이해하고, 기계 시스템의 효율성·신뢰성·안정성을 고려하여 설계와 제조 방법을 학습합니다."
+            },
+            {
+              "label": "융합 연구 분야",
+              "content": "인공지능, 빅데이터, 로봇공학, 자동제어, 에너지 시스템 등 다양한 첨단 기술과 융합하여 새로운 기계 시스템을 연구합니다."
+            },
+            {
+              "label": "졸업 후 진로",
+              "content": "기계 분야 기업 엔지니어, 선박·해양 관련 회사, 기계 관련 공공 및 민간 연구기관 연구원, 기술직 공무원 등으로 진출할 수 있습니다."
+            }
+          ]
+        },
+        {
+          "t": "input",
+          "label": "오늘 설계한 알밤 충격 완화 장치와 기계공학의 연결점을 적어 보자.",
+          "ph": "예: 구조 설계, 재료 선택, 충돌 안전성 분석, 시뮬레이션 활용 등",
+          "rows": 3
+        },
+        {
+          "t": "link",
+          "url": "https://www.career.go.kr/",
+          "icon": "🧭",
+          "title": "커리어넷",
+          "desc": "기계공학과와 관련 직업 정보를 더 자세히 탐색할 수 있습니다."
+        }
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>

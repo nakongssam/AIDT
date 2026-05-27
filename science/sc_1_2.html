@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDT — 탄소 발자국 계산기로 알아보는 나의 탄소 배출량</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root {
+  --bg:#F5F4F0;--surface:#fff;--surface-alt:#FAFAF7;--border:#E5E3DD;--border-lt:#EEECE6;
+  --txt:#1A1A1A;--txt2:#555;--txt3:#999;
+  --accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;
+  --blue:#3b82f6;--blue-lt:#eff6ff;--green:#10b981;--green-lt:#d1fae5;
+  --purple:#8b5cf6;--purple-lt:#ede9fe;--red:#ef4444;--red-lt:#fee2e2;
+  --radius:12px;--radius-sm:8px;--transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:290px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-hd{padding:20px 16px 14px;border-bottom:1px solid var(--border-lt)}
+.sidebar-hd h1{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.sidebar-hd .topic{font-size:16px;font-weight:700;line-height:1.4}
+.sidebar-nav{flex:1;padding:8px 6px;overflow-y:auto}
+
+/* Navigation Categories & Items */
+.nav-cat{font-size:11px;font-weight:800;color:var(--txt3);margin:20px 12px 6px;padding-bottom:4px;border-bottom:1px solid var(--border-lt);letter-spacing:1px;}
+.nav-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;font-size:13px;color:var(--txt2);cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);line-height:1.4;word-break:keep-all;}
+.nav-item:hover{background:var(--surface-alt);color:var(--txt)}
+.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:700}
+.nav-item .icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;margin-top:1px;}
+
+.sidebar-ft{padding:10px 16px;border-top:1px solid var(--border-lt)}
+.prog-label{font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:4px}
+.prog-bg{height:4px;background:var(--border-lt);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.content{flex:1;margin-left:290px;padding:28px 44px 80px;max-width:860px}
+.mobile-tog{display:none;position:fixed;top:10px;left:10px;z-index:200;width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:18px 14px 60px}
+  .mobile-tog{display:flex!important}
+}
+
+/* Page header */
+.pg-hd{margin-bottom:28px}
+.pg-crumb{font-size:12px;color:var(--txt3);margin-bottom:6px}
+.pg-title{font-size:26px;font-weight:800;line-height:1.3}
+
+/* Blocks */
+.blk{margin-bottom:22px}
+.blk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.blk h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.blk h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.blk p,.blk li{font-size:14px;line-height:1.8;color:var(--txt)}
+.blk p+p{margin-top:10px}
+.blk ul{padding-left:20px;margin:8px 0}
+.blk ul li{margin-bottom:4px}
+
+/* Callout */
+.callout{border-left:4px solid var(--accent);background:var(--accent-lt);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:18px}
+.callout.blue{background:var(--blue-lt);border-color:var(--blue)}
+.callout.green{background:var(--green-lt);border-color:var(--green)}
+.callout.purple{background:var(--purple-lt);border-color:var(--purple)}
+.callout .c-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.callout .c-body{font-size:14px;line-height:1.7;color:var(--txt2)}
+
+/* Objectives */
+.obj-list{list-style:none;padding:0}
+.obj-list li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:14px}
+.obj-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* Input */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.input-group textarea,.input-group input[type=text]{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;background:var(--bg);transition:var(--transition)}
+.input-group textarea:focus,.input-group input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Steps */
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.steps .s-hd{padding:14px 18px;border-bottom:1px solid var(--border-lt);font-size:14px;font-weight:700}
+.step{padding:14px 18px;border-bottom:1px solid var(--border-lt);display:flex;gap:12px;cursor:pointer;transition:var(--transition)}
+.step:last-child{border-bottom:none}
+.step:hover{background:var(--surface-alt)}
+.step .s-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0;transition:var(--transition)}
+.step.done .s-n{background:var(--green);border-color:var(--green);color:#fff}
+.step .s-c h4{font-size:14px;font-weight:600;margin:0 0 3px}
+.step .s-c p{font-size:13px;color:var(--txt2);margin:0}
+
+/* Tabs */
+.tabs-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--transition)}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:16px 0;font-size:14px;line-height:1.8}
+.tab-panel.active{display:block}
+
+/* Flip Cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.flip-card{height:130px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:14px}
+.flip-front{background:var(--accent-lt);border:1px solid var(--accent);font-weight:700;color:var(--accent-dk)}
+.flip-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg);color:var(--txt2);font-size:13px;line-height:1.5}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;gap:8px}
+.quiz-q .qn{color:var(--accent);font-weight:800}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;cursor:pointer;transition:var(--transition);font-size:14px}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-lt)}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-lt)}
+.quiz-opt.wrong{border-color:var(--red);background:var(--red-lt)}
+.quiz-opt .oc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--transition)}
+.quiz-opt.correct .oc{border-color:var(--green);background:var(--green);color:#fff}
+.quiz-opt.wrong .oc{border-color:var(--red);background:var(--red);color:#fff}
+.quiz-fb{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none}
+.quiz-fb.show{display:block}
+.quiz-fb.ok{background:var(--green-lt);color:var(--green)}
+.quiz-fb.no{background:var(--red-lt);color:var(--red)}
+
+/* Prediction */
+.pred-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pred-row label{font-size:13px;font-weight:600;min-width:100px}
+.pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
+.pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
+/* Btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-dk);transform:translateY(-1px)}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Page nav */
+.pg-nav{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--border-lt)}
+.pg-nav .btn{min-width:130px;justify-content:center}
+
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeIn .35s ease both}
+</style>
+</head>
+<body>
+
+<div class="mobile-tog" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-hd">
+    <h1>AIDT 일반고·특성화 과학</h1>
+    <div class="topic">탄소 발자국 계산기로<br>알아보는 나의 탄소 배출량</div>
+  </div>
+  <nav class="sidebar-nav" id="nav"></nav>
+  <div class="sidebar-ft">
+    <div class="prog-label">진행률 <span id="pTxt">0%</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="content" id="main"></main>
+</div>
+
+<script>
+// ========== FULL CONTENT DATA ==========
+const D = {
+  title: "탄소 발자국 계산기",
+  pages: [
+    // 도입 - 학습목표
+    {
+      id:"p1", cat:"도입", icon:"🎯", title:"학습목표",
+      blocks:[
+        {t:"html", v:`
+          <div class="blk" style="text-align:center;padding:20px 0">
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">과학 × 정보 융합</div>
+            <h2 style="font-size:28px;font-weight:900;margin-bottom:8px">탄소 발자국 계산기로<br>알아보는 나의 탄소 배출량</h2>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">탄소발자국</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">Python</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">기후변화</span>
+            </div>
+          </div>
+        `},
+        {t:"objectives", items:[
+          "일상생활 속 활동이 탄소 배출에 미치는 영향을 이해하고, 탄소 발자국의 개념과 산정 방법을 설명할 수 있다.",
+          "Python을 활용하여 탄소 발자국 계산 프로그램을 구현하고, 결과를 분석하여 실생활 속 탄소 배출 저감 방안을 제안할 수 있다."
+        ]}
+      ]
+    },
+    // 도입 - 생각해요
+    {
+      id:"p2", cat:"도입", icon:"💭", title:"생각해요",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 나의 하루는 지구를 얼마나 데우고 있을까?</h3>
+          <p>아침에 일어나 전등을 켜고, 따뜻한 물로 세수를 하고, 자동차나 버스를 타고 학교에 갑니다. 점심에는 식사를 하고, 저녁에는 컴퓨터나 스마트폰을 사용합니다. 우리는 매일 이렇게 다양한 활동을 하며 살아갑니다. 그런데 이 모든 활동의 뒤편에는 보이지 않는 손님, 바로 <strong>이산화탄소(CO₂)</strong>가 함께하고 있습니다.</p>
+          <p>전기를 만들기 위해 발전소에서 화석연료를 태우고, 자동차가 움직이기 위해 휘발유를 소비하며, 음식이 식탁에 오르기까지 생산·운반·조리 과정에서 에너지가 사용됩니다. 그 모든 과정에서 온실가스가 배출되고, 이는 지구온난화와 기후변화의 원인이 됩니다.</p>
+          <p style="margin-top:12px;font-weight:600;color:var(--accent)">그렇다면 나의 일상 활동이 만들어내는 탄소의 양은 얼마나 될까요? 그것을 어떻게 측정할 수 있을까요?</p>
+        </div>`},
+        {t:"html", v:`<div class="blk"><h4>▶ 나의 탄소 발자국, 얼마나 될까?</h4><p>오늘 하루 내가 한 활동 중에서 탄소를 배출했다고 생각하는 것을 떠올려보고, 친구들과 함께 이야기 나누어 봅시다.</p></div>`},
+        {t:"input", label:"▶ 나의 생각", ph:"예: 등하교할 때 자동차를 이용했고, 휴대전화를 충전했다.", rows:2},
+        {t:"input", label:"▶ 우리 모둠의 생각", ph:"모둠원들과 나눈 의견을 정리해 보세요.", rows:3}
+      ]
+    },
+
+    // 알아봐요 1
+    {
+      id:"p3", cat:"알아봐요", icon:"📖", title:"1. 탄소 발자국이란?",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 탄소 발자국(Carbon Footprint)의 개념</h3>
+          <p><strong>탄소 발자국</strong>은 개인이나 기업, 국가가 제품이나 서비스를 생산·소비·폐기하는 전 과정에서 직간접적으로 배출하는 온실가스의 총량을 이산화탄소(CO₂)로 환산한 값입니다. 일반적으로 <strong>kg CO₂eq</strong>(이산화탄소 환산 킬로그램) 단위로 표현하며, 이 값이 클수록 지구에 더 많은 부담을 준다는 의미입니다.</p>
+          <p>발자국이라는 비유는 "우리가 지구 위에 남기는 자취"라는 뜻에서 출발했습니다. 한 번 발을 내디딜 때마다 흔적이 남듯, 우리가 에너지를 쓰고 물건을 소비할 때마다 보이지 않는 탄소의 흔적이 지구에 남는 것입니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"탄소 발자국", back:"개인·기업이 활동·제품·서비스 전 과정에서 직간접적으로 배출하는 온실가스를 CO₂로 환산한 총량"},
+          {front:"온실가스", back:"이산화탄소(CO₂), 메탄(CH₄), 아산화질소(N₂O) 등 지구 복사에너지를 흡수해 온실효과를 일으키는 기체"},
+          {front:"CO₂eq", back:"Carbon Dioxide Equivalent. 여러 온실가스의 지구온난화 기여도를 이산화탄소 1kg을 기준으로 환산한 단위"},
+          {front:"배출계수", back:"단위 활동량(전기 1kWh, 휘발유 1L 등)당 배출되는 온실가스의 양을 나타내는 값"}
+        ]}
+      ]
+    },
+    // 알아봐요 2
+    {
+      id:"p4", cat:"알아봐요", icon:"📖", title:"2. 기후 변화와 탄소 배출",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 기후 변화의 원인, 인간 활동</h3>
+          <p>산업혁명 이후 인류는 석탄, 석유, 천연가스 같은 <strong>화석연료</strong>를 대규모로 사용하기 시작했습니다. 그 결과 대기 중 이산화탄소 농도는 산업혁명 이전보다 약 50% 가까이 증가했고, 지구 평균 기온은 약 1.1℃ 상승했습니다. 이로 인해 극지방의 빙하가 녹고, 해수면이 상승하며, 폭염·홍수·가뭄 같은 이상기후가 빈번해지고 있습니다.</p>
+          <p>이러한 변화의 중심에는 <strong>우리 일상의 에너지 소비</strong>가 있습니다. 가정에서 사용하는 전기, 자동차의 이동, 우리가 먹는 음식의 생산까지 모두 탄소를 배출하는 활동이며, 이러한 활동을 객관적인 데이터로 환산하면 우리의 생활이 기후에 미치는 영향을 정량적으로 평가할 수 있습니다.</p>
+        </div>`},
+        {t:"steps", title:"탄소 발자국 계산의 기본 원리", items:[
+          {title:"1. 활동량 측정", desc:"전기 사용량(kWh), 이동 거리(km), 가스·물 사용량 등 일상의 활동량을 수집한다."},
+          {title:"2. 배출계수 곱하기", desc:"각 활동량에 해당 분야의 CO₂ 배출계수를 곱해 단위 활동당 탄소 배출량을 구한다."},
+          {title:"3. 항목별 합산", desc:"전기, 교통, 식생활 등 항목별 배출량을 모두 더해 총 탄소 발자국을 계산한다."},
+          {title:"4. 비교 및 해석", desc:"평균값, 권장 기준치 등과 비교하여 자신의 생활 패턴이 기후에 미치는 영향을 분석한다."}
+        ]},
+        {t:"callout", variant:"blue", title:"💡 한국인 1인당 탄소 배출량", body:"우리나라 1인당 연간 이산화탄소 배출량은 <strong>약 11~12톤</strong>으로, 세계 평균(약 4.5톤)보다 2배 이상 높은 수준입니다. 일상에서의 작은 실천이 모이면 의미 있는 감축이 가능합니다.<br>• <strong>전기 1kWh</strong>: 약 0.4593 kg CO₂eq<br>• <strong>휘발유 1L</strong>: 약 2.31 kg CO₂eq<br>• <strong>도시가스 1m³</strong>: 약 2.176 kg CO₂eq"}
+      ]
+    },
+
+    // 활동해요 1
+    {
+      id:"p5", cat:"활동해요", icon:"✏️", title:"1. 문제 정의와 자료 수집",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 우리는 무엇을 해결하려고 하는가?</h3>
+          <p>탄소 발자국 계산기를 만들기 전에, 먼저 우리가 해결하려는 문제가 무엇인지 명확히 정의해 봅시다.</p>
+        </div>`},
+        {t:"input", label:"1. 우리가 만들 탄소 발자국 계산기는 어떤 항목을 측정해야 할까?", ph:"예: 전기 사용량, 자동차 이동 거리, 도시가스 사용량 등", rows:2},
+        {t:"input", label:"2. 누구를 위한 계산기인가? 사용자는 어떤 정보를 입력해야 할까?", ph:"예: 우리 가족, 학생인 나 자신. 한 달간 사용량을 입력하도록 한다.", rows:2},
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 활동량 자료 수집하기</h3>
+          <p>아래의 표를 참고하여 우리 가정의 한 달 사용량을 조사해 봅시다. 전기·가스 요금 고지서, 자동차 주행거리, 대중교통 이용 내역 등을 활용할 수 있습니다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"전기", back:"kWh 단위. 한국전력공사 요금 고지서 또는 한전 앱(스마트한전)에서 확인 가능"},
+          {front:"도시가스", back:"m³ 단위. 도시가스 요금 고지서에서 확인. 난방·취사·온수에 사용"},
+          {front:"교통(자동차)", back:"L 단위. 주유 영수증 또는 차량 계기판 평균 연비 × 주행거리로 계산"},
+          {front:"교통(대중교통)", back:"km 단위. 교통카드 사용 내역 또는 평균 등하교 거리로 환산"},
+          {front:"식생활", back:"kg 단위. 육류·유제품 등 식품군별 섭취량으로 추정. 식습관 영향도 큼"}
+        ]},
+        {t:"input", label:"우리 집의 한 달 사용량 (예: 전기 250kWh, 도시가스 30m³, 휘발유 80L 등)", ph:"항목별로 조사한 값을 정리해 보세요.", rows:3}
+      ]
+    },
+
+    // 활동해요 2 - Python 코딩
+    {
+      id:"p6", cat:"활동해요", icon:"💻", title:"2. Python 계산기 만들기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 알고리즘 설계</h3>
+          <p>탄소 발자국을 계산하는 가장 기본적인 알고리즘은 <strong>활동량 × 배출계수</strong>입니다. 각 항목별로 이 값을 계산하고, 모든 항목을 합산하면 총 탄소 배출량을 구할 수 있습니다.</p>
+        </div>`},
+        {t:"callout", variant:"purple", title:"💡 IF-THEN 규칙으로 정리하기", body:"• <strong>IF</strong>: 전기 사용량이 입력되면<br>• <strong>THEN</strong>: 전기량 × 0.4593을 더한다.<br>• <strong>IF</strong>: 휘발유 사용량이 입력되면<br>• <strong>THEN</strong>: 휘발유량 × 2.31을 더한다.<br>이러한 규칙을 Python의 함수와 변수로 표현하면 계산기를 만들 수 있습니다."},
+        {t:"html", v:`<div class="blk"><h4>▶ Google Colab으로 시작하기</h4><p>이번 활동에서는 별도 설치 없이 웹브라우저에서 바로 Python 코드를 실행할 수 있는 <strong>Google Colab</strong>을 사용합니다. 새 노트(New notebook)를 생성한 뒤 아래 코드를 셀에 입력하고 실행해 보세요.</p></div>`},
+        {t:"link", url:"https://colab.research.google.com/", icon:"🐍", title:"Google Colab — 무료 Python 노트북", desc:"브라우저에서 바로 실행 가능한 Python 환경. 새 노트북을 만들어 아래 코드를 붙여넣어 실행해 보세요"},
+        {t:"html", v:`<div class="blk"><h4 style="color:var(--accent-dk)">[코드 1] 기본 탄소 발자국 계산기</h4><p>한 가정의 한 달 사용량을 입력받아 총 탄소 배출량을 계산하는 간단한 프로그램입니다.</p></div>`},
+        {t:"code", lang:"Python (Google Colab)", code:`# 탄소 발자국 계산기 (기본 버전)
+# 배출계수 (출처: 환경부, 한국에너지공단)
+EF_ELECTRIC = 0.4593   # 전기 1kWh당 kg CO2eq
+EF_GAS      = 2.176    # 도시가스 1m^3당 kg CO2eq
+EF_GASOLINE = 2.31     # 휘발유 1L당 kg CO2eq
+
+# 사용자 입력 받기
+electric = float(input("한 달 전기 사용량(kWh): "))
+gas      = float(input("한 달 도시가스 사용량(m^3): "))
+gasoline = float(input("한 달 휘발유 사용량(L): "))
+
+# 항목별 배출량 계산
+co2_electric = electric * EF_ELECTRIC
+co2_gas      = gas * EF_GAS
+co2_gasoline = gasoline * EF_GASOLINE
+
+# 총합
+total = co2_electric + co2_gas + co2_gasoline
+
+# 결과 출력
+print("\\n===== 나의 탄소 발자국 =====")
+print(f"전기:    {co2_electric:.2f} kg CO2eq")
+print(f"도시가스: {co2_gas:.2f} kg CO2eq")
+print(f"휘발유:  {co2_gasoline:.2f} kg CO2eq")
+print(f"---------------------------")
+print(f"총 배출량: {total:.2f} kg CO2eq")`},
+        {t:"html", v:`<div class="blk"><h4 style="color:var(--blue)">[코드 2] 함수로 구조화하기</h4><p>같은 계산을 함수로 묶으면 재사용성이 좋아지고, 사용자가 자신의 사용량을 바꿔가며 여러 번 실험해볼 수 있습니다.</p></div>`},
+        {t:"code", lang:"Python (Google Colab)", code:`# 탄소 발자국 계산기 (함수 버전)
+EF = {
+    "electric": 0.4593,   # 전기(kWh)
+    "gas":      2.176,    # 도시가스(m^3)
+    "gasoline": 2.31,     # 휘발유(L)
+    "beef":     27.0,     # 소고기 1kg당 (참고: 식품군별 추정치)
+}
+
+def carbon_footprint(usage):
+    """usage: dict 형태의 활동량을 받아 총 탄소 배출량(kg CO2eq) 반환"""
+    total = 0
+    breakdown = {}
+    for k, v in usage.items():
+        emission = v * EF.get(k, 0)
+        breakdown[k] = emission
+        total += emission
+    return total, breakdown
+
+# 사용 예시
+my_usage = {
+    "electric": 250,   # 한 달 전기 사용량
+    "gas":      30,    # 도시가스
+    "gasoline": 80,    # 휘발유
+    "beef":     2,     # 한 달 소고기 섭취량(kg)
+}
+
+total, breakdown = carbon_footprint(my_usage)
+for k, v in breakdown.items():
+    print(f"{k:>10}: {v:>8.2f} kg CO2eq")
+print(f"{'TOTAL':>10}: {total:>8.2f} kg CO2eq")`},
+        {t:"html", v:`<div class="blk"><h4 style="color:var(--purple)">[코드 3] 시각화 — 항목별 비중을 한눈에</h4><p>matplotlib을 활용해 항목별 탄소 배출량 비중을 막대그래프로 시각화해 봅시다.</p></div>`},
+        {t:"code", lang:"Python (Google Colab)", code:`import matplotlib.pyplot as plt
+
+# 한글 폰트 설정 (Colab용)
+plt.rcParams['font.family'] = 'DejaVu Sans'
+
+labels = ["전기", "가스", "휘발유", "소고기"]
+values = [breakdown["electric"], breakdown["gas"],
+          breakdown["gasoline"], breakdown["beef"]]
+
+plt.figure(figsize=(8,5))
+bars = plt.bar(labels, values, color=["#10b981","#3b82f6","#8b5cf6","#ef4444"])
+plt.title("My Monthly Carbon Footprint (kg CO2eq)")
+plt.ylabel("kg CO2eq")
+
+# 막대 위에 값 표시
+for bar, val in zip(bars, values):
+    plt.text(bar.get_x()+bar.get_width()/2, val+1,
+             f"{val:.1f}", ha="center", fontsize=10)
+
+plt.tight_layout()
+plt.show()`}
+      ]
+    },
+
+    // 활동해요 3 - 결과 분석·개선
+    {
+      id:"p7", cat:"활동해요", icon:"💡", title:"3. 결과 분석과 감축 방안",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 결과 해석하기</h3>
+          <p>위 프로그램을 실행해 본 결과, 우리 가정의 한 달 탄소 발자국은 얼마였나요? 어떤 항목이 가장 큰 비중을 차지했나요? 결과를 표로 정리하고 비교해 봅시다.</p>
+        </div>`},
+        {t:"input", label:"1. 우리 가정의 한 달 총 탄소 배출량은 얼마였나요? (kg CO₂eq)", ph:"예: 295.6 kg CO2eq", rows:1},
+        {t:"input", label:"2. 가장 큰 비중을 차지한 항목과 그 이유는?", ph:"예: 휘발유. 출퇴근으로 자동차 사용이 많기 때문이다.", rows:2},
+        {t:"html", v:`<div class="blk" style="margin-top:18px"><h3>▶ 감축 방안 — 무엇을 줄일 수 있을까?</h3><p>탄소 배출을 줄이려면 어떤 행동의 변화가 필요할까요? 우리 가정에서 실천할 수 있는 구체적인 방안을 떠올려 봅시다.</p></div>`},
+        {t:"prediction", items:[
+          {label:"IF (조건) 1", ph:"예: 자가용 통근을 대중교통으로 바꾸면"},
+          {label:"THEN (효과) 1", ph:"예: 월 50L 휘발유 절감 → 약 115kg CO2 감축"},
+          {label:"IF (조건) 2", ph:"예: 사용하지 않는 전기 코드를 뽑으면"},
+          {label:"THEN (효과) 2", ph:"예: 월 20kWh 절감 → 약 9kg CO2 감축"},
+          {label:"IF (조건) 3", ph:"예: 일주일에 하루 채식을 실천하면"},
+          {label:"THEN (효과) 3", ph:"예: 월 4kg 육류 감소 → 약 100kg CO2 감축"}
+        ]},
+        {t:"html", v:`<div class="blk" style="margin-top:18px">
+          <h3>▶ 우리만의 계산기로 발전시키기</h3>
+          <p>기본 계산기를 우리 모둠만의 아이디어로 발전시켜 봅시다. <strong>생성형 AI(ChatGPT 등)</strong>의 도움을 받아 새로운 기능을 추가해 보세요.</p>
+        </div>`},
+        {t:"input", label:"1. 추가하고 싶은 새로운 입력 항목은? (음식물쓰레기, 의류, 택배 등)", ph:"예: 일주일에 사용하는 일회용품 개수를 추가한다.", rows:2},
+        {t:"input", label:"2. 결과를 더 효과적으로 보여줄 방법은?", ph:"예: 권장 평균치와 비교해 막대그래프로 표시한다, 감축 목표를 자동으로 제안한다.", rows:3},
+        {t:"input", label:"3. 우리 모둠의 발표 핵심 메시지는?", ph:"예: 자가용 → 대중교통 한 가지 변화만으로도 한 달 100kg CO2를 줄일 수 있다.", rows:2}
+      ]
+    },
+
+    // 정리 - 스스로 진단하기
+    {
+      id:"p8", cat:"정리", icon:"✅", title:"스스로 진단하기",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 이번 수업에서 무엇을 배웠는지 점검해 봅시다</h3>
+          <p>아래 항목을 읽고, 자신의 이해 정도를 솔직하게 평가해 봅시다. 부족한 부분은 모둠 친구나 선생님께 도움을 요청하면 좋습니다.</p>
+        </div>`},
+        {t:"assessment", title:"학습 점검표", ratings:["잘함","보통","미흡"], items:[
+          "탄소 발자국의 개념을 설명하고, 일상생활 속 활동이 탄소 배출에 미치는 영향을 이해할 수 있다.",
+          "활동량과 배출계수를 곱해 항목별 탄소 배출량을 계산할 수 있다.",
+          "Python을 활용하여 탄소 발자국 계산 프로그램을 직접 작성·실행할 수 있다.",
+          "계산 결과를 해석하고, 우리 가정·학교에서 실천할 수 있는 감축 방안을 제안할 수 있다."
+        ]}
+      ]
+    },
+
+    // 정리 - 활동퀴즈 1
+    {
+      id:"p9", cat:"정리", icon:"❓", title:"활동퀴즈 1. 개념 이해",
+      blocks:[
+        {t:"html", v:`<div class="blk"><h3>▶ 탄소 발자국과 기후변화</h3></div>`},
+        {t:"quiz", num:"01", q:"개인이나 기업이 제품·서비스를 생산·소비·폐기하는 전 과정에서 직간접적으로 배출하는 온실가스의 총량을 이산화탄소로 환산한 값을 무엇이라고 합니까?", opts:[
+          "오존층 파괴 지수",
+          "탄소 발자국(Carbon Footprint)",
+          "수질 오염 지수",
+          "에너지 소비 효율 등급"
+        ], ans:1, ok:"정답입니다! 탄소 발자국은 우리가 일상에서 남기는 '보이지 않는 탄소의 흔적'입니다.", no:"힌트: '발자국'이라는 비유에서 출발한 개념입니다."},
+        {t:"quiz", num:"02", q:"탄소 발자국의 단위로 일반적으로 사용하는 것은 무엇입니까?", opts:[
+          "kWh (킬로와트시)",
+          "ppm (피피엠)",
+          "kg CO₂eq (이산화탄소 환산 킬로그램)",
+          "데시벨(dB)"
+        ], ans:2, ok:"정답입니다! CO₂eq는 여러 온실가스의 영향을 이산화탄소 기준으로 환산한 단위입니다.", no:"힌트: 여러 온실가스를 '이산화탄소 기준'으로 비교하기 위한 단위입니다."},
+        {t:"quiz", num:"03", q:"탄소 발자국 계산의 기본 공식으로 가장 옳은 것은?", opts:[
+          "활동량 + 배출계수",
+          "활동량 × 배출계수",
+          "활동량 ÷ 배출계수",
+          "활동량 − 배출계수"
+        ], ans:1, ok:"정답입니다! 각 활동량에 배출계수를 '곱한' 뒤 모든 항목을 합산해 총 탄소량을 구합니다.", no:"힌트: 단위 활동당 배출되는 양에 활동의 크기를 적용해야 합니다."}
+      ]
+    },
+
+    // 정리 - 활동퀴즈 2
+    {
+      id:"p10", cat:"정리", icon:"❓", title:"활동퀴즈 2. 적용·분석",
+      blocks:[
+        {t:"html", v:`<div class="blk"><h3>▶ Python 코드와 실생활 적용</h3></div>`},
+        {t:"quiz", num:"04", q:"Google Colab에서 Python으로 탄소 발자국 계산기를 만들 때, 사용자로부터 숫자 입력을 받기 위해 가장 적절한 코드는?", opts:[
+          "print(input())",
+          "x = float(input(\"전기 사용량: \"))",
+          "x = read(\"전기 사용량: \")",
+          "x = string(\"전기 사용량: \")"
+        ], ans:1, ok:"정답입니다! input()은 문자열을 받기 때문에 숫자 계산을 위해 float()으로 변환해야 합니다.", no:"힌트: input()은 기본적으로 문자열을 반환합니다. 숫자 연산을 위해 변환이 필요합니다."},
+        {t:"quiz", num:"05", q:"한 달 동안 전기 250kWh, 휘발유 80L를 사용했다면 총 탄소 배출량은? (전기 0.4593, 휘발유 2.31 kg CO₂eq 기준, 소수 둘째자리 반올림)", opts:[
+          "약 99.6 kg CO₂eq",
+          "약 184.8 kg CO₂eq",
+          "약 299.6 kg CO₂eq",
+          "약 530.4 kg CO₂eq"
+        ], ans:2, ok:"정답입니다! 250×0.4593 + 80×2.31 = 114.825 + 184.8 = 299.625 kg CO₂eq 입니다.", no:"힌트: (전기량×0.4593) + (휘발유량×2.31)을 계산해 보세요."},
+        {t:"quiz", num:"06", q:"우리 가정의 탄소 발자국을 줄이기 위한 실천 방안으로 가장 적절하지 <strong>않은</strong> 것은?", opts:[
+          "사용하지 않는 가전제품의 플러그를 뽑는다.",
+          "가까운 거리는 자가용 대신 도보·자전거·대중교통을 이용한다.",
+          "에어컨을 사용하지 않을 때도 24시간 켜둔다.",
+          "일주일에 하루는 채식을 실천한다."
+        ], ans:2, ok:"정답입니다! 에어컨을 켜두는 것은 전기 사용량을 늘려 오히려 탄소 배출량을 증가시킵니다.", no:"힌트: 어떤 행동이 오히려 전기 사용량을 '늘리는' 행동인지 생각해 봅시다."}
+      ]
+    },
+
+    // 정리 - 읽기 자료
+    {
+      id:"p11", cat:"정리", icon:"📚", title:"읽기 자료",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>★ 1.5℃의 약속 — 파리협정과 탄소 중립</h3>
+          <p>2015년, 전 세계 195개국이 프랑스 파리에 모여 <strong>파리협정(Paris Agreement)</strong>을 체결했습니다. 이 협정의 핵심은 산업혁명 이전 대비 지구 평균 기온 상승을 <strong>2℃ 이하, 가능하면 1.5℃ 이하</strong>로 억제하자는 약속입니다. 왜 하필 1.5℃일까요? 그 이상 상승하면 빙하 붕괴, 해수면 상승, 식량위기 등 돌이킬 수 없는 변화가 시작되기 때문입니다.</p>
+        </div>`},
+        {t:"tabs", tabs:[
+          {label:"❶ 파리협정", content:`<p><strong>모두가 함께 약속한 1.5℃</strong></p><p>파리협정은 선진국뿐만 아니라 개발도상국을 포함한 모든 국가가 자발적으로 온실가스 감축 목표(NDC)를 제출하고 이행하기로 한 첫 국제 협약입니다. 우리나라도 2030년까지 2018년 대비 온실가스 배출량을 40% 감축하겠다는 목표를 제시했습니다.</p>`},
+          {label:"❷ 탄소 중립", content:`<p><strong>2050 탄소 중립(Net-Zero)</strong></p><p>탄소 중립이란 인간 활동에서 배출되는 온실가스를 최대한 줄이고, 남은 배출량은 흡수원(숲, 갯벌)이나 기술적 제거(CCUS)로 상쇄하여 실질적인 배출량을 '0'으로 만드는 것입니다. 우리나라는 2050년 탄소 중립을 국가 비전으로 선언했습니다.</p>`},
+          {label:"❸ 우리의 역할", content:`<p><strong>일상에서 실천하는 탄소 다이어트</strong></p><p>정부와 기업뿐만 아니라 개인의 실천도 중요합니다. 환경부의 '<strong>탄소중립 포인트제</strong>'에 참여하면 텀블러 사용, 다회용기 사용, 친환경 제품 구매 등 일상 속 실천에 따라 포인트(현금성 인센티브)를 받을 수 있습니다. 우리가 만든 계산기로 매달 자신의 탄소 발자국을 확인하고, 줄여가는 습관을 들이는 것이 그 출발점입니다.</p>`}
+        ]},
+        {t:"html", v:`<div class="blk"><h4>✓ 읽고 생각해 보기</h4></div>`},
+        {t:"input", label:"❶ 우리나라가 2050년 탄소 중립을 달성하려면 어떤 분야가 가장 큰 변화가 필요할까?", ph:"발전, 산업, 수송, 건물, 농업 등 분야별로 생각해 봅시다.", rows:2},
+        {t:"input", label:"❷ 청소년인 내가 학교와 일상에서 실천할 수 있는 탄소 감축 행동은?", ph:"등하교, 점심시간, 학교 행사 등에서의 실천 사례를 떠올려 봅시다.", rows:3},
+        {t:"link", url:"https://cpoint.or.kr/", icon:"🌍", title:"탄소중립 포인트제 — 실천하면 보상받기", desc:"환경부가 운영하는 탄소중립 포인트제. 일상 속 친환경 실천에 대한 인센티브 정보를 확인할 수 있어요"}
+      ]
+    },
+
+    // 정리 - 진로 연계
+    {
+      id:"p12", cat:"정리", icon:"🧭", title:"진로 연계",
+      blocks:[
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 기후·환경 데이터를 다루는 직업</h3>
+          <p>탄소 발자국을 측정하고 줄이는 일은 단순한 개인의 실천을 넘어 하나의 전문 직업으로 자리잡고 있습니다. 데이터를 활용해 기후 문제를 해결하려는 다양한 진로를 살펴봅시다.</p>
+        </div>`},
+        {t:"cards", items:[
+          {front:"기후변화 대응 전문가", back:"기업·정부의 온실가스 배출량을 산정하고 감축 로드맵을 설계하는 컨설턴트. 환경공학·기후학 지식과 데이터 분석 능력이 필요"},
+          {front:"환경 데이터 분석가", back:"센서·인공위성·통계 자료에서 환경 데이터를 수집·분석해 정책과 산업 의사결정을 지원하는 전문가"},
+          {front:"ESG 전문가", back:"환경(Environment)·사회(Social)·지배구조(Governance) 관점에서 기업의 지속가능성을 평가하고 보고서를 작성하는 분야"},
+          {front:"신재생에너지 엔지니어", back:"태양광·풍력·수소 등 재생에너지 시스템을 설계·운영하여 화석연료 대체와 탄소 감축에 기여"}
+        ]},
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 관련 학과·기관</h3>
+          <ul>
+            <li><strong>학과</strong>: 환경공학과, 환경에너지공학과, 대기과학과, 지구환경과학과, 컴퓨터공학과(데이터 분석 전공)</li>
+            <li><strong>기관</strong>: 환경부, 국립환경과학원, 한국환경공단, 온실가스종합정보센터, 한국에너지공단</li>
+            <li><strong>자격</strong>: 온실가스관리기사, 환경영향평가사, 신재생에너지발전설비기사</li>
+          </ul>
+        </div>`},
+        {t:"link", url:"https://www.gir.go.kr/", icon:"📊", title:"온실가스종합정보센터", desc:"국가 온실가스 통계와 탄소 중립 정책 정보를 종합적으로 제공하는 공식 기관"},
+        {t:"link", url:"https://www.career.go.kr/", icon:"🧭", title:"커리어넷 — 직업·전공 탐색", desc:"환경·에너지 관련 직업과 학과 정보를 더 자세히 살펴볼 수 있습니다"}
+      ]
+    }
+  ]
+};
+
+// ========== RENDERER ==========
+let cur = 'p1', visited = new Set();
+
+function rBlock(b, pid) {
+  switch(b.t) {
+    case 'html': return b.v;
+    case 'objectives': return `<div class="blk blk-card"><h3>🎯 학습목표</h3><ul class="obj-list">${b.items.map((x,i)=>`<li><span class="obj-num">${i+1}</span><span>${x}</span></li>`).join('')}</ul></div>`;
+    case 'callout': return `<div class="callout ${b.variant||''}"><div class="c-title">${b.title}</div><div class="c-body">${b.body}</div></div>`;
+    case 'input': {
+      const id='i-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk input-group"><label for="${id}">${b.label}</label>${b.rows>1?`<textarea id="${id}" rows="${b.rows}" placeholder="${b.ph||''}"></textarea>`:`<input type="text" id="${id}" placeholder="${b.ph||''}">`}</div>`;
+    }
+    case 'steps': return `<div class="steps"><div class="s-hd">📋 ${b.title}</div>${b.items.map((s,i)=>`<div class="step" onclick="this.classList.toggle('done')"><div class="s-n">${i+1}</div><div class="s-c"><h4>${s.title}</h4><p>${s.desc}</p></div></div>`).join('')}</div>`;
+    case 'link': return `<a class="link-card" href="${b.url}" target="_blank"><div class="l-icon">${b.icon||'🔗'}</div><div class="l-info"><h4>${b.title}</h4><p>${b.desc}</p></div></a>`;
+    case 'tabs': {
+      const tid='t-'+Math.random().toString(36).substr(2,5);
+      return `<div class="blk"><div class="tabs-nav">${b.tabs.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="swTab('${tid}',${i},this)">${t.label}</button>`).join('')}</div>${b.tabs.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="${tid}-${i}">${t.content}</div>`).join('')}</div>`;
+    }
+    case 'cards': return `<div class="cards-grid">${b.items.map(c=>`<div class="flip-card" onclick="this.classList.toggle('flipped')"><div class="flip-inner"><div class="flip-front">${c.front.replace(/\n/g,'<br>')}</div><div class="flip-back">${c.back}</div></div></div>`).join('')}</div>`;
+    case 'prediction': return `<div class="blk blk-card"><h4>🔮 예측 조건/행동 입력</h4>${b.items.map(x=>`<div class="pred-row"><label>${x.label}</label><input type="text" placeholder="${x.ph}" style="width:100%"></div>`).join('')}<button class="btn btn-p" style="margin-top:10px" onclick="alert('입력값이 저장되었습니다!')">저장하기</button></div>`;
+    case 'quiz': {
+      const qid='q-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk blk-card" id="${qid}"><div class="quiz-q"><span class="qn">${b.num}.</span><span>${b.q}</span></div>${b.opts.map((o,i)=>`<div class="quiz-opt" onclick="chkQ('${qid}',${i},${b.ans})"><span class="oc"></span><span>${o}</span></div>`).join('')}<div class="quiz-fb ok" id="${qid}-ok">${b.ok}</div><div class="quiz-fb no" id="${qid}-no">${b.no}</div></div>`;
+    }
+    case 'assessment': return `<div class="blk blk-card"><h3>✅ ${b.title}</h3>${b.items.map(x=>`<div class="assess-item"><span>${x}</span><div class="rating-g">${b.ratings.map(r=>`<button class="r-btn" onclick="selR(this)">${r}</button>`).join('')}</div></div>`).join('')}</div>`;
+    case 'code': {
+      const cid = 'c-'+Math.random().toString(36).substr(2,8);
+      return `<div class="blk" style="border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin-bottom:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background:#2d2d2d; padding:8px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e0e0e0; font-size:13px; font-weight:600; font-family:monospace; letter-spacing:0.5px;">${b.lang}</span>
+          <button style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#e0e0e0; border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="navigator.clipboard.writeText(document.getElementById('${cid}').textContent); this.textContent='복사 완료 ✔'; setTimeout(()=>this.textContent='코드 복사', 2000);">코드 복사</button>
+        </div>
+        <div style="background:#1e1e1e; padding:16px; overflow-x:auto;">
+          <pre id="${cid}" style="margin:0; color:#d4d4d4; font-family:Consolas, Monaco, monospace; font-size:14px; line-height:1.6;">${b.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+      </div>`;
+    }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
+    default: return '';
+  }
+}
+
+function render(pid) {
+  const pg = D.pages.find(p=>p.id===pid);
+  if(!pg) return;
+  visited.add(pid);
+  cur = pid;
+  const idx = D.pages.indexOf(pg);
+  const m = document.getElementById('main');
+  m.innerHTML = `
+    <div class="pg-hd">
+      <div class="pg-crumb">${D.title} ${pg.cat ? `> ${pg.cat}` : ''}</div>
+      <h2 class="pg-title">${pg.icon} ${pg.title}</h2>
+    </div>
+    ${pg.blocks.map(b=>rBlock(b,pid)).join('')}
+    <div class="pg-nav">
+      ${idx>0?`<button class="btn btn-o" onclick="go('${D.pages[idx-1].id}')">← 이전</button>`:'<div></div>'}
+      ${idx<D.pages.length-1?`<button class="btn btn-p" onclick="go('${D.pages[idx+1].id}')">다음 →</button>`:`<button class="btn btn-p" onclick="alert('모든 학습을 완료했습니다! 🎉')">학습 완료 🎉</button>`}
+    </div>
+  `;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.pid===pid)});
+  // Progress
+  const pct = Math.round(visited.size/D.pages.length*100);
+  document.getElementById('pTxt').textContent=pct+'%';
+  document.getElementById('pBar').style.width=pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function go(pid){render(pid)}
+
+function swTab(tid,idx,btn){
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[id^="${tid}-"]`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${tid}-${idx}`).classList.add('active');
+}
+
+function chkQ(qid,sel,ans){
+  const qz=document.getElementById(qid);
+  qz.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.classList.remove('correct','wrong');
+    const oc=o.querySelector('.oc');
+    if(i===sel){
+      o.classList.add(sel===ans?'correct':'wrong');
+      oc.textContent=sel===ans?'✓':'✗';
+    }
+    if(i===ans&&sel!==ans){
+      o.classList.add('correct');
+      oc.textContent='✓';
+    }
+    o.style.pointerEvents='none';
+  });
+  document.getElementById(sel===ans?qid+'-ok':qid+'-no').classList.add('show');
+}
+
+function selR(btn){
+  btn.parentElement.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// Build nav with Categories
+let navHTML = '';
+let curCat = null;
+D.pages.forEach(p => {
+  if (p.cat !== curCat) {
+    if (p.cat) navHTML += `<div class="nav-cat">${p.cat}</div>`;
+    curCat = p.cat;
+  }
+  navHTML += `<div class="nav-item ${p.id==='p1'?'active':''}" data-pid="${p.id}" onclick="go('${p.id}')"><span class="icon">${p.icon}</span><span>${p.title}</span></div>`;
+});
+document.getElementById('nav').innerHTML = navHTML;
+
+render('p1');
+</script>
+</body>
+</html>
