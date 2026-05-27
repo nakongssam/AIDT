@@ -129,6 +129,27 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .pred-row input{width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;text-align:center}
 .pred-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
 
+/* Assessment - Segmented Control */
+.assess-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-lt);flex-wrap:wrap}
+.assess-item:last-child{border-bottom:none}
+.assess-item>span{flex:1;min-width:200px;font-size:14px;line-height:1.6;color:var(--txt)}
+.rating-g{display:inline-flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
+.r-btn{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--txt2);background:transparent;border:none;border-radius:6px;cursor:pointer;transition:var(--transition);min-width:54px}
+.r-btn:hover{color:var(--txt)}
+.r-btn.sel{background:var(--surface);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.r-btn:nth-child(1).sel{color:var(--green);background:var(--green-lt)}
+.r-btn:nth-child(2).sel{color:#d97706;background:#fef3c7}
+.r-btn:nth-child(3).sel{color:var(--red);background:var(--red-lt)}
+
+/* Link Card */
+.link-card{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--txt);transition:var(--transition);margin-bottom:12px}
+.link-card:hover{border-color:var(--accent);background:var(--surface-alt);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.04)}
+.link-card .l-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent-lt);border-radius:var(--radius-sm)}
+.link-card .l-info{flex:1;min-width:0}
+.link-card .l-info h4{font-size:14px;font-weight:700;margin:0 0 2px;color:var(--txt)}
+.link-card .l-info p{font-size:13px;line-height:1.5;color:var(--txt2);margin:0}
+.link-card::after{content:"↗";font-size:14px;color:var(--txt3);flex-shrink:0;margin-left:4px}
+
 /* Btn */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:var(--transition)}
 .btn-p{background:var(--accent);color:#fff}
@@ -168,20 +189,20 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 <script>
 // ========== FULL CONTENT DATA ==========
 const D = {
-  title: "공주시 문화시설을 활용한 원의 방정식 모델링",
+  title: "원의 방정식 모델링",
   pages: [
-    // 도입부 (카테고리 없음)
+    // 도입 - 학습목표
     {
-      id:"p1", icon:"🎯", title:"학습목표",
+      id:"p1", cat:"도입", icon:"🎯", title:"학습목표",
       blocks:[
         {t:"html", v:`
           <div class="blk" style="text-align:center;padding:20px 0">
-            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">수학 × 정보 융합 · 공간 모델링</div>
+            <div style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">수학 × 정보 융합 · 수학적 모델링</div>
             <h2 style="font-size:28px;font-weight:900;margin-bottom:8px">공주시 문화시설을 활용한<br>원의 방정식 모델링</h2>
             <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px">
               <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--accent-lt);color:var(--accent-dk)">수학(원의 방정식)</span>
-              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">정보(AI 근사)</span>
-              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">공간 데이터 모델링</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue)">정보(최소제곱 근사)</span>
+              <span style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)">AI 모델링</span>
             </div>
           </div>
         `},
@@ -192,198 +213,225 @@ const D = {
         ]}
       ]
     },
-
-    // 생각해요 (카테고리 없음)
+    // 도입 - 생각해요
     {
-      id:"p2", icon:"💭", title:"생각해요",
+      id:"p2", cat:"도입", icon:"💭", title:"생각해요",
       blocks:[
         {t:"html", v:`<div class="blk">
-          <h3>▶ 공주의 관광지를 수학적으로 연결하면?</h3>
-          <p>공주는 무령왕릉, 공산성, 송산리 고분군과 같은 역사적 문화유적과 다양한 관광지가 어우러진 도시입니다. 이런 문화유적이나 관광지를 수학적으로 연결해 본다면 어떤 의미가 있을까요?</p>
-          <p>세 지점을 잇는 원의 방정식을 구하면, <strong>중심과 반지름</strong>이라는 새로운 시각으로 공주를 바라볼 수 있습니다. 그렇다면, 공주의 문화유적을 수학적으로 탐구한다면 어떤 과정을 거칠 수 있을까요?</p>
-          <p style="margin-top:12px;font-weight:600;color:var(--accent)">친구들과 공주를 여행했던 경험을 떠올리며, 아래 질문들에 대한 나의 생각을 적어 봅시다.</p>
+          <h3>▶ 공주의 문화유적을 수학으로 연결한다면?</h3>
+          <p>공주는 무령왕릉, 공산성, 송산리 고분군과 같은 역사적 문화유적과 다양한 관광지가 어우러진 도시입니다. 이런 문화유적이나 관광지를 수학적으로 연결해 본다면 어떤 의미가 있을까요? 세 지점을 잇는 원의 방정식을 구하면, 중심과 반지름이라는 새로운 시각으로 공주를 바라볼 수 있습니다.</p>
+          <p style="margin-top:12px;font-weight:600;color:var(--accent)">그렇다면, 공주의 문화유적을 수학적으로 탐구한다면 어떤 과정을 거칠 수 있을까요?</p>
         </div>`},
-        {t:"input", label:"▶ 공주시의 문화유적·관광지 3개를 선택해 원의 방정식을 세운다면, 그 중심은 어떤 위치에 놓이게 될까?", ph:"예: 세 관광지의 가운데쯤, 모두에게 비슷하게 가까운 지점에 놓일 것 같다.", rows:2},
-        {t:"input", label:"▶ 우리가 구한 원의 반지름은 선택한 지점들과 어떤 관계를 보여줄까?", ph:"예: 중심에서 세 관광지까지의 거리를 동일하게 나타낼 것이다.", rows:2},
-        {t:"input", label:"▶ 이렇게 구한 중심과 반지름은 '공주에서 만남의 장소'를 정할 때 어떤 의미를 가질 수 있을까?", ph:"예: 친구들이 흩어져 있을 때, 모두에게 공평하게 가까운 만남의 장소를 정할 수 있다.", rows:3},
-        {t:"html", v:`<div class="callout purple"><div class="c-title">🎬 [릴스① 도입 훅]</div><div class="c-body">주제: 공주의 무령왕릉·공산성·박물관 위치에 점을 찍고, 세 점을 모두 지나는 원이 그려지는 순간 "어디서 만나면 가장 좋을까?" 질문을 던지는 30초 도입 영상<br>길이: 30~45초 / 학부생 팀 제작 예정</div></div>`}
+        {t:"html", v:`<div class="blk"><h4>▶ 함께 생각해 봅시다</h4>
+          <ul>
+            <li>공주시의 문화유적·관광지 3개를 선택해 원의 방정식을 세운다면, 그 중심은 어떤 위치에 놓이게 될까?</li>
+            <li>우리가 구한 원의 반지름은 선택한 지점들과 어떤 관계를 보여줄까?</li>
+            <li>계산한 원의 방정식과 AI 도구로 근사한 원의 방정식은 얼마나 비슷하고, 또 어떤 차이가 있을까?</li>
+            <li>이렇게 구한 중심과 반지름은 '공주에서 만남의 장소'를 정할 때 어떤 의미를 가질 수 있을까?</li>
+          </ul>
+        </div>`},
+        {t:"input", label:"▶ 여러분은 공주에서 친구들과 만날 때 어떤 코스로 여행하나요? 가장 효율적인 동선을 정하는 나만의 방법이 있나요?", ph:"예: 모두가 비슷한 거리에 있는 중간 지점에서 만난다.", rows:2},
+        {t:"input", label:"▶ 특정 종류의 가게들이 한 위치에 밀집되어 있는 이유는 무엇이며, 이런 위치를 고려해 만날 장소를 정하면 어떤 이점이 있을까요?", ph:"모둠 친구들과 의견을 나누고 정리해 보세요.", rows:3}
       ]
     },
 
-    // 알아봐요 - 1
+    // 알아봐요 1 - 도구 소개 통합 + 세 점을 지나는 원의 방정식
     {
       id:"p3", cat:"알아봐요", icon:"📖", title:"1. 세 점을 지나는 원의 방정식",
       blocks:[
         {t:"html", v:`<div class="blk">
-          <h3>▶ 세 점을 지나는 원은 유일하게 결정된다</h3>
-          <p>세 점이 한 원 위에 있을 때, 그 점들을 모두 지나는 원은 <strong>유일하게 결정</strong>됩니다. 원의 방정식은 다음과 같이 표현됩니다.</p>
-          <div style="text-align:center;padding:14px;background:var(--surface-alt);border-radius:var(--radius-sm);font-size:18px;font-weight:600;margin:12px 0">
-            (x − a)² + (y − b)² = r²
-          </div>
-          <p>이때 (a, b)는 <strong>원의 중심</strong>, r은 <strong>원의 반지름</strong>을 나타냅니다. 중심 (a, b)와 반지름 r을 구하기 위해서는 세 점 (x₁, y₁), (x₂, y₂), (x₃, y₃)이 필요하며, 이를 원의 방정식에 대입하여 만든 3개의 방정식을 연립하면 중심과 반지름을 구할 수 있습니다.</p>
-          <p>이 과정을 통해 선택한 문화유적 3개를 지나는 원을 수학적으로 구할 수 있습니다.</p>
+          <h3>▶ 이번 수업에서 사용할 도구</h3>
+          <p>공주시의 문화유적 위치를 수학적으로 모델링하기 위해 다음 도구들을 사용합니다. 활동 중 막히는 부분이 있으면 도구의 역할을 다시 확인해 보세요.</p>
         </div>`},
-        {t:"callout", variant:"blue", title:"💡 핵심 개념", body:"• 세 점이 한 원 위에 있을 때, 그 점들을 모두 지나는 원은 유일하게 결정된다.<br>• 세 점의 좌표를 원의 방정식에 대입하여 만든 3개의 방정식을 연립하면 중심 (a, b)와 반지름 r을 구할 수 있다.<br>• 알지오매스에 세 점을 찍으면 원의 방정식이 시각적으로 확인된다."},
-        {t:"callout", variant:"green", title:"▷ 활용 포인트", body:"① 주어진 점들로 원의 방정식을 직접 도출하며 기하와 대수의 연결을 이해한다.<br>② 원의 중심·반지름을 통해 '모이기 좋은 지점'을 탐색하는 실제적 의미를 부여한다."}
+        {t:"tabs", tabs:[
+          {label:"ChatGPT", content:"<p><strong>ChatGPT</strong>는 OpenAI가 개발한 대화형 인공지능입니다. 세 점을 이용한 원의 방정식 유도 과정을 단계별로 안내하고, 지도에서 관광지 좌표를 선택하는 코드 작성과 프로젝트 보고서·발표 자료 작성을 보조합니다.</p>"},
+          {label:"Google Colab", content:"<p><strong>Google Colab</strong>은 클라우드 기반 Python 실행 환경입니다. 최소제곱법을 활용한 원의 방정식 근사 코드를 실행하고, 중심·반지름 계산과 RMSE(오차) 분석을 자동화합니다.</p>"},
+          {label:"알지오매스", content:"<p><strong>알지오매스(AlgeoMath)</strong>는 공학 계산·그래프 시각화 도구입니다. 세 점을 찍고 직접 구한 원의 방정식을 그래프로 시각화하며, 원의 중심과 반지름이 가지는 생활권·접근성의 의미를 시각적으로 탐구합니다.</p>"}
+        ]},
+        {t:"html", v:`<div class="blk" style="margin-top:18px">
+          <h3>▶ 세 점을 지나는 원의 방정식</h3>
+          <p>세 점이 한 원 위에 있을 때, 그 점들을 모두 지나는 원은 <strong>유일하게 결정</strong>됩니다. 원의 방정식은 <strong>(x − a)² + (y − b)² = r²</strong> 으로 표현되며, 이때 (a, b)는 원의 중심, r은 원의 반지름을 나타냅니다.</p>
+          <p>중심 (a, b)와 반지름 r을 구하기 위해서는 세 점 (x₁, y₁), (x₂, y₂), (x₃, y₃)가 필요하며, 이를 대입하여 만든 <strong>3개의 방정식을 연립</strong>하여 중심과 반지름을 구할 수 있습니다. 이 과정을 통해 선택한 문화유적 3개를 지나는 원을 수학적으로 구할 수 있습니다.</p>
+        </div>`},
+        {t:"callout", variant:"blue", title:"💡 활용 포인트", body:"① 주어진 점들로 원의 방정식을 직접 도출하며 기하와 대수의 연결을 이해할 수 있다.<br>② 원의 중심·반지름을 통해 '모이기 좋은 지점'을 탐색하는 실제적 의미를 부여할 수 있다."},
+        {t:"cards", items:[
+          {front:"원의 방정식", back:"(x − a)² + (y − b)² = r² 의 형태. (a, b)는 중심, r은 반지름을 나타낸다."},
+          {front:"세 점의 유일성", back:"한 직선 위에 있지 않은 세 점을 모두 지나는 원은 오직 하나로 결정된다."},
+          {front:"원의 중심", back:"세 점에서 모두 같은 거리에 있는 특별한 지점. '세 곳 모두에게 공평한 지점'을 의미한다."},
+          {front:"연립방정식", back:"세 점을 원의 방정식에 대입해 만든 3개의 식을 연립하면 중심과 반지름을 구할 수 있다."}
+        ]}
       ]
     },
-
-    // 알아봐요 - 2
+    // 알아봐요 2 - 원의 방정식 근사와 AI 도구
     {
       id:"p4", cat:"알아봐요", icon:"📖", title:"2. 원의 방정식 근사와 AI 도구",
       blocks:[
         {t:"html", v:`<div class="blk">
-          <h3>▶ 실제 데이터에는 오차가 있다</h3>
-          <p>실제 데이터는 항상 오차를 포함하므로, 세 점이 정확히 한 원 위에 있지 않을 수도 있습니다. 이때는 <strong>최소제곱법</strong>과 같은 근사 기법을 활용하여 원의 중심과 반지름을 추정합니다.</p>
-          <p>Google Colab 같은 코딩 환경에서 점 좌표를 입력하면, AI와 알고리즘이 가장 적합한 원을 계산해 줍니다. 이렇게 구한 원의 방정식을 알지오매스에 입력해 그래프로 확인하면, 실제 데이터와 근사 결과를 시각적으로 비교할 수 있습니다.</p>
+          <h3>▶ 실제 데이터와 근사</h3>
+          <p>실제 데이터는 항상 오차를 포함하므로, 세 점이 정확히 한 원 위에 있지 않을 수도 있습니다. 이때는 <strong>최소제곱법</strong>과 같은 근사 기법을 활용하여 원의 중심과 반지름을 추정합니다. Google Colab 같은 코딩 환경에서 점 좌표를 입력하면, AI와 알고리즘이 가장 적합한 원을 계산해 줍니다. 이렇게 구한 원의 방정식을 알지오매스에 입력해 그래프로 확인하면, 실제 데이터와 근사 결과를 시각적으로 비교할 수 있습니다.</p>
         </div>`},
-        {t:"steps", title:"AI·코딩으로 원의 방정식 근사하기", items:[
-          {title:"1. ChatGPT로 코드 생성", desc:"공주시 지도에서 관광지 좌표를 선택할 수 있는 코드를 ChatGPT로 생성한다."},
-          {title:"2. Google Colab에서 실행", desc:"코드를 실행하고 3개의 관광지를 선택해 좌표를 확인한다."},
-          {title:"3. 원의 방정식 도출", desc:"선택한 3개의 점을 토대로 원의 방정식을 생성한다."},
-          {title:"4. 원의 중심 위치 확인", desc:"도출한 원의 방정식으로부터 중심 좌표를 확인하고 그 의미를 해석한다."}
+        {t:"steps", title:"AI·코딩을 활용한 모델링 과정", items:[
+          {title:"1. 좌표 선택 코드 생성", desc:"ChatGPT를 활용하여 공주시 지도에서 관광지 좌표를 선택할 수 있는 코드를 생성한다."},
+          {title:"2. 관광지 3개 선택", desc:"Google Colab에서 코드를 실행하고 모둠 토의를 통해 3개의 관광지를 정해 좌표를 확인한다."},
+          {title:"3. 원의 방정식 생성", desc:"선택한 3개의 점을 토대로 원의 방정식을 세우고, 원의 중심 위치를 확인한다."},
+          {title:"4. 근사와 오차 분석", desc:"최소제곱법으로 중심·반지름을 근사하고, RMSE 등 오차를 분석해 손계산 결과와 비교·검증한다."}
         ]},
-        {t:"callout", variant:"green", title:"▷ 활용 포인트", body:"① AI와 코딩을 통해 원의 방정식을 근사하며 데이터 기반 수학 탐구를 경험한다.<br>② 근사 과정에서 발생하는 오차를 분석하며 수학적 추론력을 향상시킨다.<br>③ 수학·AI 융합 학습을 통해 실제 공간 데이터를 모델링하는 능력을 기른다."},
-        {t:"html", v:`<div class="callout blue"><div class="c-title">🎬 [릴스② 핵심 개념]</div><div class="c-body">주제: 세 점을 지나는 원이 유일하게 결정되는 원리를 애니메이션으로 보여주고, 손계산 결과와 Google Colab의 최소제곱법 근사 결과를 나란히 비교하는 60~90초 영상<br>길이: 60~90초 / 학부생 팀 제작 예정</div></div>`}
+        {t:"callout", variant:"green", title:"💡 활용 포인트", body:"① AI와 코딩을 통해 원의 방정식을 근사하며 데이터 기반 수학 탐구를 경험할 수 있다.<br>② 근사 과정에서 발생하는 오차를 분석하며 수학적 추론력을 향상할 수 있다.<br>③ 수학·AI 융합 학습을 통해 실제 공간 데이터를 모델링하는 능력을 기를 수 있다."},
+        {t:"callout", variant:"purple", title:"📚 참고자료 — 세 지점의 중심을 찾는 수학, 어디에 활용될까?", body:"우리가 보는 관광지는 단순히 지도 위에 찍힌 점일 뿐이지만, 수학적으로 세 지점을 연결하면 새로운 의미가 생깁니다. 세 관광지를 동시에 지나는 원을 만들고 그 중심을 찾으면, 세 곳에서 모두 같은 거리에 있는 특별한 지점을 알 수 있습니다. 예를 들어 도시 계획에서는 주요 시설 3곳을 기준으로 원의 중심을 찾아 사람들이 모이기 좋은 광장을 설계할 수 있고, 상업 분야에서는 학교·아파트 단지·역을 기준으로 원의 중심을 구해 편의점이나 카페 입지를 결정하기도 합니다. 이 결과는 단순한 수학 계산으로 끝나지 않고, 생활 공간 배치, 도시의 효율적인 동선 설계, 문화행사·축제 장소 선정과 같은 실제 사회 문제 해결에 활용됩니다."}
       ]
     },
 
-    // 활동해요 - 1
+    // 활동해요 1
     {
-      id:"p5", cat:"활동해요", icon:"✏️", title:"1. 관광지 3곳 선택 & 원의 방정식",
+      id:"p5", cat:"활동해요", icon:"✏️", title:"1. 관광지로 원의 방정식 세우기",
       blocks:[
         {t:"html", v:`<div class="blk">
           <h3>▶ 공주시 관광지를 활용하여 원의 방정식 세우기</h3>
-          <p>모둠별로 공주시의 문화유적·관광지 3곳을 선택하고, 그 좌표를 활용해 원의 방정식을 직접 구해 봅시다.</p>
+          <p>공주시 지도에서 모둠별로 문화유적·관광지 3개를 선택하고, 세 점을 이용해 원의 방정식을 직접 구해 봅시다.</p>
         </div>`},
-        {t:"input", label:"1. 공주시 지도에서 모둠별로 문화유적·관광지 3개를 선택해 좌표(위도·경도)를 기록해 보자.", ph:"예: ① 무령왕릉 (36.4628, 127.1131) ② 공산성 (36.4664, 127.1271) ③ 국립공주박물관 (36.4644, 127.1211)", rows:4},
-        {t:"input", label:"2. 세 점을 이용해 원의 방정식을 구하고, 알지오매스에 입력해 원·중심·반지름을 시각화하여 세 점이 원 위에 있는지 검증해 보자.", ph:"예: 알지오매스에서 세 점을 찍어 원을 그렸을 때, 중심 좌표는 (___, ___), 반지름은 ___이며, 세 점이 모두 원 위에 정확히 위치함을 확인하였다.", rows:4}
+        {t:"input", label:"1. 공주시 지도에서 모둠별로 문화유적·관광지 3개를 선택해 좌표(위도·경도)를 기록해 봅시다.", ph:"예: 무령왕릉(위도, 경도) / 공산성(위도, 경도) / 국립공주박물관(위도, 경도)", rows:3},
+        {t:"input", label:"2. 세 점을 이용해 원의 방정식을 구해 봅시다. 중심 (a, b)와 반지름 r을 적어 보세요.", ph:"예: (x − a)² + (y − b)² = r² / 중심 ( , ), 반지름 r = ", rows:2},
+        {t:"input", label:"3. 알지오매스에 입력해 원·중심·반지름을 시각화하고, 세 점이 원 위에 있는지 검증해 봅시다.", ph:"세 점이 원 위에 정확히 놓이는지, 어긋난다면 얼마나 어긋나는지 적어 보세요.", rows:2},
+        {t:"link", url:"https://www.algeomath.kr/", icon:"📐", title:"알지오매스 — 원 시각화", desc:"세 점을 찍고 직접 구한 원의 방정식을 그래프로 확인해 봅시다"}
       ]
     },
-
-    // 활동해요 - 2
+    // 활동해요 2
     {
-      id:"p6", cat:"활동해요", icon:"💻", title:"2. AI·코딩 근사와 결과 검증",
+      id:"p6", cat:"활동해요", icon:"💻", title:"2. AI·코딩으로 근사하고 해석하기",
       blocks:[
         {t:"html", v:`<div class="blk">
-          <h3>▶ AI·코딩으로 근사하고 결과 검증하기</h3>
-          <p>이번에는 Google Colab과 ChatGPT를 활용해 최소제곱법으로 원의 중심·반지름을 근사해 보고, 손으로 계산한 결과와 비교합니다.</p>
+          <h3>▶ AI·코딩으로 근사하고 접근성 해석하기</h3>
+          <p>ChatGPT로 얻은 코드를 Google Colab에서 실행해 최소제곱법으로 원의 중심·반지름을 근사하고, 오차를 분석해 '모이기 좋은 지점'의 의미를 해석해 봅시다.</p>
         </div>`},
-        {t:"callout", variant:"blue", title:"💡 ChatGPT 프롬프트 예시", body:"\"공주시의 세 관광지 좌표 [(x₁, y₁), (x₂, y₂), (x₃, y₃)]를 입력으로 받아 최소제곱법으로 원의 중심과 반지름을 근사하고 RMSE를 출력하는 Python 코드를 작성해 줘.\""},
-        {t:"code", lang:"Python (Google Colab)", code:`import numpy as np
-
-# 공주시 관광지 3곳의 좌표 (예시: 위도, 경도 → 평면 좌표로 변환했다고 가정)
-points = np.array([
-    [x1, y1],  # 관광지 1
-    [x2, y2],  # 관광지 2
-    [x3, y3],  # 관광지 3
-])
-
-# 최소제곱법으로 원의 중심과 반지름 근사
-# (x - a)^2 + (y - b)^2 = r^2  =>  x^2 + y^2 = 2ax + 2by + (r^2 - a^2 - b^2)
-A = np.column_stack([2*points[:,0], 2*points[:,1], np.ones(len(points))])
-b = points[:,0]**2 + points[:,1]**2
-
-# 정규방정식: A^T A x = A^T b
-sol, *_ = np.linalg.lstsq(A, b, rcond=None)
-a, b_center, c = sol
-r = np.sqrt(c + a**2 + b_center**2)
-
-print(f"원의 중심: ({a:.4f}, {b_center:.4f})")
-print(f"반지름: {r:.4f}")
-
-# RMSE(오차) 계산
-distances = np.sqrt((points[:,0]-a)**2 + (points[:,1]-b_center)**2)
-rmse = np.sqrt(np.mean((distances - r)**2))
-print(f"RMSE: {rmse:.4f}")`},
-        {t:"input", label:"1. ChatGPT로 얻은 코드를 통해 최소제곱법으로 원의 중심·반지름을 근사하고, 손계산 결과와 비교해 보자.", ph:"예: 손계산 중심 (___, ___), 근사 중심 (___, ___). 두 결과의 차이는 ___이며, 반지름의 상대 오차는 ___% 이다.", rows:4},
-        {t:"input", label:"2. 오차를 확인하고, 반경 임계값으로 생활권/접근성 원을 그려 '모이기 좋은 지점'의 의미를 해석해 보자.", ph:"예: 반지름 r 이내에는 ___ 같은 시설이 포함되어 있으며, 이 원의 중심은 세 관광지로부터 비슷한 거리에 있어 만남의 장소로 적합하다.", rows:4}
+        {t:"input", label:"1. ChatGPT로 얻은 코드를 통해 최소제곱법으로 원의 중심·반지름을 근사하고, 결과를 간단히 검증해 봅시다.", ph:"예: 직접 계산한 중심·반지름과 AI 근사 결과를 나란히 적어 비교해 보세요.", rows:3},
+        {t:"input", label:"2. 오차(RMSE 등)를 확인하고, 반경 임계값으로 생활권/접근성 원을 그려 '모이기 좋은 지점'의 의미를 해석해 봅시다.", ph:"중심이 어떤 위치에 놓였는지, 그 지점이 만남의 장소로 적절한 이유는 무엇인지 적어 보세요.", rows:3},
+        {t:"callout", variant:"blue", title:"💡 발표 시 점검 사항", body:"• 모둠이 정한 관광지 3곳과 그 좌표<br>• 직접 구한 원의 방정식 결과와 AI 근사 결과의 검증 내용<br>• 원의 중심·반지름이 나타내는 '모이기 좋은 지점'의 의미"},
+        {t:"link", url:"https://colab.google/", icon:"💻", title:"Google Colab — 최소제곱 근사", desc:"세 점 좌표로 원의 중심·반지름을 근사하고 RMSE를 분석해 봅시다"}
       ]
     },
 
-    // 활동해요 - 3
+    // 정리 - 스스로 진단하기
     {
-      id:"p7", cat:"활동해요", icon:"💡", title:"3. '모이기 좋은 지점' 발표",
+      id:"p7", cat:"정리", icon:"✅", title:"스스로 진단하기",
       blocks:[
         {t:"html", v:`<div class="blk">
-          <h3>▶ 모둠별 프로젝트 발표 – 공주에서 모이기 좋은 지점</h3>
-          <p>지금까지의 탐구 결과를 정리하여 모둠별로 발표 자료를 준비합니다. 모둠이 정한 관광지, 원의 방정식 결과와 근사 결과 검증 내용, '모이기 좋은 지점'의 의미를 발표해 봅시다.</p>
+          <h3>▶ 이번 수업에서 무엇을 배웠는지 점검해 봅시다</h3>
+          <p>아래 항목을 읽고, 자신의 이해 정도를 솔직하게 평가해 봅시다. 부족한 부분은 모둠 친구나 선생님께 도움을 요청하면 좋습니다.</p>
         </div>`},
-        {t:"steps", title:"발표 자료 구성 순서", items:[
-          {title:"1. 선택한 관광지 3곳 소개", desc:"우리 모둠이 선택한 문화유적·관광지 3곳과 그 좌표, 선택한 이유를 소개한다."},
-          {title:"2. 원의 방정식 결과 제시", desc:"손으로 계산한 원의 방정식, 중심, 반지름과 알지오매스 시각화 결과를 보여준다."},
-          {title:"3. AI 근사 결과 비교", desc:"Google Colab으로 근사한 결과와 손계산 결과의 차이, RMSE 값을 비교한다."},
-          {title:"4. 모이기 좋은 지점 해석", desc:"중심 좌표가 실제 공주 지도의 어디에 위치하는지, 만남의 장소로서의 의미를 해석한다."},
-          {title:"5. 학습 성찰", desc:"활동을 통해 새롭게 알게 된 점, 어려웠던 점, 더 탐구하고 싶은 점을 공유한다."}
-        ]},
-        {t:"input", label:"우리 모둠이 제안하는 '공주에서 모이기 좋은 지점'은 어디이며, 그 이유는 무엇인가요?", ph:"우리 모둠이 정한 중심 좌표가 위치한 장소와, 그곳을 만남의 장소로 추천하는 이유를 정리해 보세요.", rows:4}
+        {t:"assessment", title:"학습 점검표", ratings:["잘함","보통","미흡"], items:[
+          "공주시 문화시설을 바탕으로 원의 방정식을 세우고, 중심·반지름을 계산할 수 있다.",
+          "알지오매스로 원을 시각화하여 선택한 점들이 원 위에 있는지 확인할 수 있다.",
+          "Google Colab, ChatGPT를 활용해 직접 해본 계산과 AI 근사를 비교하고 오차(RMSE)를 해석할 수 있다.",
+          "원의 중심·반지름을 생활권/접근성에 연결하여 '모이기 좋은 지점'을 합리적으로 제안할 수 있다."
+        ]}
       ]
     },
 
-    // 활동퀴즈 - 1
+    // 정리 - 활동퀴즈 1
     {
-      id:"p8", cat:"활동퀴즈", icon:"❓", title:"1. 원의 방정식 이해",
+      id:"p8", cat:"정리", icon:"❓", title:"활동퀴즈 1. 원의 방정식의 이해",
       blocks:[
-        {t:"html", v:`<div class="blk"><h3>▶ 세 점을 지나는 원의 방정식</h3></div>`},
-        {t:"quiz", num:"01", q:"세 점 (0,0), (2,6), (4,2)를 지나는 원의 중심의 좌표를 (a, b), 반지름의 길이를 r이라 할 때 a + b + r²의 값은?", opts:[
-          "6", "8", "10", "12", "14"
-        ], ans:4, ok:"정답입니다! 세 점을 원의 방정식에 대입해 연립방정식을 풀면 중심과 반지름의 제곱을 구할 수 있습니다.", no:"각 점을 (x−a)² + (y−b)² = r²에 대입한 뒤 식을 빼서 a, b를 먼저 구해 보세요."},
-        {t:"quiz", num:"02", q:"좌표평면 위의 세 점 (0,0), (6,0), (−4,4)를 지나는 원의 중심의 좌표를 (p, q)라 할 때, p + q의 값은?", opts:[
-          "6", "8", "10", "12", "14"
-        ], ans:2, ok:"정답입니다! 두 점 (0,0)과 (6,0)에서 p=3을 얻고, (−4,4)와의 관계로 q를 구할 수 있습니다.", no:"두 점에서 같은 거리에 있는 점들의 집합(수직이등분선)을 떠올려 보세요."},
+        {t:"html", v:`<div class="blk"><h3>▶ 원의 방정식의 이해</h3></div>`},
+        {t:"quiz", num:"01", q:"세 점 (0, 0), (2, 6), (4, 2)를 지나는 원의 중심의 좌표를 (a, b), 반지름의 길이를 r이라 할 때, a + b + r²의 값은?", opts:[
+          "6",
+          "8",
+          "10",
+          "14"
+        ], ans:3, ok:"정답입니다! 세 점을 원의 방정식에 대입해 연립하면 a + b + r² = 14 입니다.", no:"힌트: 세 점을 x² + y² + Dx + Ey + F = 0 에 대입해 D, E, F를 구하고 중심·반지름을 계산해 보세요."},
+        {t:"quiz", num:"02", q:"좌표평면 위의 세 점 (0, 0), (6, 0), (−4, 4)를 지나는 원의 중심의 좌표를 (p, q)라 할 때, p + q의 값은?", opts:[
+          "6",
+          "8",
+          "10",
+          "12"
+        ], ans:2, ok:"정답입니다! 세 점을 연립해 중심을 구하면 p + q = 10 입니다.", no:"힌트: 두 현의 수직이등분선의 교점이 원의 중심입니다."},
         {t:"quiz", num:"03", q:"중심이 직선 y = x + 3 위에 있고 점 (1, 2)를 지나며 x축에 접하는 두 원의 중심 사이의 거리는?", opts:[
-          "6√2", "7√2", "8√2", "12", "14"
-        ], ans:2, ok:"정답입니다! x축에 접하는 원의 반지름은 |중심의 y좌표|와 같다는 점이 핵심입니다.", no:"x축에 접한다는 조건과 중심이 직선 위에 있다는 조건을 모두 사용해 보세요."}
+          "6√2",
+          "7√2",
+          "8√2",
+          "12"
+        ], ans:2, ok:"정답입니다! 두 조건(중심이 직선 위, x축에 접함)을 연립하면 중심 사이의 거리는 8√2 입니다.", no:"힌트: x축에 접하면 반지름 = |중심의 y좌표| 입니다. 중심을 (t, t+3)으로 두고 풀어 보세요."},
+        {t:"quiz", num:"04", q:"세 점 A(−2, 3), B(−1, 0), C(0, −1)을 지나는 원의 반지름의 길이는?", opts:[
+          "1",
+          "2",
+          "3",
+          "5"
+        ], ans:3, ok:"정답입니다! 세 점을 지나는 원의 방정식을 구하면 반지름의 길이는 5 입니다.", no:"힌트: 세 점을 원의 방정식에 대입해 중심을 구한 뒤, 한 점까지의 거리를 계산해 보세요."},
+        {t:"quiz", num:"05", q:"세 점 (0, 0), (−2, 0), (0, 2)를 지나는 원의 넓이는?", opts:[
+          "π",
+          "2π",
+          "3π",
+          "4π"
+        ], ans:1, ok:"정답입니다! 세 점을 지나는 원의 반지름은 √2 이므로 넓이는 2π 입니다.", no:"힌트: 먼저 원의 반지름 r을 구한 뒤, 넓이 πr²을 계산해 보세요."}
       ]
     },
-
-    // 활동퀴즈 - 2
+    // 정리 - 활동퀴즈 2
     {
-      id:"p9", cat:"활동퀴즈", icon:"❓", title:"2. 근사와 오차 분석",
+      id:"p9", cat:"정리", icon:"❓", title:"활동퀴즈 2. 근사와 오차 분석",
       blocks:[
-        {t:"html", v:`<div class="blk"><h3>▶ AI 근사와 오차 해석</h3></div>`},
-        {t:"quiz", num:"04", q:"세 점 A(−2,3), B(−1,0), C(0,−1)을 지나는 원의 반지름의 길이는?", opts:[
-          "1", "2", "3", "4", "5"
-        ], ans:4, ok:"정답입니다! 세 점의 좌표를 원의 방정식에 대입해 연립하면 반지름을 구할 수 있습니다.", no:"세 점이 한 원 위에 있다는 조건으로 연립방정식을 세워 보세요."},
-        {t:"quiz", num:"05", q:"세 점을 이용해 직접 계산한 원의 반지름 r = 5km이고 Google Colab으로 근사한 결과 원의 반지름 r = 5.2km였다. 이때 반지름 계산의 상대 오차율은?", opts:[
-          "3%", "4%", "7%", "8%", "9%"
-        ], ans:1, ok:"정답입니다! 상대 오차율 = |근사값 − 참값| ÷ 참값 × 100% = 0.2/5 × 100% = 4%입니다.", no:"상대 오차율 = (오차 ÷ 참값) × 100% 공식을 적용해 보세요."},
-        {t:"quiz", num:"06", q:"세 점이 정확히 한 원 위에 있지 않을 때, AI 근사 결과와 손계산 결과를 비교하는 이유로 가장 적절한 것은?", opts:[
+        {t:"html", v:`<div class="blk"><h3>▶ 근사와 오차 분석</h3></div>`},
+        {t:"quiz", num:"06", q:"세 점을 이용해 직접 계산한 원의 반지름 r = 5km이고, Google Colab으로 근사한 결과 원의 반지름 r = 5.2km였다. 이때 반지름 계산의 상대 오차율은?", opts:[
+          "3%",
+          "4%",
+          "7%",
+          "8%"
+        ], ans:1, ok:"정답입니다! 상대 오차율 = |5.2 − 5| / 5 × 100 = 4% 입니다.", no:"힌트: 상대 오차율 = (오차의 절댓값 ÷ 참값) × 100 으로 계산합니다."},
+        {t:"quiz", num:"07", q:"세 점이 정확히 한 원 위에 있지 않을 때, AI 근사 결과와 손계산 결과를 비교하는 이유로 가장 적절한 것은?", opts:[
           "직접 계산한 결과가 항상 더 정확하기 때문이다.",
-          "AI는 계산 시간을 줄여주지만, 수학적 근거를 제공하지 않는다.",
+          "AI는 계산 시간을 줄여주지만, 수학적 근거를 제공하지 않기 때문이다.",
           "실제 데이터에는 오차가 포함되므로, 두 결과를 비교하여 신뢰도를 확인하기 위해서이다.",
-          "AI 결과는 항상 틀리기 때문이다.",
           "두 방법 모두 결과가 똑같으므로 비교할 필요가 없다."
-        ], ans:2, ok:"정답입니다! 실제 데이터의 오차를 인정하고, 손계산과 AI 근사 결과를 비교함으로써 모델의 신뢰도를 검증할 수 있습니다.", no:"힌트: 데이터 기반 탐구에서는 '오차'를 어떻게 다루는지가 핵심입니다."}
+        ], ans:2, ok:"정답입니다! 실제 데이터에는 오차가 포함되므로, 두 결과를 비교해 신뢰도를 확인하는 것이 핵심입니다.", no:"힌트: 실제 데이터가 가진 특성과, 비교를 통해 무엇을 확인할 수 있는지 생각해 보세요."}
       ]
     },
 
-    // 읽기 자료
+    // 정리 - 읽기 자료
     {
-      id:"p10", cat:"읽기 자료", icon:"📚", title:"읽기 자료 & 진로 연계",
+      id:"p10", cat:"정리", icon:"📚", title:"읽기 자료",
       blocks:[
         {t:"html", v:`<div class="blk">
-          <h3>▶ 공주시 문화유적과 원의 방정식</h3>
-          <p>공주는 무령왕릉, 공산성, 국립공주박물관과 같은 역사적 문화유적을 품은 도시입니다. 이 지점들을 단순히 관광지로 보는 것에서 나아가, 수학적으로 연결해 본다면 새로운 의미를 발견할 수 있습니다. 세 지점을 모두 지나는 원의 방정식을 구하면, 그 중심은 세 곳에서 같은 거리에 있는 특별한 지점을 나타냅니다. 이는 단순히 기하학적 계산이 아니라, '<strong>모이기 좋은 중심</strong>'을 찾는 실제적 탐구로 이어집니다.</p>
+          <h3>★ 공주시 문화유적과 원의 방정식</h3>
+          <p>공주는 무령왕릉, 공산성, 국립공주박물관과 같은 역사적 문화유적을 품은 도시입니다. 이 지점들을 단순히 관광지로 보는 것에서 나아가, 수학적으로 연결해 본다면 새로운 의미를 발견할 수 있습니다. 세 지점을 모두 지나는 원의 방정식을 구하면, 그 중심은 세 곳에서 같은 거리에 있는 특별한 지점을 나타냅니다. 이는 단순히 기하학적 계산이 아니라, '모이기 좋은 중심'을 찾는 실제적 탐구로 이어집니다.</p>
         </div>`},
         {t:"tabs", tabs:[
-          {label:"원과 거리 개념", content:`<p>원의 정의는 '중심에서 같은 거리에 있는 점들의 집합'입니다. 세 점으로 원을 만든다는 것은, 세 지점을 같은 거리 개념으로 묶는다는 의미입니다. 따라서 원의 중심은 '세 곳 모두에게 공평한 지점'이 됩니다.</p><p>이러한 사고는 단순한 기하 문제를 넘어, <strong>공정성과 균형</strong>이라는 수학적 가치까지 탐구하게 합니다.</p>`},
-          {label:"원의 근사와 AI 도구", content:`<p>실제 데이터는 오차가 포함되어 세 점이 정확히 한 원 위에 있지 않을 수도 있습니다. 이때는 <strong>최소제곱법</strong> 같은 근사 기법을 활용하여 '가장 잘 맞는 원'을 구합니다.</p><ul><li><strong>ChatGPT</strong>: 원의 방정식 유도, 최소제곱 근사 과정, 수학적 탐구 절차 안내</li><li><strong>Google Colab</strong>: 세 점 좌표로 원의 중심·반지름을 자동 계산하고 RMSE까지 분석</li><li><strong>알지오매스</strong>: 구한 원을 입력해 그래프로 시각화하고 중심·반지름을 해석</li></ul><p>이 과정을 통해 손계산 결과와 AI 근사 결과를 비교하고, 오차 분석으로 데이터 기반 탐구를 경험할 수 있습니다.</p>`},
-          {label:"원의 방정식 활용", content:`<p>세 점을 통해 얻은 원과 중심은 단순한 수학 결과를 넘어 실제 생활에도 활용됩니다.</p><ul><li><strong>도시 계획</strong>: 주요 시설 3곳을 기준으로 광장·공원 입지를 선정</li><li><strong>상업 분야</strong>: 학교, 아파트, 역을 기준으로 상권 중심을 계산</li><li><strong>재난 관리</strong>: 소방서·병원·경찰서를 기준으로 효율적인 구조 거점을 결정</li></ul><p>이처럼 원의 방정식은 교과서 속 기하 문제가 아니라, 공간 배치와 의사결정에 직접적으로 쓰이는 수학적 도구입니다.</p>`}
+          {label:"★ 원과 거리 개념", content:"<p><strong>원과 거리 개념</strong></p><p>원의 정의는 '중심에서 같은 거리에 있는 점들의 집합'입니다. 세 점으로 원을 만든다는 것은, 세 지점을 같은 거리 개념으로 묶는다는 의미입니다. 따라서 원의 중심은 '세 곳 모두에게 공평한 지점'이 됩니다. 이러한 사고는 단순한 기하 문제를 넘어, 공정성과 균형이라는 수학적 가치까지 탐구하게 합니다.</p>"},
+          {label:"★ 근사와 AI 도구", content:"<p><strong>원의 근사와 AI 도구</strong></p><p>실제 데이터는 오차가 포함되어 세 점이 정확히 한 원 위에 있지 않을 수도 있습니다. 이때는 최소제곱법 같은 근사 기법을 활용하여 '가장 잘 맞는 원'을 구합니다.</p><ul><li><strong>ChatGPT</strong>: 원의 방정식 유도 방법, 최소제곱 근사 과정, 수학적 탐구 절차를 설명받고 학습 자료 제작을 지원한다.</li><li><strong>Google Colab</strong>: 세 점 좌표를 불러와 원의 중심과 반지름을 자동 계산하고, 오차 분석(RMSE)까지 수행한다.</li><li><strong>알지오매스</strong>: 구한 원의 방정식을 직접 입력하여 그래프를 시각적으로 확인하고, 중심과 반지름을 해석한다.</li></ul>"},
+          {label:"★ 원의 방정식 활용", content:"<p><strong>원의 방정식 활용</strong></p><p>세 점을 통해 얻은 원과 중심은 단순한 수학 결과를 넘어 실제 생활에도 활용됩니다.</p><ul><li><strong>도시 계획</strong>: 주요 시설 3곳을 기준으로 광장·공원 입지를 선정한다.</li><li><strong>상업 분야</strong>: 학교·아파트·역을 기준으로 상권 중심을 계산한다.</li><li><strong>재난 관리</strong>: 소방서·병원·경찰서를 기준으로 효율적인 구조 거점을 결정한다.</li></ul><p>이처럼 원의 방정식은 교과서 속 기하 문제가 아니라, 공간 배치와 의사결정에 직접적으로 쓰이는 수학적 도구입니다.</p>"}
         ]},
+        {t:"html", v:`<div class="blk"><h4>✓ 읽고 생각해 보기</h4></div>`},
+        {t:"input", label:"❶ 원의 중심이 '세 곳 모두에게 공평한 지점'이라는 말은 어떤 의미일까?", ph:"중심에서 세 점까지의 거리가 모두 같다는 점을 떠올려 봅시다.", rows:2},
+        {t:"input", label:"❷ 세 점을 지나는 원의 중심을 찾는 수학이 도시 계획·상업·재난 관리에서 어떻게 활용될 수 있을까?", ph:"광장 입지, 상권 중심, 구조 거점 등을 떠올려 봅시다.", rows:3}
+      ]
+    },
+
+    // 정리 - 진로 연계
+    {
+      id:"p11", cat:"정리", icon:"🧭", title:"진로 연계",
+      blocks:[
         {t:"html", v:`<div class="blk">
-          <h3>▶ 진로 연계</h3>
-          <p>원의 방정식과 공간 데이터 모델링은 다양한 진로 분야와 연결됩니다. 자신의 관심 분야와 연결해 더 탐구해 봅시다.</p>
+          <h3>▶ 프로그램·콘텐츠 소개</h3>
+          <ul>
+            <li><strong>스마트 도시 공간 분석 캠프</strong>: 도시 내 주요 지점 데이터를 활용해 원의 중심과 거리 개념을 탐구하며, 수학(기하·대수)과 공간정보 기술을 결합해 문제 해결력을 기르는 체험형 프로그램</li>
+            <li><strong>공주시 금강 VR·AR 체험 콘텐츠</strong>: 무령왕릉·공산성·박물관 등 문화유적을 VR로 탐방하며, 세 지점을 기준으로 원을 설정하고 중심을 찾는 수학적 탐구가 가능한 콘텐츠</li>
+          </ul>
         </div>`},
         {t:"cards", items:[
-          {front:"도시계획가", back:"주요 시설의 입지 선정과 시민 생활 동선 설계 등 공간 기반 의사결정을 수행"},
-          {front:"데이터 분석가", back:"좌표 데이터와 수학적 모델링을 활용해 효율적인 공간 배치 및 예측을 수행"},
-          {front:"GIS 전문가", back:"지리정보시스템을 활용해 도시·문화유적의 위치 관계를 분석하고 공간 문제 해결을 지원"},
-          {front:"수학과", back:"좌표 기하, 대수, 근사 기법을 기반으로 공간 문제 해결과 수학적 모델링을 연구"},
-          {front:"도시공학과", back:"도시 구조와 공간 활용을 분석하고, 수학적 원리를 적용해 효율적인 도시 설계를 수행"}
+          {front:"수학과", back:"좌표 기하, 대수, 근사 기법을 기반으로 공간 문제 해결 및 수학적 모델링을 연구하는 전공"},
+          {front:"도시공학과", back:"도시 구조와 공간 활용을 분석하고, 수학적 원리를 적용해 효율적인 도시 설계를 수행하는 전공"},
+          {front:"도시계획가", back:"주요 시설 입지 선정, 시민 생활 동선 설계 등 공간 기반 의사결정을 수행하는 직업"},
+          {front:"데이터 분석가", back:"좌표 데이터와 수학적 모델링을 활용해 효율적인 공간 배치 및 예측을 수행하는 직업"},
+          {front:"GIS 전문가", back:"지리정보시스템을 활용해 도시·문화유적의 위치 관계를 분석하고 공간 문제 해결을 지원하는 직업"}
         ]},
-        {t:"link", url:"https://www.algeomath.kr/", icon:"📐", title:"알지오매스로 더 탐구하기", desc:"세 점을 찍고 원의 방정식을 직접 시각화해 봅시다"},
-        {t:"html", v:`<div class="callout green"><div class="c-title">🎬 [릴스③ 실생활 적용]</div><div class="c-body">주제: 공주시 무령왕릉·공산성·박물관 세 지점의 원의 중심이 실제 어디에 위치하는지 보여주고, 도시계획가가 광장 입지를 선정할 때 같은 원리를 어떻게 활용하는지 연결하는 영상<br>길이: 45~60초 / 학부생 팀 제작 예정</div></div>`}
+        {t:"html", v:`<div class="blk">
+          <h3>▶ 책 소개 — 《문명, 수학의 필하모니》 (김홍종)</h3>
+          <p>문화·예술·기술·사회 속에 숨어 있는 수학적 구조를 다양한 사례로 풀어내며, 공간·비율·대칭·프랙털 등 도시와 일상에 스며든 수학 원리를 폭넓게 탐구한 교양서입니다.</p>
+          <h3>▶ 기업 소개</h3>
+          <ul>
+            <li><strong>Autodesk(오토데스크)</strong>: AutoCAD, Tinkercad 등 공간 설계·모델링 소프트웨어를 제공하여 수학과 설계 기술 융합을 지원한다.</li>
+            <li><strong>국토지리정보원(NGII)</strong>: 지리 좌표 데이터 수집·분석을 통해 지도 제작, 도시 계획, 공간정보 서비스를 제공한다.</li>
+          </ul>
+        </div>`},
+        {t:"link", url:"https://www.career.go.kr/", icon:"🧭", title:"커리어넷 — 직업·전공 탐색", desc:"수학·도시공학·GIS 관련 직업 정보와 학과 정보를 더 자세히 살펴볼 수 있습니다"},
+        {t:"link", url:"https://www.algeomath.kr/", icon:"📐", title:"알지오매스", desc:"원의 방정식과 그래프 시각화를 직접 체험해 볼 수 있는 수학 탐구 도구입니다"}
       ]
     }
   ]
@@ -426,6 +474,16 @@ function rBlock(b, pid) {
         </div>
       </div>`;
     }
+    case 'wokwi': return `<div class="blk" style="margin-bottom:18px;">
+      <a href="https://wokwi.com/projects/new/arduino-uno" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border:1px solid #ffb74d; border-radius:var(--radius); text-decoration:none; color:var(--txt); transition:var(--transition); box-shadow:0 2px 4px rgba(0,0,0,0.04);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(255,152,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.04)'">
+        <div style="font-size:32px; flex-shrink:0;">🔧</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:2px;">Wokwi 시뮬레이터로 직접 실습해 보기</div>
+          <div style="font-size:13px; color:var(--txt2); line-height:1.5;">새 탭으로 시뮬레이터를 열어두고, 아래 코드를 하나씩 복사해 붙여넣은 뒤 ▶ 버튼으로 실행해 보세요.</div>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#e65100; flex-shrink:0; padding:8px 14px; background:rgba(255,255,255,0.6); border-radius:var(--radius-sm); border:1px solid rgba(230,81,0,0.2);">새 탭에서 열기 ↗</div>
+      </a>
+    </div>`;
     default: return '';
   }
 }
